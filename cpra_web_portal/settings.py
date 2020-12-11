@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'cpra_web_portal',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

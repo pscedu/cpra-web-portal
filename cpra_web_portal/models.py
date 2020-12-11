@@ -56,7 +56,7 @@ class ValidationAssignment(models.Model):
     datetime_created = models.DateTimeField
     datetime_approved = models.DateTimeField
     is_approved = models.SmallIntegerField
-
+(())
 
 class ValidationAssignmentComment(models.Model):
     va_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
