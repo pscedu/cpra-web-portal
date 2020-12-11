@@ -1,2 +1,3 @@
 ./venv
 /cpra_web_portal/db.sqlite3
+/cpra_web_portal/config.json
