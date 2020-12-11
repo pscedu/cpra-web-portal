@@ -10,18 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
-from pathlib import Path
-import json
-import os
+import json, os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
-config_file_path = os.path.join(BASE_DIR,
-                                "config.json"
-                                if os.path.exists(os.path.join(BASE_DIR, "config.json"))
-                                else "example_config.json")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-settings = json.load(open(config_file_path))
+settings = json.load(open(
+    os.path.join(BASE_DIR, 'example_config.json' if os.environ.get('GITHUB_WORKFLOW') else 'config.json')
+))
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,7 +28,7 @@ settings = json.load(open(config_file_path))
 SECRET_KEY = settings['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = settings['DEBUG']
 
 ALLOWED_HOSTS = settings['ALLOWED_HOSTS']
 
@@ -40,13 +36,13 @@ ALLOWED_HOSTS = settings['ALLOWED_HOSTS']
 # Application definition
 
 INSTALLED_APPS = [
-    'cpra_web_portal',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cpra_web_portal',
 ]
 
 MIDDLEWARE = [
