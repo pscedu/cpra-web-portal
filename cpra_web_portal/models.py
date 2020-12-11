@@ -19,13 +19,13 @@ class User(models.Model):
     name = models.CharField(max_length=64, default="")
     username = models.CharField(max_length=64, default="")
     password = models.CharField(max_length=64, default="")
-    email = models.EmailField
+    email = models.EmailField()
 
 
 class WFSubroutineValidationItem(models.Model):
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
-    list_id = models.IntegerField
+    list_id = models.IntegerField()
 
 
 class WFSimulationSubroutine(models.Model):
@@ -43,9 +43,9 @@ class WFAssignment(models.Model):
 class SimulationRun(models.Model):
     name = models.CharField(max_length=64, default="")
     sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE)
-    datetime_created = models.DateTimeField
-    datetime_approved = models.DateTimeField
-    is_approved = models.SmallIntegerField
+    datetime_created = models.DateTimeField()
+    datetime_approved = models.DateTimeField()
+    is_approved = models.SmallIntegerField()
     results_file_path = models.CharField(max_length=64, default="")
 
 
@@ -53,12 +53,11 @@ class ValidationAssignment(models.Model):
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    datetime_created = models.DateTimeField
-    datetime_approved = models.DateTimeField
-    is_approved = models.SmallIntegerField
-(())
+    datetime_created = models.DateTimeField()
+    datetime_approved = models.DateTimeField()
+    is_approved = models.SmallIntegerField()
 
 class ValidationAssignmentComment(models.Model):
     va_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
-    comments = models.TextField
+    comments = models.TextField()
     snapshot_url = models.CharField(max_length=100, default="")
