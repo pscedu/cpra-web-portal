@@ -1,5 +1,6 @@
 import os
 import sqlalchemy
+from cpra_web_portal import models
 
 engine = sqlalchemy.create_engine("db_url")
 
@@ -9,5 +10,6 @@ directories_to_check = os.listdir(base_directory)
 
 
 for directory in directories_to_check:
+    print(models.Simulation())
     print(directory)
 
