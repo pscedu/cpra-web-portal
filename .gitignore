@@ -2,3 +2,4 @@
 .idea/
 db.sqlite3
 config.json
+__pycache__/
