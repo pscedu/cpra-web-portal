@@ -1,4 +1,4 @@
-import os, sys, inspect
+import os, sys, inspect, datetime
 
 current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parent_dir = os.path.dirname(current_dir)
@@ -24,6 +24,9 @@ for directory in directories_to_check:
     directory_path = os.path.join(base_directory, directory)
     for item in os.listdir(directory_path):
         item_path = os.path.join(directory_path, item)
-        print(os.stat_result(item_path))
-        print(item)
+        item_stat = os.stat(item_path)
+        item_datetime_created = datetime.datetime.fromtimestamp(item_stat.st_ctime)
+
+        print(item_stat)
+        print(item_datetime_created)
 
