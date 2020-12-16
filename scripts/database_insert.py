@@ -13,10 +13,16 @@ from cpra_web_portal import models
 
 base_directory = "/pylon5/bcz3a2p/ewhite12/public/MP2023_production_runs"
 
-directories_to_check = os.listdir(base_directory)
+directories_to_check = [
+    'ADCIRC',
+    'CLARA',
+    'ICM'
+]
 
 
 for directory in directories_to_check:
-    print(models.Simulation())
+    directory_path = os.path.join(base_directory, directory)
+    print(os.listdir(directory_path))
     print(directory)
+
 
