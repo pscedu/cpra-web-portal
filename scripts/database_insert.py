@@ -28,7 +28,7 @@ for directory in directories_to_check:
         item_stat = os.stat(item_path)
         item_datetime_created = datetime.datetime.fromtimestamp(item_stat.st_ctime)
 
-        if item_datetime_created < (current_timestamp - datetime.timedelta(hours=2)):
+        if item_datetime_created > (current_timestamp - datetime.timedelta(hours=2)):
             # If its been created recently then we should insert it.
             print(item_stat)
             print(item_datetime_created)
