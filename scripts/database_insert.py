@@ -22,7 +22,8 @@ directories_to_check = [
 
 for directory in directories_to_check:
     directory_path = os.path.join(base_directory, directory)
-    print(os.listdir(directory_path))
-    print(directory)
-
+    for item in os.listdir(directory_path):
+        item_path = os.path.join(directory_path, item)
+        print(os.stat_result(item_path))
+        print(item)
 
