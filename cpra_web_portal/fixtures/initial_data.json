@@ -1,0 +1,1 @@
+[{"model": "cpra_web_portal.simulation", "pk": 1, "fields": {"name": "ADCIRC", "results_dir": ""}}, {"model": "cpra_web_portal.simulation", "pk": 2, "fields": {"name": "ICM", "results_dir": ""}}, {"model": "cpra_web_portal.simulation", "pk": 3, "fields": {"name": "CLARA", "results_dir": ""}}]
