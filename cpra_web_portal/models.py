@@ -44,8 +44,8 @@ class SimulationRun(models.Model):
     name = models.CharField(max_length=64, default="")
     sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE)
     datetime_created = models.DateTimeField()
-    datetime_approved = models.DateTimeField()
-    is_approved = models.SmallIntegerField()
+    datetime_approved = models.DateTimeField(null=True)
+    is_approved = models.SmallIntegerField(default=0)
     results_file_path = models.CharField(max_length=64, default="")
 
 
@@ -55,8 +55,8 @@ class ValidationAssignment(models.Model):
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     datetime_created = models.DateTimeField()
-    datetime_approved = models.DateTimeField()
-    is_approved = models.SmallIntegerField()
+    datetime_approved = models.DateTimeField(null=True)
+    is_approved = models.SmallIntegerField(default=0)
 
 
 class ValidationAssignmentComment(models.Model):
