@@ -63,7 +63,7 @@ for directory in directories_to_check:
                     # Insert validation_assignment items
                     for wf_assignment in wf_assignments:
                         validation_assignment_item_data = {
-                            'sr_id': wf_assignment.pk,
+                            'sr_id': new_simulation_run,
                             'sub_id': wf_assignment.sub_id,
                             'vi_id': wf_assignment.vi_id,
                             'user_id': wf_assignment.user_id,
