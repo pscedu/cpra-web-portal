@@ -50,6 +50,7 @@ class SimulationRun(models.Model):
 
 
 class ValidationAssignment(models.Model):
+    sr_id = models.ForeignKey(SimulationRun, on_delete=models.CASCADE)
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
