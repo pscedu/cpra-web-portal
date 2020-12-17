@@ -34,12 +34,12 @@ for directory in directories_to_check:
             # What do we need to grab?
 
             # We should grab the simulation ID
-            simulation = models.Simulation(name=directory)
+            simulation = models.Simulation.objects.get(name=directory)
 
             # Insert simulation_run item
             new_simulation_run_data = {
                 'name': item,
-                'sim_id': simulation.pk,
+                'sim_id': simulation,
                 'datetime_created': current_timestamp,
                 'results_file_path': item_path
             }
@@ -48,7 +48,7 @@ for directory in directories_to_check:
 
             new_simulation_run.save()
             # We should grab the related wf_simulation_subroutines
-            wf_simulation_subroutines = models.WFSimulationSubroutine.objects.filter(sub_id=simulation.pk)
+            wf_simulation_subroutines = models.WFSimulationSubroutine.objects.filter(sim_id=simulation.pk)
             # Grab the related wf_subroutine_validation_items
 
             for wf_simulation_subroutine in wf_simulation_subroutines:
