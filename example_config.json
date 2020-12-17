@@ -3,9 +3,10 @@
   "DATABASES": {
     "default": {
       "ENGINE": "django.db.backends.sqlite3",
-      "NAME": "../db.sqlite3"
+      "NAME": "db.sqlite3"
     }
   },
   "ALLOWED_HOSTS": [],
-  "DEBUG": true
+  "DEBUG": true,
+  "FIXTURE_DIRS": ""
 }
