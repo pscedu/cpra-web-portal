@@ -54,7 +54,7 @@ for directory in directories_to_check:
             # Grab the related wf_subroutine_validation_items
 
             for wf_simulation_subroutine in wf_simulation_subroutines:
-                wf_subroutine_validation_items = models.WFSubroutineValidationItem.objects.filter(list_id=wf_simulation_subroutine.sim_id)
+                wf_subroutine_validation_items = models.WFSubroutineValidationItem.objects.filter(list_id=wf_simulation_subroutine.sub_vi_list_id)
                 # Grab the related wf_assignments
 
                 for wf_subroutine_validation_item in wf_subroutine_validation_items:
