@@ -47,6 +47,8 @@ for directory in directories_to_check:
             new_simulation_run = models.SimulationRun(**new_simulation_run_data)
 
             new_simulation_run.save()
+
+            # TODO: Add fixtures for these other tables so that we can test the script all the way through.
             # We should grab the related wf_simulation_subroutines
             wf_simulation_subroutines = models.WFSimulationSubroutine.objects.filter(sim_id=simulation.pk)
             # Grab the related wf_subroutine_validation_items
