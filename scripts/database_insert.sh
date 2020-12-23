@@ -1,10 +1,10 @@
 #!/bin/sh
 
-set -X
+set -x
 
 echo "Running databaes insert"
 echo `date`
 
 module load anaconda5
 source activate cpra-web-portal
-python /opt/repostories/cpra-web-portal/database_insert.py
+python /opt/repostories/cpra-web-portal/scripts/database_insert.py
