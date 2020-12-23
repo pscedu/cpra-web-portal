@@ -7,4 +7,4 @@ echo `date`
 
 module load anaconda5
 source activate cpra-web-portal
-python /opt/repostories/cpra-web-portal/scripts/database_insert.py
+python /opt/repositories/cpra-web-portal/scripts/database_insert.py
