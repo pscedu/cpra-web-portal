@@ -2,7 +2,7 @@
 
 set -x
 
-echo "Running databaes insert"
+echo "Running database insert"
 echo `date`
 
 module load anaconda5
