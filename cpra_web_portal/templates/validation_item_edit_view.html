@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container-fluid">
+			<div class="row justify-content-center my-4">
+			<h1>Salinity</h1>
+			</div>
+			<div class="row">
+				<div class="col-3 ">
+					<div class="row justify-content-center">
+						<h2>Details</h2>
+					</div>
+					<div class="row justify-content-center">
+						<form>
+						  <div class="form-group">
+							<label for="exampleInputName">Name</label>
+							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="Salinity">
+						  </div>
+<button type="submit" class="btn btn-primary">Save Changes</button>
+						</form>
+					</div>
+				</div>
+				<div class="col-9">
+					<div class="row justify-content-center">
+						<h2>Related Workflows</h2>
+					</div>
+					<div class="row my-2 py-2" style="border-top: 1px solid black;">
+						<div class="col-12">
+							<h4>Metrics</h4>
+							<table class="table">
+					  <thead>
+						<tr>
+						  <th scope="col">Metric</th>
+							<th scope="col">Type</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">Salinity over Time</th>
+						  <td scope="row">Live Graph</td>
+						</tr>
+						<tr>
+						  <th scope="row">Image 10</th>
+						  <td scope="row">Static</td>
+						</tr>
+					  </tbody>
+					</table>
+						</div>
+					</div>
+					<div class="row">
+						<button class="btn btn-primary">New</button>
+					</div>
+					<div class="row my-2 py-2" style="border-top: 1px solid black;">
+						<div class="col-12">
+							<h4>Default Assignments</h4>
+							<table class="table">
+					  <thead>
+						<tr>
+						  <th scope="col">User</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">Juan Puerto</th>
+						</tr>
+					  </tbody>
+					</table>
+							
+					<div class="row">
+						<button class="btn btn-primary">New</button>
+					</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+{% endblock %}
