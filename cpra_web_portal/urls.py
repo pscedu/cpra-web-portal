@@ -24,4 +24,13 @@ urlpatterns = [
     path('subroutine_edit_view/', views.SubroutineEditView.as_view(), name='subroutine_edit_view'),
     path('validation_item_edit_view/', views.ValidationItemEditView.as_view(), name='validation_item_edit_view'),
     path('simulation_edit_view/', views.SimulationEditView.as_view(), name='simulation_edit_view'),
+    path('admin_console/', views.AdminConsole.as_view(), name='admin_console'),
+    path('dictionaries_list_view/', views.DictionariesListView.as_view(), name='dictionaries_list_view'),
+    path('simulation_runs_list_view/', views.SimulationRunsListView.as_view(), name='simulation_runs_list_view'),
+    path('subroutines_list_view/', views.SubroutinesListView.as_view(), name='subroutines_list_view'),
+    path('tasks/', views.Tasks.as_view(), name='tasks'),
+    path('user_item_view/', views.UserItemView.as_view(), name='user_item_view'),
+    path('users_list_view/', views.UsersListView.as_view(), name='users_list_view'),
+    path('validation_item_view/', views.ValidationItemView.as_view(), name='validation_item_view'),
+    path('validation_items_list_view/', views.ValidationItemsListView.as_view(), name='validation_items_list_view'),
 ]
