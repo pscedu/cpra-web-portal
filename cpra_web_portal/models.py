@@ -22,6 +22,13 @@ class User(models.Model):
     email = models.EmailField()
 
 
+class Metric(models.Model):
+    name = models.CharField(max_length=64, default="")
+    type = models.CharField(max_length=64, default="")
+    file_path = models.CharField(max_length=64, default="")
+    graph_config = models.JSONField()
+
+
 class WFSubroutineValidationItem(models.Model):
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
@@ -63,3 +70,8 @@ class ValidationAssignmentComment(models.Model):
     va_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
     comments = models.TextField()
     snapshot_url = models.CharField(max_length=100, default="")
+
+
+class ValidationItemMetrics(models.Model):
+    vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
+    metric_id = models.ForeignKey(Metric, on_delete=models.CASCADE)
