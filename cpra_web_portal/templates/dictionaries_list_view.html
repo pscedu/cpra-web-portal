@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>CPRA Portal</title>
+		<link href="static/css/bootstrap-4.4.1.css" rel="stylesheet" type="text/css">
+	</head>
+
+	<body>
+	<nav class="navbar navbar-expand-lg navbar-light bg-light"> 
+		<a class="navbar-brand" href="index.html"><img src="static/images/cpra_logo.png"></a>
+	    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent1" aria-controls="navbarSupportedContent1" aria-expanded="false" aria-label="Toggle navigation"> <span class="navbar-toggler-icon"></span> </button>
+	    <div class="collapse navbar-collapse" id="navbarSupportedContent1">
+	        <ul class="navbar-nav mr-auto">
+	            <li class="nav-item"> <a class="nav-link" href="index.html">Home</a> </li>
+	            <li class="nav-item"> <a class="nav-link" href="tasks.html">Tasks <span class="sr-only">(current)</span></a> </li>
+	            <li class="nav-item dropdown"> 
+					<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Review</a>
+	                <div class="dropdown-menu" aria-labelledby="navbarDropdown1"> 
+						<a class="dropdown-item" href="simulation_runs_list_view.html">Simulation Runs</a>
+	                    <a class="dropdown-item" href="subroutines_list_view.html">Subroutines</a>
+	                    <a class="dropdown-item" href="validation_items_list_view.html">Validation Items</a>
+					</div>
+                </li>
+	            <li class="nav-item dropdown active"> 
+					<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
+	                <div class="dropdown-menu" aria-labelledby="navbarDropdown1"> 
+						<a class="dropdown-item" href="admin_console.html">Dashboard</a>
+	                    <a class="dropdown-item" href="users_list_view.html">User Management</a>
+	                    <a class="dropdown-item active" href="dictionaries_list_view.html">Dictionaries</a>
+					</div>
+                </li>
+            </ul>
+			<div>
+				<h5>Welcome, Juan</h5>
+				<p style="text-align: end">Logout</p>
+			</div>
+        </div>
+    </nav>
+<div class="container">
+	<div class="row my-2">
+		<div class="col-12">
+			<ul class="nav nav-tabs" id="myTab" role="tablist">
+			  <li class="nav-item">
+				<a class="nav-link active" id="metrics-tab" data-toggle="tab" href="#metrics" role="tab" aria-controls="metrics" aria-selected="true">Metrics</a>
+			  </li>
+			  <li class="nav-item">
+				<a class="nav-link" id="validation_items-tab" data-toggle="tab" href="#validation_items" role="tab" aria-controls="validation_items" aria-selected="false">Validation Items</a>
+			  </li>
+			  <li class="nav-item">
+				<a class="nav-link" id="subroutines-tab" data-toggle="tab" href="#subroutines" role="tab" aria-controls="subroutines" aria-selected="false">Subroutines</a>
+			  </li>
+			  <li class="nav-item">
+				<a class="nav-link" id="simulations-tab" data-toggle="tab" href="#simulations" role="tab" aria-controls="simulations" aria-selected="false">Simulations</a>
+			  </li>
+			</ul>
+			<div class="tab-content" id="myTabContent">
+			  <div class="tab-pane fade show active" id="metrics" role="tabpanel" aria-labelledby="metrics-tab">
+					<table class="table table-hover">
+					  <thead>
+						<tr>
+						  <th scope="col">Name</th>
+						  <th scope="col">Type</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">Image 10</th>
+						  <td>Static</td>
+						</tr>
+						<tr>
+						  <th scope="row">Salinity over Time</th>
+						  <td>Live Graph</td>
+						</tr>
+					  </tbody>
+					</table>
+			  </div>
+			  <div class="tab-pane fade" id="validation_items" role="tabpanel" aria-labelledby="validation_items-tab">
+					<table class="table table-hover">
+					  <thead>
+						<tr>
+						  <th scope="col">Name</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">Salinity</th>
+						</tr>
+					  </tbody>
+					</table>
+			  </div>
+			  <div class="tab-pane fade" id="subroutines" role="tabpanel" aria-labelledby="subroutines-tab">
+					<table class="table table-hover">
+					  <thead>
+						<tr>
+						  <th scope="col">Name</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">ICM-Hydro</th>
+						</tr>
+					  </tbody>
+					</table>
+			  </div>
+			  <div class="tab-pane fade" id="simulations" role="tabpanel" aria-labelledby="simulations-tab">
+					<table class="table table-hover">
+					  <thead>
+						<tr>
+						  <th scope="col">Name</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">ICM</th>
+						</tr>
+					  </tbody>
+					</table>
+			  </div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<button class="btn btn-primary">New</button>
+	</div>
+</div>
+    <script src="static/js/jquery-3.4.1.min.js"></script>
+    <script src="static/js/popper.min.js"></script>
+    <script src="static/js/bootstrap-4.4.1.js"></script>
+	</body>
+</html>
