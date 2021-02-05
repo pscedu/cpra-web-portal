@@ -11,26 +11,26 @@
 
 	<body>
 		<nav class="navbar navbar-expand-lg navbar-light bg-light">
-			<a class="navbar-brand" href="home.html"><img src="static/images/cpra_logo.png"></a>
+			<a class="navbar-brand" href="{% url 'home' %}"><img src="static/images/cpra_logo.png"></a>
 			<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent1" aria-controls="navbarSupportedContent1" aria-expanded="false" aria-label="Toggle navigation"> <span class="navbar-toggler-icon"></span> </button>
 			<div class="collapse navbar-collapse" id="navbarSupportedContent1">
 				<ul class="navbar-nav mr-auto">
-					<li class="nav-item"> <a class="nav-link" href="home.html">Home</a> </li>
-					<li class="nav-item"> <a class="nav-link" href="tasks.html">Tasks</a> </li>
+					<li class="nav-item"> <a class="nav-link" href="{% url 'home' %}">Home</a> </li>
+					<li class="nav-item"> <a class="nav-link" href="{% url 'tasks' %}">Tasks</a> </li>
 					<li class="nav-item dropdown">
 						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Review <span class="sr-only">(current)</span></a>
 						<div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-							<a class="dropdown-item" href="simulation_runs_list_view.html">Simulation Runs</a>
-							<a class="dropdown-item" href="subroutines_list_view.html">Subroutines</a>
-							<a class="dropdown-item" href="validation_items_list_view.html">Validation Items</a>
+							<a class="dropdown-item" href="{% url 'simulation_runs_list_view' %}">Simulation Runs</a>
+							<a class="dropdown-item" href="{% url 'subroutines_list_view' %}">Subroutines</a>
+							<a class="dropdown-item" href="{% url 'validation_items_list_view' %}">Validation Items</a>
 						</div>
 					</li>
 	            <li class="nav-item dropdown active">
 					<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
 	                <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-						<a class="dropdown-item" href="admin_console.html">Dashboard</a>
-	                    <a class="dropdown-item" href="users_list_view.html">User Management</a>
-	                    <a class="dropdown-item" href="dictionaries_list_view.html">Dictionaries</a>
+						<a class="dropdown-item" href="{% url 'admin_console' %}">Dashboard</a>
+	                    <a class="dropdown-item" href="{% url 'users_list_view' %}">User Management</a>
+	                    <a class="dropdown-item" href="{% url 'dictionaries_list_view' %}">Dictionaries</a>
 					</div>
                 </li>
 				</ul>
@@ -40,7 +40,7 @@
 				</div>
 			</div>
 		</nav>
-        <div class="container">
+        <div class="container-fluid">
             {% block content %}
             {% endblock %}
         </div>
