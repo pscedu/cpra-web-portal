@@ -73,6 +73,8 @@ class SimulationRunsListView(View):
     def get(self, request):
         context = {}
         template = loader.get_template('simulation_runs_list_view.html')
+        sim_runs = models.SimulationRun.objects.all()
+        context['simulation_runs'] = list(sim_runs)
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -80,7 +82,18 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
+        simulation_run_id = request.GET.get('sr_id')
         context = {}
+
+        subroutines = models.ValidationAssignment.objects
+
+        if simulation_run_id:
+            subroutines = subroutines.filter(sr_id=simulation_run_id)
+
+        subroutines = list(subroutines.values('sub_id').distinct())
+
+        context['subroutines'] = subroutines
+
         template = loader.get_template('subroutines_list_view.html')
         return HttpResponse(template.render(context, request))
 
