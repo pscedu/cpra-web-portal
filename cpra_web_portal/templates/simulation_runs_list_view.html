@@ -10,10 +10,12 @@
 	<div class="row">
 		<div class="col-12">
 			<div class="list-group">
-				<a href="#" class="list-group-item">
+				{% for simulation_run in simulation_runs %}
+				<a href="{% url 'subroutines_list_view' %}?sr_id={{ simulation_run.id }}" class="list-group-item">
 					<h5 class="mb-1">ICM - FWOA (G500)</h5>
 					<p class="mb-1">1/1/2021</p>
-				</a> 
+				</a>
+				{% endfor %}
 			</div>
 		</div>
 	</div>
