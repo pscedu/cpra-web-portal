@@ -128,8 +128,13 @@ class UsersListView(View):
 
 
 class ValidationItemView(View):
-    def get(self, request):
+    def get(self, request, id):
         context = {}
+
+        validation_item = models.ValidationAssignment.objects.filter(id=id).first()
+
+        context['validation_item'] = validation_item
+
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
 
@@ -139,6 +144,19 @@ class ValidationItemView(View):
 class ValidationItemsListView(View):
     def get(self, request):
         context = {}
+        simulation_run_id = request.GET.get('sr_id')
+        sub_id = request.GET.get('sub_id')
+
+        validation_assignments = models.ValidationAssignment.objects
+
+        if simulation_run_id:
+            validation_assignments = validation_assignments.filter(sr_id=simulation_run_id)
+
+        if sub_id:
+            validation_assignments = validation_assignments.filter(sub_id=sub_id)
+
+        context['validation_assignments'] = list(validation_assignments)
+
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))
 
