@@ -158,7 +158,14 @@ class ValidationItemsListView(View):
         if sub_id:
             validation_assignments = validation_assignments.filter(sub_id=sub_id)
 
-        context['validation_assignments'] = list(validation_assignments)
+        validation_assignments = validation_assignments.select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id').all()
+
+        for validation_assignment in validation_assignments:
+            validation_assignment.simulation_run = validation_assignment.sr_id
+            validation_assignment.subroutine = validation_assignment.sub_id
+            validation_assignment.simulation = validation_assignment.simulation_run.sim_id
+
+        context['validation_assignments'] = validation_assignments
 
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))
