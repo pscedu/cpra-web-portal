@@ -73,8 +73,11 @@ class SimulationRunsListView(View):
     def get(self, request):
         context = {}
         template = loader.get_template('simulation_runs_list_view.html')
-        sim_runs = models.SimulationRun.objects.all()
-        context['simulation_runs'] = list(sim_runs)
+        sim_runs = models.SimulationRun.objects.all().select_related('sim_id')
+        for sim_run in sim_runs:
+            sim_run.simulation = sim_run.sim_id
+
+        context['simulation_runs'] = sim_runs
         return HttpResponse(template.render(context, request))
 
     post = get
