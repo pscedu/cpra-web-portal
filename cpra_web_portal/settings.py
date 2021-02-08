@@ -73,6 +73,8 @@ TEMPLATES = [
     },
 ]
 
+print(TEMPLATES[0]['DIRS'])
+
 WSGI_APPLICATION = 'cpra_web_portal.wsgi.application'
 
 
@@ -119,3 +121,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+#/pylon5/bcz3a2p/ewhite12/MP2023/ICM/S04/G031/geomorph/output_qaqc/ecoregion_points/plots

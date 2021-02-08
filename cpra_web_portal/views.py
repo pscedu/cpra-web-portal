@@ -134,9 +134,28 @@ class ValidationItemView(View):
     def get(self, request, id):
         context = {}
 
-        validation_item = models.ValidationAssignment.objects.filter(id=id).first()
+        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('sr_id__sim_id')\
+            .select_related('sub_id').select_related('vi_id').select_related('user_id').first()
+
+        validation_item.validation_item_metrics = validation_item.vi_id.validationitemmetrics_set.all()
 
         context['validation_item'] = validation_item
+
+        # We also need to get all of the validation assignments that have the same sr_id,
+        # sub_id, and vi_id (as this is how the comments and approvals would be tracked)
+
+        related_validation_items = models.ValidationAssignment.objects.filter(
+            sr_id=validation_item.sr_id, sub_id=validation_item.sub_id, vi_id=validation_item.vi_id
+        ).select_related('user_id').all()
+
+        context['comments'] = []
+        context['approvals'] = []
+
+        for rvi in related_validation_items:
+            for comment in rvi.validationassignmentcomment_set.all():
+                context['comments'].append({'user': rvi.user_id, 'comment': comment.comments})
+            if rvi.is_approved:
+                context['approvals'].append({'user': rvi.user_id, 'datetime_approved': rvi.datetime_approved})
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -158,14 +177,7 @@ class ValidationItemsListView(View):
         if sub_id:
             validation_assignments = validation_assignments.filter(sub_id=sub_id)
 
-        validation_assignments = validation_assignments.select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id').all()
-
-        for validation_assignment in validation_assignments:
-            validation_assignment.simulation_run = validation_assignment.sr_id
-            validation_assignment.subroutine = validation_assignment.sub_id
-            validation_assignment.simulation = validation_assignment.simulation_run.sim_id
-
-        context['validation_assignments'] = validation_assignments
+        context['validation_assignments'] = validation_assignments.select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id').all()
 
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))

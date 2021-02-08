@@ -23,21 +23,25 @@
 					</div>
 				</div>
 				<div class="col-3 bg-light" style="border: 1px solid #C5C5C5">
-					<h3>Subroutine Name</h3>
-					<h4>Validation Item Name</h4>
+					<h3>
+						{{ validation_item.sr_id.sim_id.name }}
+						{{ validation_item.sr_id.name }}
+					</h3>
+					<h4>
+						{{ validation_item.sub_id.name }}
+						{{ validation_item.vi_id.name }}
+					</h4>
 					<p>Description of Validation Item. Date run completed, what level of validation is necessary, etc</p>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
 						<div class="col-12">
 							<h4>Comments</h4>
 							<div class="list-group">
-								<div class="list-group-item-action p-2">
-									<h5>User</h5>
-									<p>Comment</p>
-								</div>
-								<div class="list-group-item-danger p-2">
-									<h5>Juan</h5>
-									<p>Ipsum Lorem.</p>
-								</div>
+								{% for comment in comments %}
+									<div class="list-group-item-action p-2">
+										<h5>{{ comment.user.name }}</h5>
+										<p>{{ comment.comment }}</p>
+									</div>
+								{% endfor %}
 								<button class="btn btn-primary">Add Comment</button>
 							</div>
 						</div>
@@ -46,9 +50,11 @@
 						<div class="col-12">
 							<h4>Approvals</h4>
 							<div class="list-group">
+								{% for approval in approvals %}
 								<div class="list-group-item-action p-2">
-									<h5>User - Approval Date</h5>
+									<h5> {{ approval.user.name }} - {{ approval.datetime_approved }}</h5>
 								</div>
+								{% endfor %}
 								<div class="btn-group">
 									<button class="btn btn-success">Approve</button>
 									<button class="btn btn-danger">Deny</button>
