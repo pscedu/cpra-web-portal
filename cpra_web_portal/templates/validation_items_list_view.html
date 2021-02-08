@@ -12,8 +12,13 @@
 			<div class="list-group">
 				{% for validation_assignment in validation_assignments %}
 					<a href="{% url 'validation_item_view' validation_assignment.id %}" class="list-group-item">
-					<h5 class="mb-1">ICM - FWOA (G500) - ICM-Hydro - Salinity</h5>
-					<p class="mb-1">1/1/2021</p>
+					<h5 class="mb-1">
+						{{ validation_assignment.simulation.name }}
+						{{ validation_assignment.simulation_run.name }}
+						{{ validation_assignment.subroutine.name }}
+						{{ validation_assignment.validation_item.name }}
+					</h5>
+					<p class="mb-1">{{ validation_assignment.datetime_created }}</p>
 					</a>
 				{% endfor %}
 			</div>
