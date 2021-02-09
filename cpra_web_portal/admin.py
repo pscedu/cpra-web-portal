@@ -5,7 +5,6 @@ from . import models
 admin.site.register(model_or_iterable=models.Simulation)
 admin.site.register(model_or_iterable=models.Subroutine)
 admin.site.register(model_or_iterable=models.ValidationItem)
-admin.site.register(model_or_iterable=models.User)
 admin.site.register(model_or_iterable=models.WFSubroutineValidationItem)
 admin.site.register(model_or_iterable=models.WFSimulationSubroutine)
 admin.site.register(model_or_iterable=models.WFAssignment)
