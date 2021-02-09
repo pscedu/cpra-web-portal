@@ -95,7 +95,17 @@ class SubroutinesListView(View):
 
         subroutines = list(subroutines.values('sub_id').distinct())
 
-        context['subroutines'] = subroutines
+        grouped_validation_assignments = []
+        for subroutine in subroutines:
+            validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']).\
+                select_related('sr_id__sim_id').first()
+            grouped_validation_assignments.append({
+                'sr_id': validation_assignment.sr_id,
+                'sub_id': validation_assignment.sub_id,
+                'sim_id': validation_assignment.sr_id.sim_id
+            })
+
+        context['grouped_validation_assignments'] = grouped_validation_assignments
 
         template = loader.get_template('subroutines_list_view.html')
         return HttpResponse(template.render(context, request))
