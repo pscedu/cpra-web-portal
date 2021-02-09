@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Simulation(models.Model):
@@ -12,14 +13,6 @@ class Subroutine(models.Model):
 
 class ValidationItem(models.Model):
     name = models.CharField(max_length=64, default="")
-
-
-class User(models.Model):
-    group = models.CharField(max_length=64, default="")
-    name = models.CharField(max_length=64, default="")
-    username = models.CharField(max_length=64, default="")
-    password = models.CharField(max_length=64, default="")
-    email = models.EmailField()
 
 
 class Metric(models.Model):
