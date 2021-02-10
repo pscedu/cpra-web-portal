@@ -1,6 +1,7 @@
 from django.http import HttpResponse
 from django.template import loader
 from django.views import View
+from django.template import RequestContext
 
 from . import models
 # Create your views here.
@@ -93,7 +94,7 @@ class SubroutinesListView(View):
         if simulation_run_id:
             subroutines = subroutines.filter(sr_id=simulation_run_id)
 
-        subroutines = list(subroutines.values('sub_id').distinct())
+        subroutines = list(subroutines.values('id', 'sub_id').distinct())
 
         grouped_validation_assignments = []
         for subroutine in subroutines:
