@@ -122,5 +122,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login'
+LOGOUT_REDIRECT_URL = '/'
+
 
 #/pylon5/bcz3a2p/ewhite12/MP2023/ICM/S04/G031/geomorph/output_qaqc/ecoregion_points/plots
