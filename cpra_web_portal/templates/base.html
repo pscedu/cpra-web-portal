@@ -35,8 +35,12 @@
                 </li>
 				</ul>
 				<div>
-					<h5>Welcome, Juan</h5>
-					<p style="text-align: end">Logout</p>
+                {% if user.is_authenticated %}
+                    <h5>Welcome,  {{ user.username }}. </h5>
+					<a href="{% url 'logout' %}" style="text-align: end">Logout</a>
+                {% else %}
+					<a href="{% url 'login' %}" style="text-align: end">Login</a>
+                {% endif %}
 				</div>
 			</div>
 		</nav>
