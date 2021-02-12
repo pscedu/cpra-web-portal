@@ -1,10 +1,14 @@
 {% load static %}
+{% load util_filters %}
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>QA/QC Portal</title>
+        <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
+        <script src="{% static '/js/popper.min.js' %}"></script>
+        <script src="{% static '/js/bootstrap-4.4.1.js' %}"></script>
 		<link href="{% static '/css/bootstrap-4.4.1.css' %}" rel="stylesheet" type="text/css">
 	</head>
 
@@ -16,23 +20,27 @@
 			<div class="collapse navbar-collapse" id="navbarSupportedContent1">
 				<ul class="navbar-nav mr-auto">
 					<li class="nav-item"> <a class="nav-link" href="{% url 'home' %}">Home</a> </li>
-					<li class="nav-item"> <a class="nav-link" href="{% url 'tasks' %}">Tasks</a> </li>
-					<li class="nav-item dropdown">
-						<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Review <span class="sr-only">(current)</span></a>
-						<div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-							<a class="dropdown-item" href="{% url 'simulation_runs_list_view' %}">Simulation Runs</a>
-							<a class="dropdown-item" href="{% url 'subroutines_list_view' %}">Subroutines</a>
-							<a class="dropdown-item" href="{% url 'validation_items_list_view' %}">Validation Items</a>
-						</div>
-					</li>
-	            <li class="nav-item dropdown active">
-					<a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
-	                <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
-						<a class="dropdown-item" href="{% url 'admin_console' %}">Dashboard</a>
-	                    <a class="dropdown-item" href="{% url 'users_list_view' %}">User Management</a>
-	                    <a class="dropdown-item" href="{% url 'dictionaries_list_view' %}">Dictionaries</a>
-					</div>
-                </li>
+                    {% if user.is_authenticated %}
+                            <li class="nav-item"> <a class="nav-link" href="{% url 'tasks' %}">Tasks</a> </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Review <span class="sr-only">(current)</span></a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
+                                    <a class="dropdown-item" href="{% url 'simulation_runs_list_view' %}">Simulation Runs</a>
+                                    <a class="dropdown-item" href="{% url 'subroutines_list_view' %}">Subroutines</a>
+                                    <a class="dropdown-item" href="{% url 'validation_items_list_view' %}">Validation Items</a>
+                                </div>
+                            </li>
+                        {% if user|has_group:"Admin" %}
+                            <li class="nav-item dropdown active">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdown1">
+                                    <a class="dropdown-item" href="{% url 'admin_console' %}">Dashboard</a>
+                                    <a class="dropdown-item" href="{% url 'users_list_view' %}">User Management</a>
+                                    <a class="dropdown-item" href="{% url 'dictionaries_list_view' %}">Dictionaries</a>
+                                </div>
+                            </li>
+                        {% endif %}
+                    {% endif %}
 				</ul>
 				<div>
                 {% if user.is_authenticated %}
@@ -81,8 +89,5 @@
                 &copy; 2020 Pittsburgh Supercomputing Center
             </div>
         </footer>
-        <script src="{% static '/js/jquery-3.4.1.min.js' %}"></script>
-        <script src="{% static '/js/popper.min.js' %}"></script>
-        <script src="{% static '/js/bootstrap-4.4.1.js' %}"></script>
     </body>
 </html>
