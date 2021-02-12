@@ -2,9 +2,63 @@ from django.http import HttpResponse
 from django.template import loader
 from django.views import View
 from django.template import RequestContext
+from django.forms.models import model_to_dict
+import json
+import os
 
 from . import models
 # Create your views here.
+
+
+def get_metric(request):
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+
+    files = []
+
+    # I also need to get all of the files listed under this metric
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id)\
+        .select_related('sr_id__sim_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
+        metric.file_path
+    )
+
+    for file in os.listdir(file_path):
+        files.append(file)
+
+    response = {
+        'metric': model_to_dict(metric),
+        'files': files
+    }
+
+    return HttpResponse(json.dumps(response))
+
+
+def get_static_metric(request):
+    file_name = request.GET.get('file_name')
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
+        .select_related('sr_id__sim_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
+        metric.file_path,
+        file_name
+    )
+
+    try:
+        with open(file_path, "rb") as f:
+            return HttpResponse(f.read(), content_type="image/jpeg")
+    except:
+        return HttpResponse(status=500)
 
 
 class Home(View):
@@ -161,12 +215,17 @@ class ValidationItemView(View):
 
         context['comments'] = []
         context['approvals'] = []
+        context['metrics'] = []
 
         for rvi in related_validation_items:
             for comment in rvi.validationassignmentcomment_set.all():
                 context['comments'].append({'user': rvi.user_id, 'comment': comment.comments})
             if rvi.is_approved:
                 context['approvals'].append({'user': rvi.user_id, 'datetime_approved': rvi.datetime_approved})
+
+        # Get related metrics
+        for validation_item_metric in models.ValidationItemMetrics.objects.filter(vi_id=validation_item.vi_id).select_related('metric_id'):
+            context['metrics'].append({'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
