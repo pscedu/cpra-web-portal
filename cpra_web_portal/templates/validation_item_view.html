@@ -2,67 +2,114 @@
 {% load static %}
 {% block content %}
 <div class="container-fluid">
+	<div class="row">
+		<div class="col-9">
 			<div class="row">
-				<div class="col-9">
-					<div class="row">
-						<div class="col-2">
-							<select>
-								<option value="Graph Selector">Graph Selector</option>
-							</select>	
-						</div>
-						<div class="col-8">
-					    	<h1>Graph Name</h1>
-						</div>
-						<div class="col-2">
-							<button class="btn btn-primary">Export</button>
-						</div>
-					</div>
-					<div class="row flex-grow-1">
-						<div class="col-12" style="height:100vh; background: url('static/images/graph_example.png') no-repeat center;">
-						</div>
+				<div class="col-2">
+					<select id="metric_select" class="form-control">
+						{% for metric in metrics %}
+							<option data-metric_id="{{ metric.id }}">{{ metric.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="col-8">
+					<h1 id="metric_name"></h1>
+				</div>
+				<div class="col-2">
+					<button class="btn btn-primary">Export</button>
+				</div>
+			</div>
+			<div class="row flex-grow-1">
+				<div class="col-12">
+<!--							This is where the actual graph/static image will go -->
+					<div id="metric_container" class="row"></div>
+					<div id="static_metric_options" class="row" style="display: none;">
+<!--								This is where the options for static metrics will be shown-->
 					</div>
 				</div>
-				<div class="col-3 bg-light" style="border: 1px solid #C5C5C5">
-					<h3>
-						{{ validation_item.sr_id.sim_id.name }}
-						{{ validation_item.sr_id.name }}
-					</h3>
-					<h4>
-						{{ validation_item.sub_id.name }}
-						{{ validation_item.vi_id.name }}
-					</h4>
-					<p>Description of Validation Item. Date run completed, what level of validation is necessary, etc</p>
-					<div class="row my-2 py-2" style="border-top: 1px solid black;">
-						<div class="col-12">
-							<h4>Comments</h4>
-							<div class="list-group">
-								{% for comment in comments %}
-									<div class="list-group-item-action p-2">
-										<h5>{{ comment.user.name }}</h5>
-										<p>{{ comment.comment }}</p>
-									</div>
-								{% endfor %}
-								<button class="btn btn-primary">Add Comment</button>
+			</div>
+		</div>
+		<div class="col-3 bg-light" style="border: 1px solid #C5C5C5">
+			<h3>
+				{{ validation_item.sr_id.sim_id.name }}
+				{{ validation_item.sr_id.name }}
+			</h3>
+			<h4>
+				{{ validation_item.sub_id.name }}
+				{{ validation_item.vi_id.name }}
+			</h4>
+			<p>{{ validation_item.description }}</p>
+			<div class="row my-2 py-2" style="border-top: 1px solid black;">
+				<div class="col-12">
+					<h4>Comments</h4>
+					<div class="list-group">
+						{% for comment in comments %}
+							<div class="list-group-item-action p-2">
+								<h5>{{ comment.user.username }}</h5>
+								<p>{{ comment.comment }}</p>
 							</div>
-						</div>
+						{% endfor %}
+						<button class="btn btn-primary">Add Comment</button>
 					</div>
-					<div class="row my-2 py-2" style=" border-top: 1px solid black;">
-						<div class="col-12">
-							<h4>Approvals</h4>
-							<div class="list-group">
-								{% for approval in approvals %}
-								<div class="list-group-item-action p-2">
-									<h5> {{ approval.user.name }} - {{ approval.datetime_approved }}</h5>
-								</div>
-								{% endfor %}
-								<div class="btn-group">
-									<button class="btn btn-success">Approve</button>
-									<button class="btn btn-danger">Deny</button>
-								</div>
-							</div>
+				</div>
+			</div>
+			<div class="row my-2 py-2" style=" border-top: 1px solid black;">
+				<div class="col-12">
+					<h4>Approvals</h4>
+					<div class="list-group">
+						{% for approval in approvals %}
+						<div class="list-group-item-action p-2">
+							<h5> {{ approval.user.username }} - {{ approval.datetime_approved }}</h5>
+						</div>
+						{% endfor %}
+						<div class="btn-group">
+							<button class="btn btn-success">Approve</button>
+							<button class="btn btn-danger">Deny</button>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
+
+<script>
+
+	$(document).ready(function (){
+		let $metric_select = $('#metric_select');
+		let $metric_container = $('#metric_container')
+		let metric_select_val = $metric_select.val();
+		let metric_select_id = $metric_select.find('option:selected').data('metric_id')
+		let $metric_name = $('#metric_name');
+
+		let metric_data = {};
+		let files = [];
+
+		// Initial Load Sequence
+		// Set the title of the page equal to the selected value
+		$metric_name.text(metric_select_val);
+
+		//Grab the needed data
+		// So what do we need? Type to set which options container to show
+		// We need.... the data to fill out said containers
+		$.get('/metric/?metric_id=' + metric_select_id + '&validation_assignment_id={{ validation_item.id }}', function(data){
+			data = JSON.parse(data);
+			metric_data = data['metric']
+			files = data['files']
+
+			// Lets just grab one of the files to display, use the first one in the list$metric_container.empty();
+			$metric_container.empty();
+			let img = new Image();
+			img.src = '/static_metric/?metric_id=' + metric_select_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + files[0];
+			img.style.width = "80%"
+			$metric_container.append(img);
+		});
+
+
+		$metric_select.on('change', function(){
+			console.log(this.val());
+		});
+	})
+
+</script>
 {% endblock %}
