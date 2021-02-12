@@ -169,9 +169,26 @@ class SubroutinesListView(View):
 
 
 class Tasks(View):
+
     def get(self, request):
-        context = {}
+        context = {
+            'open_tasks': [],
+            'flagged_tasks': []
+        }
         template = loader.get_template('tasks.html')
+        tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user).select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id')
+        for task in tasks:
+            # We need to get all of the Validation Assignments with the same sr_id, sub_id, and vi_id
+            # check whether they've been flagged by other users
+            for related_task in models.ValidationAssignment.objects.all().filter(sr_id=task.sr_id, sub_id=task.sub_id, vi_id=task.vi_id):
+                if related_task.is_flagged:
+                    # If its been flagged, we need to add this task to the flagged tasks list and break from loop
+                    context['flagged_tasks'].append(task)
+                    break
+            # If the user has not approved this task, then we need to add it to that list as well
+            if not task.is_approved:
+                context['open_tasks'].append(task)
+
         return HttpResponse(template.render(context, request))
 
     post = get
