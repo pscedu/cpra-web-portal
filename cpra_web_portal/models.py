@@ -13,6 +13,7 @@ class Subroutine(models.Model):
 
 class ValidationItem(models.Model):
     name = models.CharField(max_length=64, default="")
+    description = models.TextField(null=True)
 
 
 class Metric(models.Model):
