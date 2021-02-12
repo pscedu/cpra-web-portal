@@ -34,4 +34,6 @@ urlpatterns = [
     path('users_list_view/', views.UsersListView.as_view(), name='users_list_view'),
     path('validation_item_view/<int:id>', views.ValidationItemView.as_view(), name='validation_item_view'),
     path('validation_items_list_view/', views.ValidationItemsListView.as_view(), name='validation_items_list_view'),
+    path('metric/', views.get_metric, name='get_metric'),
+    path('static_metric/', views.get_static_metric, name='get_metric')
 ]
