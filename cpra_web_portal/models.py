@@ -64,10 +64,11 @@ class ValidationAssignment(models.Model):
     srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     is_approved = models.SmallIntegerField(default=0)
+    datetime_approved = models.DateTimeField(null=True)
 
 
 class ValidationAssignmentComment(models.Model):
-    srv_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
+    srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
     snapshot_url = models.CharField(max_length=100, default="")
