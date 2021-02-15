@@ -143,21 +143,21 @@ class SubroutinesListView(View):
         simulation_run_id = request.GET.get('sr_id')
         context = {}
 
-        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id)
+        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related('srv_id__sub_id')
 
         if simulation_run_id:
-            subroutines = subroutines.filter(sr_id=simulation_run_id)
+            subroutines = subroutines.filter(srv_id__sr_id=simulation_run_id)
 
-        subroutines = list(subroutines.values('id', 'sub_id').distinct())
+        subroutines = list(subroutines.values('id', 'srv_id__sub_id').distinct())
 
         grouped_validation_assignments = []
         for subroutine in subroutines:
             validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']).\
-                select_related('sr_id__sim_id').first()
+                select_related('srv_id__sr_id').select_related('srv_id__sub_id').first()
             grouped_validation_assignments.append({
-                'sr_id': validation_assignment.sr_id,
-                'sub_id': validation_assignment.sub_id,
-                'sim_id': validation_assignment.sr_id.sim_id
+                'sr_id': validation_assignment.srv_id.sr_id,
+                'sub_id': validation_assignment.srv_id.sub_id,
+                'sim_id': validation_assignment.srv_id.sr_id.sim_id
             })
 
         context['grouped_validation_assignments'] = grouped_validation_assignments
@@ -176,15 +176,13 @@ class Tasks(View):
             'flagged_tasks': []
         }
         template = loader.get_template('tasks.html')
-        tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user).select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id')
+        tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user)\
+            .select_related('srv_id__sr_id__sim_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')
         for task in tasks:
             # We need to get all of the Validation Assignments with the same sr_id, sub_id, and vi_id
             # check whether they've been flagged by other users
-            for related_task in models.ValidationAssignment.objects.all().filter(sr_id=task.sr_id, sub_id=task.sub_id, vi_id=task.vi_id):
-                if related_task.is_flagged:
-                    # If its been flagged, we need to add this task to the flagged tasks list and break from loop
-                    context['flagged_tasks'].append(task)
-                    break
+            if task.srv_id.is_flagged:
+                context['flagged_tasks'].append(task)
             # If the user has not approved this task, then we need to add it to that list as well
             if not task.is_approved:
                 context['open_tasks'].append(task)
@@ -259,12 +257,12 @@ class ValidationItemsListView(View):
         validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
 
         if simulation_run_id:
-            validation_assignments = validation_assignments.filter(sr_id=simulation_run_id)
+            validation_assignments = validation_assignments.filter(srv_id__sr_id=simulation_run_id)
 
         if sub_id:
-            validation_assignments = validation_assignments.filter(sub_id=sub_id)
+            validation_assignments = validation_assignments.filter(srv_id__sub_id=sub_id)
 
-        context['validation_assignments'] = validation_assignments.select_related('sr_id__sim_id').select_related('sub_id').select_related('vi_id').all()
+        context['validation_assignments'] = validation_assignments.select_related('srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id').all()
 
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))
