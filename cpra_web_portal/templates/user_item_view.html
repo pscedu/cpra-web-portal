@@ -14,17 +14,18 @@
 						<form>
 						  <div class="form-group">
 							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="Juan Puerto">
+							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ user.username }}">
 						  </div>
 						  <div class="form-group">
 							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value="abcdefg">
+							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value="{{ user.password }}">
 						  </div>
 						  <div class="form-group">
 							<label for="exampleInputEmail1">Email address</label>
-							<input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" value="jpuerto@psc.edu">
+							<input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" value="{{ user.email }}">
 						  </div>
 						  <div class="form-group">
+<!--							  TODO: Need to add actual functionality here	-->
 							<label for="exampleSelectGroup">Group</label>
 							  
 							<select>
@@ -49,18 +50,18 @@
 						  <th scope="col">Simulation Run</th>
 						  <th scope="col">Subroutine</th>
 						  <th scope="col">Validation Item</th>
-						  <th scope="col">User</th>
 						  <th scope="col">Time Approved</th>
 						</tr>
 					  </thead>
 					  <tbody>
+					    {% for recent_approved_task in recent_approved_tasks %}
 						<tr>
-						  <th scope="row">ICM-FWOA (G500)</th>
-						  <td>ICM Hydro</td>
-						  <td>Salinity</td>
-						  <td>Juan Puerto</td>
-						  <td>9:00AM 1/1/2021</td>
+						  <th scope="row">{{ recent_approved_task.srv_id.sr_id.name }}</th>
+						  <td>{{ recent_approved_task.srv_id.sub_id.name }}</td>
+						  <td>{{ recent_approved_task.srv_id.vi_id.name }}</td>
+						  <td>{{ recent_approved_task.srv_id.datetime_approved }}</td>
 						</tr>
+					  	{% endfor %}
 					  </tbody>
 					</table>
 						</div>

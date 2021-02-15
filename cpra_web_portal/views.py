@@ -215,6 +215,17 @@ class UserItemView(View):
     def get(self, request):
         context = {}
         template = loader.get_template('user_item_view.html')
+        user_id = request.GET.get('user_id')
+
+        user = User.objects.filter(id=user_id).first()
+
+        context['user'] = user
+
+
+        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=user_id).order_by('-datetime_approved') \
+                                               .select_related('user_id').select_related(
+            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
+
         return HttpResponse(template.render(context, request))
 
     post = get
