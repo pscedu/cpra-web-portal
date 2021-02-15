@@ -50,18 +50,25 @@ class SimulationRun(models.Model):
     results_file_path = models.CharField(max_length=64, default="")
 
 
-class ValidationAssignment(models.Model):
+class SimulationRunValidation(models.Model):
     sr_id = models.ForeignKey(SimulationRun, on_delete=models.CASCADE)
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     datetime_created = models.DateTimeField()
     datetime_approved = models.DateTimeField(null=True)
+    is_approved = models.SmallIntegerField(default=0)
+    is_flagged = models.SmallIntegerField(default=0)
+
+
+class ValidationAssignment(models.Model):
+    srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     is_approved = models.SmallIntegerField(default=0)
 
 
 class ValidationAssignmentComment(models.Model):
-    va_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
+    srv_id = models.ForeignKey(ValidationAssignment, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
     snapshot_url = models.CharField(max_length=100, default="")
 
