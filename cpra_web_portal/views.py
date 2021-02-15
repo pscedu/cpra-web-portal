@@ -79,6 +79,9 @@ class MetricEditView(View):
     def get(self, request, id):
         context = {}
         template = loader.get_template('metric_edit_view.html')
+
+        context['metric'] = models.Metric.objects.filter(id=id).first()
+
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -97,6 +100,13 @@ class ValidationItemEditView(View):
     def get(self, request, id):
         context = {}
         template = loader.get_template('validation_item_edit_view.html')
+
+        context['validation_item'] = models.ValidationItem.objects.filter(id=id).first()
+
+        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related('metric_id').all()
+
+        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=id).select_related('user_id').all()
+
         return HttpResponse(template.render(context, request))
 
     post = get
