@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
-			<h1>ICM</h1>
+			<h1>{{ simulation.name }}</h1>
 			</div>
 			<div class="row">
 				<div class="col-3 ">
@@ -14,11 +14,11 @@
 						<form>
 						  <div class="form-group">
 							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="ICM">
+							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ simulation.name }}">
 						  </div>
 						  <div class="form-group">
 							<label for="examplePath">Results Directory</label>
-							<input type="text" class="form-control" id="examplePath" aria-describedby="emailHelp" value="/home/results">
+							<input type="text" class="form-control" id="examplePath" aria-describedby="emailHelp" value="{{ simulation.results_dir }}">
 						  </div>
 						  <button type="submit" class="btn btn-primary">Save Changes</button>
 						</form>
@@ -38,9 +38,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">ICM-FWOA (G500)</th>
+					  {% for wf_simulation_subroutine in wf_simulation_subroutines %}
+						<tr style="cursor:pointer;" onclick="window.location='{% url 'subroutine_edit_view' wf_simulation_subroutine.id %}'">
+						  <th scope="row">{{ wf_simulation_subroutine.name }}</th>
 						</tr>
+					  {% endfor %}
 					  </tbody>
 					</table>
 						</div>
@@ -58,9 +60,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
+						{% for wf_assignment in wf_assignments %}
 						<tr>
-						  <th scope="row">Juan Puerto</th>
+						  <th scope="row">{{ wf_assignment.user_id.name }}</th>
 						</tr>
+					  	{% endfor %}
 					  </tbody>
 					</table>
 					<div class="row">
