@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
-			<h1>Salinity</h1>
+			<h1>{{ validation_item.name }}</h1>
 			</div>
 			<div class="row">
 				<div class="col-3 ">
@@ -14,7 +14,7 @@
 						<form>
 						  <div class="form-group">
 							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="Salinity">
+							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ validation_item.name }}">
 						  </div>
 <button type="submit" class="btn btn-primary">Save Changes</button>
 						</form>
@@ -27,7 +27,7 @@
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
 						<div class="col-12">
 							<h4>Metrics</h4>
-							<table class="table">
+							<table class="table table-hover">
 					  <thead>
 						<tr>
 						  <th scope="col">Metric</th>
@@ -35,14 +35,12 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">Salinity over Time</th>
-						  <td scope="row">Live Graph</td>
+					    {% for validation_item_metric in validation_item_metrics %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'metric_edit_view' validation_item_metric.metric_id_id %}'">
+						  <th scope="row">{{ validation_item_metric.metric_id.name }}</th>
+						  <td scope="row">{{ validation_item.metric_id.type }}</td>
 						</tr>
-						<tr>
-						  <th scope="row">Image 10</th>
-						  <td scope="row">Static</td>
-						</tr>
+					    {% endfor %}
 					  </tbody>
 					</table>
 						</div>
@@ -60,9 +58,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
+					  	{% for wf_assignment in wf_assignments %}
 						<tr>
-						  <th scope="row">Juan Puerto</th>
+						  <th scope="row">{{ wf_assignment.user_id.name }}</th>
 						</tr>
+					  	{% endfor %}
 					  </tbody>
 					</table>
 							
