@@ -19,11 +19,11 @@ def get_metric(request):
 
     # I also need to get all of the files listed under this metric
     validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id)\
-        .select_related('sr_id__sim_id').first()
+        .select_related('srv_id__sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.sr_id.sim_id.results_dir,
-        validation_assignment.sr_id.results_file_path,
+        validation_assignment.srv_id.sr_id.sim_id.results_dir,
+        validation_assignment.srv_id.sr_id.results_file_path,
         metric.file_path
     )
 
@@ -45,11 +45,11 @@ def get_static_metric(request):
     metric = models.Metric.objects.filter(id=metric_id).first()
 
     validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
-        .select_related('sr_id__sim_id').first()
+        .select_related('srv_id__sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.sr_id.sim_id.results_dir,
-        validation_assignment.sr_id.results_file_path,
+        validation_assignment.srv_id.sr_id.sim_id.results_dir,
+        validation_assignment.srv_id.sr_id.results_file_path,
         metric.file_path,
         file_name
     )
@@ -214,32 +214,23 @@ class ValidationItemView(View):
     def get(self, request, id):
         context = {}
 
-        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('sr_id__sim_id')\
-            .select_related('sub_id').select_related('vi_id').select_related('user_id').first()
-
-        validation_item.validation_item_metrics = validation_item.vi_id.validationitemmetrics_set.all()
+        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id')\
+            .select_related('srv_id__sub_id').select_related('srv_id__vi_id').first()
 
         context['validation_item'] = validation_item
-
-        # We also need to get all of the validation assignments that have the same sr_id,
-        # sub_id, and vi_id (as this is how the comments and approvals would be tracked)
-
-        related_validation_items = models.ValidationAssignment.objects.filter(
-            sr_id=validation_item.sr_id, sub_id=validation_item.sub_id, vi_id=validation_item.vi_id
-        ).select_related('user_id').all()
 
         context['comments'] = []
         context['approvals'] = []
         context['metrics'] = []
 
-        for rvi in related_validation_items:
-            for comment in rvi.validationassignmentcomment_set.all():
-                context['comments'].append({'user': rvi.user_id, 'comment': comment.comments})
-            if rvi.is_approved:
-                context['approvals'].append({'user': rvi.user_id, 'datetime_approved': rvi.datetime_approved})
+        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=validation_item.srv_id):
+            context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
+
+        for approval in models.ValidationAssignment.objects.filter(srv_id=validation_item.srv_id, is_approved=1):
+            context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
 
         # Get related metrics
-        for validation_item_metric in models.ValidationItemMetrics.objects.filter(vi_id=validation_item.vi_id).select_related('metric_id'):
+        for validation_item_metric in models.ValidationItemMetrics.objects.filter(vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
             context['metrics'].append({'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
 
         template = loader.get_template('validation_item_view.html')
