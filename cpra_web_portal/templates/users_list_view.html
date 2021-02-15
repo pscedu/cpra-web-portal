@@ -20,7 +20,7 @@
 			  </thead>
 			  <tbody>
 			  	{% for user in users %}
-						<tr style="cursor: pointer" onclick="window.location='{% url 'user_item_view' %}?user_id={{ user.id }}'">
+						<tr style="cursor: pointer" onclick="window.location='{% url 'user_item_view' user.id %}'">
 						  <th scope="row">{{ user.username }}</th>
 						  <td>{% for group in user.groups.all %}
 								{{ group.name }}
