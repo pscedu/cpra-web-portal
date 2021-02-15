@@ -224,6 +224,20 @@ class UsersListView(View):
     def get(self, request):
         context = {}
         template = loader.get_template('users_list_view.html')
+
+        users = User.objects.all()
+
+        active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        user_id_list = []
+        for session in active_sessions:
+            data = session.get_decoded()
+            user_id_list.append(data.get('_auth_user_id', None))
+
+        for user in users:
+            user.is_logged_in = str(user.id) in user_id_list
+
+        context['users'] = users
+
         return HttpResponse(template.render(context, request))
 
     post = get
