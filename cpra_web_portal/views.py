@@ -1,12 +1,17 @@
-from django.http import HttpResponse
-from django.template import loader
-from django.views import View
-from django.template import RequestContext
-from django.forms.models import model_to_dict
 import json
 import os
 
+from django.contrib.auth.models import User
+from django.contrib.sessions.models import Session
+from django.forms.models import model_to_dict
+from django.http import HttpResponse
+from django.template import loader
+from django.utils import timezone
+from django.views import View
+
 from . import models
+
+
 # Create your views here.
 
 
@@ -18,7 +23,7 @@ def get_metric(request):
     files = []
 
     # I also need to get all of the files listed under this metric
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id)\
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
         .select_related('srv_id__sr_id').first()
 
     file_path = os.path.join(
@@ -110,6 +115,19 @@ class AdminConsole(View):
     def get(self, request):
         context = {}
         template = loader.get_template('admin_console.html')
+
+        active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        user_id_list = []
+        for session in active_sessions:
+            data = session.get_decoded()
+            user_id_list.append(data.get('_auth_user_id', None))
+        # Query all logged in users based on id list
+        context['users'] = User.objects.filter(id__in=user_id_list).all()
+
+        context['recent_approved_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_approved') \
+                                               .select_related('user_id').select_related(
+            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
+
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -143,7 +161,8 @@ class SubroutinesListView(View):
         simulation_run_id = request.GET.get('sr_id')
         context = {}
 
-        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related('srv_id__sub_id')
+        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related(
+            'srv_id__sub_id')
 
         if simulation_run_id:
             subroutines = subroutines.filter(srv_id__sr_id=simulation_run_id)
@@ -152,7 +171,7 @@ class SubroutinesListView(View):
 
         grouped_validation_assignments = []
         for subroutine in subroutines:
-            validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']).\
+            validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']). \
                 select_related('srv_id__sr_id').select_related('srv_id__sub_id').first()
             grouped_validation_assignments.append({
                 'sr_id': validation_assignment.srv_id.sr_id,
@@ -176,7 +195,7 @@ class Tasks(View):
             'flagged_tasks': []
         }
         template = loader.get_template('tasks.html')
-        tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user)\
+        tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user) \
             .select_related('srv_id__sr_id__sim_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')
         for task in tasks:
             # We need to get all of the Validation Assignments with the same sr_id, sub_id, and vi_id
@@ -214,7 +233,7 @@ class ValidationItemView(View):
     def get(self, request, id):
         context = {}
 
-        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id')\
+        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id') \
             .select_related('srv_id__sub_id').select_related('srv_id__vi_id').first()
 
         context['validation_item'] = validation_item
@@ -230,8 +249,10 @@ class ValidationItemView(View):
             context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
 
         # Get related metrics
-        for validation_item_metric in models.ValidationItemMetrics.objects.filter(vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
-            context['metrics'].append({'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
+        for validation_item_metric in models.ValidationItemMetrics.objects.filter(
+                vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
+            context['metrics'].append(
+                {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -253,10 +274,10 @@ class ValidationItemsListView(View):
         if sub_id:
             validation_assignments = validation_assignments.filter(srv_id__sub_id=sub_id)
 
-        context['validation_assignments'] = validation_assignments.select_related('srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id').all()
+        context['validation_assignments'] = validation_assignments.select_related('srv_id__sr_id').select_related(
+            'srv_id__sub_id').select_related('srv_id__vi_id').all()
 
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))
 
     post = get
-
