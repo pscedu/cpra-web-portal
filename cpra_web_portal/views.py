@@ -76,7 +76,7 @@ class Home(View):
 
 
 class MetricEditView(View):
-    def get(self, request):
+    def get(self, request, id):
         context = {}
         template = loader.get_template('metric_edit_view.html')
         return HttpResponse(template.render(context, request))
@@ -85,7 +85,7 @@ class MetricEditView(View):
 
 
 class SubroutineEditView(View):
-    def get(self, request):
+    def get(self, request, id):
         context = {}
         template = loader.get_template('subroutine_edit_view.html')
         return HttpResponse(template.render(context, request))
@@ -94,7 +94,7 @@ class SubroutineEditView(View):
 
 
 class ValidationItemEditView(View):
-    def get(self, request):
+    def get(self, request, id):
         context = {}
         template = loader.get_template('validation_item_edit_view.html')
         return HttpResponse(template.render(context, request))
@@ -103,7 +103,7 @@ class ValidationItemEditView(View):
 
 
 class SimulationEditView(View):
-    def get(self, request):
+    def get(self, request, id):
         context = {}
         template = loader.get_template('simulation_edit_view.html')
         return HttpResponse(template.render(context, request))
@@ -135,8 +135,15 @@ class AdminConsole(View):
 
 class DictionariesListView(View):
     def get(self, request):
-        context = {}
+        context = {
+            'metrics': models.Metric.objects.all(),
+            'validation_items': models.ValidationItem.objects.all(),
+            'subroutines': models.Subroutine.objects.all(),
+            'simulations': models.Simulation.objects.all()
+        }
+
         template = loader.get_template('dictionaries_list_view.html')
+
         return HttpResponse(template.render(context, request))
 
     post = get
