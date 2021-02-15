@@ -19,18 +19,21 @@
 				</tr>
 			  </thead>
 			  <tbody>
-				<tr>
-				  <th scope="row">Juan Puerto</th>
-				  <td>Admin</td>
-				  <td>&#10003;</td>
-				  <td>9:00AM 1/1/2021</td>
-				</tr>
-				<tr>
-				  <th scope="row">Test</th>
-				  <td>User</td>
-				  <td></td>
-				  <td>10:00AM 12/31/2020</td>
-				</tr>
+			  	{% for user in users %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'user_item_view' %}'">
+						  <th scope="row">{{ user.username }}</th>
+						  <td>{% for group in user.groups.all %}
+								{{ group.name }}
+							  {% endfor %}
+						  </td>
+						  <td>
+							  {% if user.is_logged_in %}
+								&#10003;
+							  {% endif %}
+						  </td>
+						  <td>{{ user.last_login }}</td>
+						</tr>
+				{% endfor %}
 			  </tbody>
 			</table>
         </div>
