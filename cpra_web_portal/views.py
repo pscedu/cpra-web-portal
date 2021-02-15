@@ -143,7 +143,7 @@ class SubroutinesListView(View):
         simulation_run_id = request.GET.get('sr_id')
         context = {}
 
-        subroutines = models.ValidationAssignment.objects
+        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id)
 
         if simulation_run_id:
             subroutines = subroutines.filter(sr_id=simulation_run_id)
@@ -256,7 +256,7 @@ class ValidationItemsListView(View):
         simulation_run_id = request.GET.get('sr_id')
         sub_id = request.GET.get('sub_id')
 
-        validation_assignments = models.ValidationAssignment.objects
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
 
         if simulation_run_id:
             validation_assignments = validation_assignments.filter(sr_id=simulation_run_id)
