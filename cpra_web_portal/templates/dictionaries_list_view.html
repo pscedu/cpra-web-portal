@@ -28,14 +28,12 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">Image 10</th>
-						  <td>Static</td>
+					    {% for metric in metrics %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'metric_edit_view' metric.id %}'">
+						  <th scope="row">{{ metric.name }}</th>
+						  <td>{{ metric.type }}</td>
 						</tr>
-						<tr>
-						  <th scope="row">Salinity over Time</th>
-						  <td>Live Graph</td>
-						</tr>
+						{% endfor %}
 					  </tbody>
 					</table>
 			  </div>
@@ -47,9 +45,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">Salinity</th>
+					    {% for validation_item in validation_items %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'validation_item_edit_view' validation_item.id %}'">
+						  <th scope="row">{{ validation_item.name }}</th>
 						</tr>
+						{% endfor %}
 					  </tbody>
 					</table>
 			  </div>
@@ -61,9 +61,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">ICM-Hydro</th>
+					    {% for subroutine in subroutines %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'subroutine_edit_view' subroutine.id %}'">
+						  <th scope="row">{{ subroutine.name }}</th>
 						</tr>
+					  	{% endfor %}
 					  </tbody>
 					</table>
 			  </div>
@@ -75,9 +77,11 @@
 						</tr>
 					  </thead>
 					  <tbody>
-						<tr>
-						  <th scope="row">ICM</th>
+					    {% for simulation in simulations %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'simulation_edit_view' simulation.id %}'">
+						  <th scope="row">{{ simulation.name }}</th>
 						</tr>
+						  {% endfor %}
 					  </tbody>
 					</table>
 			  </div>
