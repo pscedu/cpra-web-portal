@@ -91,6 +91,14 @@ class SubroutineEditView(View):
     def get(self, request, id):
         context = {}
         template = loader.get_template('subroutine_edit_view.html')
+
+        context['subroutine'] = models.Subroutine.objects.filter(id=id).first()
+
+        context['wf_subroutine_validation_items'] = models.WFSubroutineValidationItem.objects.filter(
+            sub_id=id).select_related('vi_id').all()
+
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=id).select_related('user_id').all()
+
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -103,7 +111,8 @@ class ValidationItemEditView(View):
 
         context['validation_item'] = models.ValidationItem.objects.filter(id=id).first()
 
-        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related('metric_id').all()
+        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related(
+            'metric_id').all()
 
         context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=id).select_related('user_id').all()
 
@@ -116,6 +125,20 @@ class SimulationEditView(View):
     def get(self, request, id):
         context = {}
         template = loader.get_template('simulation_edit_view.html')
+
+        context['simulation'] = models.Simulation.objects.filter(id=id).first()
+
+        context['wf_simulation_subroutines'] = []
+
+        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=id).all():
+            for subroutine_id in models.WFSubroutineValidationItem.objects.filter(
+                    list_id=wf_simulation_subroutine.sub_vi_list_id).select_related('sub_id').values(
+                    'sub_id').distinct():
+                context['wf_simulation_subroutines'].append(
+                    models.Subroutine.objects.filter(id=subroutine_id['sub_id']).first())
+
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=id).select_related('user_id').all()
+
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -237,7 +260,8 @@ class UserItemView(View):
 
         context['user'] = user
 
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by('-datetime_approved') \
+        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
+            '-datetime_approved') \
                                                .select_related('user_id').select_related(
             'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
