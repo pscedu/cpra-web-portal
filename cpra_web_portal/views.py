@@ -12,9 +12,8 @@ from django.views import View
 from . import models
 
 
-# Create your views here.
-
-
+# These are miscellaneous views? They are really Metrics requests though
+# so they could be merged under a "class Metric"
 def get_metric(request):
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
@@ -66,55 +65,13 @@ def get_static_metric(request):
         return HttpResponse(status=500)
 
 
-class Home(View):
-    def get(self, request):
-        context = {}
-        template = loader.get_template('home.html')
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
+# Individual Item Views (Edit and Review)
 class MetricEditView(View):
     def get(self, request, id):
         context = {}
         template = loader.get_template('metric_edit_view.html')
 
         context['metric'] = models.Metric.objects.filter(id=id).first()
-
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
-class SubroutineEditView(View):
-    def get(self, request, id):
-        context = {}
-        template = loader.get_template('subroutine_edit_view.html')
-
-        context['subroutine'] = models.Subroutine.objects.filter(id=id).first()
-
-        context['wf_subroutine_validation_items'] = models.WFSubroutineValidationItem.objects.filter(
-            sub_id=id).select_related('vi_id').all()
-
-        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=id).select_related('user_id').all()
-
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
-class ValidationItemEditView(View):
-    def get(self, request, id):
-        context = {}
-        template = loader.get_template('validation_item_edit_view.html')
-
-        context['validation_item'] = models.ValidationItem.objects.filter(id=id).first()
-
-        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related(
-            'metric_id').all()
-
-        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=id).select_related('user_id').all()
 
         return HttpResponse(template.render(context, request))
 
@@ -144,6 +101,91 @@ class SimulationEditView(View):
     post = get
 
 
+class SubroutineEditView(View):
+    def get(self, request, id):
+        context = {}
+        template = loader.get_template('subroutine_edit_view.html')
+
+        context['subroutine'] = models.Subroutine.objects.filter(id=id).first()
+
+        context['wf_subroutine_validation_items'] = models.WFSubroutineValidationItem.objects.filter(
+            sub_id=id).select_related('vi_id').all()
+
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=id).select_related('user_id').all()
+
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
+class UserItemView(View):
+    def get(self, request, id):
+        context = {}
+        template = loader.get_template('user_item_view.html')
+
+        user = User.objects.filter(id=id).first()
+
+        context['user'] = user
+
+        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
+            '-datetime_approved') \
+                                               .select_related('user_id').select_related(
+            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
+
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
+class ValidationItemView(View):
+    def get(self, request, id):
+        context = {}
+
+        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id') \
+            .select_related('srv_id__sub_id').select_related('srv_id__vi_id').first()
+
+        context['validation_item'] = validation_item
+
+        context['comments'] = []
+        context['approvals'] = []
+        context['metrics'] = []
+
+        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=validation_item.srv_id):
+            context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
+
+        for approval in models.ValidationAssignment.objects.filter(srv_id=validation_item.srv_id, is_approved=1):
+            context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
+
+        # Get related metrics
+        for validation_item_metric in models.ValidationItemMetrics.objects.filter(
+                vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
+            context['metrics'].append(
+                {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
+
+        template = loader.get_template('validation_item_view.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
+class ValidationItemEditView(View):
+    def get(self, request, id):
+        context = {}
+        template = loader.get_template('validation_item_edit_view.html')
+
+        context['validation_item'] = models.ValidationItem.objects.filter(id=id).first()
+
+        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related(
+            'metric_id').all()
+
+        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=id).select_related('user_id').all()
+
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
+# Strictly HTML views (collection of multiple items)
 class AdminConsole(View):
     def get(self, request):
         context = {}
@@ -182,6 +224,16 @@ class DictionariesListView(View):
     post = get
 
 
+class Home(View):
+    def get(self, request):
+        context = {}
+        template = loader.get_template('home.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
+# List Views of items
 class SimulationRunsListView(View):
     def get(self, request):
         context = {}
@@ -251,25 +303,6 @@ class Tasks(View):
     post = get
 
 
-class UserItemView(View):
-    def get(self, request, id):
-        context = {}
-        template = loader.get_template('user_item_view.html')
-
-        user = User.objects.filter(id=id).first()
-
-        context['user'] = user
-
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
-            '-datetime_approved') \
-                                               .select_related('user_id').select_related(
-            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
-
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
 class UsersListView(View):
     def get(self, request):
         context = {}
@@ -288,37 +321,6 @@ class UsersListView(View):
 
         context['users'] = users
 
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
-class ValidationItemView(View):
-    def get(self, request, id):
-        context = {}
-
-        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id') \
-            .select_related('srv_id__sub_id').select_related('srv_id__vi_id').first()
-
-        context['validation_item'] = validation_item
-
-        context['comments'] = []
-        context['approvals'] = []
-        context['metrics'] = []
-
-        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=validation_item.srv_id):
-            context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
-
-        for approval in models.ValidationAssignment.objects.filter(srv_id=validation_item.srv_id, is_approved=1):
-            context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
-
-        # Get related metrics
-        for validation_item_metric in models.ValidationItemMetrics.objects.filter(
-                vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
-            context['metrics'].append(
-                {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
-
-        template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
 
     post = get
