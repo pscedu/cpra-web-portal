@@ -1,6 +1,67 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+<script>
+	$(document).ready(function(){
+		const user_name = "{{ user.username }}"
+		const csrftoken = Cookies.get('csrftoken');
+
+		$("#input-add-comment").on("keyup", function(e){
+			// Do we want a modal to pop up to add this data?
+			// I think we probably would. Same for the approve and deny since you
+			// would probably want to have some comments attached to the approval/denial
+			if (e.key=== "Enter" || e.key === 13) {
+				// add this to list of comments AND send request off
+				let comment = $(this).val();
+				let body = {
+					comment: comment,
+					validation_assignment_id: {{ validation_item.id }}
+				}
+
+				$.post({
+					url: "{% url 'validation_assignment_comment' %}",
+					headers: {'X-CSRFToken': csrftoken},
+					data: JSON.stringify(body),
+					success: function(){
+						let $comment_container = $('#comment-container-template').clone();
+						$comment_container.id = '';
+						$comment_container.find('#user-comment-template').text(user_name).id = '';
+						$comment_container.find('#comments-comment-template').text(comment).id='';
+						$("#container-comments").append($comment_container);
+					}
+				});
+				$(this).val = '';
+			}
+		});
+		$("#btn-approve").on("click", function(){
+			$.ajax({
+				url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
+				type: 'PUT',
+				headers: {'X-CSRFToken': csrftoken},
+				success: function(data){
+					data = JSON.parse(data);
+					let $approve_container = $('#approval-container-template').clone();
+					$approve_container.id = '';
+					$approve_container.find('#data-approval-template').text(user_name + " - " + data['datetime_approved']).id = '';
+					$("#container-approvals").append($approve_container);
+				}
+			});
+		});
+		$("#btn-deny").on("click", function(){
+			$.ajax({
+				url: "{% url 'validation_assignment_methods' validation_item.id 'deny' %}" ,
+				type: 'PUT',
+				headers: {'X-CSRFToken': csrftoken},
+				success: function(data){
+					// delete the entry
+				}
+			});
+		});
+	});
+
+</script>
+
 <div class="container-fluid">
 	<div class="row">
 		<div class="col-9">
@@ -42,34 +103,44 @@
 			<div class="row my-2 py-2" style="border-top: 1px solid black;">
 				<div class="col-12">
 					<h4>Comments</h4>
-					<div class="list-group">
+					<div id="container-comments" class="list-group">
 						{% for comment in comments %}
 							<div class="list-group-item-action p-2">
 								<h5>{{ comment.user.username }}</h5>
 								<p>{{ comment.comment }}</p>
 							</div>
 						{% endfor %}
-						<button class="btn btn-primary">Add Comment</button>
 					</div>
+					<input id="input-add-comment" class="form-control" placeholder="Add comment">
 				</div>
 			</div>
 			<div class="row my-2 py-2" style=" border-top: 1px solid black;">
 				<div class="col-12">
 					<h4>Approvals</h4>
-					<div class="list-group">
+					<div id="container-approvals" class="list-group">
 						{% for approval in approvals %}
 						<div class="list-group-item-action p-2">
 							<h5> {{ approval.user.username }} - {{ approval.datetime_approved }}</h5>
 						</div>
 						{% endfor %}
-						<div class="btn-group">
-							<button class="btn btn-success">Approve</button>
-							<button class="btn btn-danger">Deny</button>
-						</div>
 					</div>
+						<div class="btn-group">
+							<button id="btn-approve" class="btn btn-success">Approve</button>
+							<button id="btn-deny" class="btn btn-danger">Deny</button>
+						</div>
 				</div>
 			</div>
 		</div>
+	</div>
+</div>
+
+<div id="container-templates" style="display: none;">
+	<div id="comment-container-template" class="list-group-item-action p-2">
+		<h5 id="user-comment-template"> </h5>
+		<p id="comments-comment-template"> </p>
+	</div>
+	<div id="approval-container-template" class="list-group-item-action p-2">
+		<h5 id="data-approval-template"></h5>
 	</div>
 </div>
 

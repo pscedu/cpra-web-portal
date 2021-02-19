@@ -1,12 +1,13 @@
 import json
 import os
+import datetime
 
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from django.template import loader
-from django.utils import timezone
+from django.utils import timezone, dateformat
 from django.views import View
 
 from . import models
@@ -183,6 +184,46 @@ class ValidationItemEditView(View):
         return HttpResponse(template.render(context, request))
 
     post = get
+
+
+class ValidationAssignment(View):
+    def put(self, request, id, method):
+        validation_item = models.ValidationAssignment.objects.get(pk=id)
+        if method == 'approve':
+            validation_item.is_approved = 1
+            validation_item.datetime_approved = datetime.datetime.now()
+        elif method == 'deny':
+            validation_item.is_approved = -1
+        else:
+            return HttpResponse(status=500)
+
+        validation_item.save()
+
+        # TODO: Add something here that updates related items
+
+        df = dateformat.DateFormat(validation_item.datetime_approved)
+        response = {'datetime_approved': df.format('N j, Y, P')}
+
+        return HttpResponse(json.dumps(response))
+
+
+class ValidationAssignmentComment(View):
+    def post(self, request):
+        body = json.loads(request.body)
+
+        validation_assignment = models.ValidationAssignment.objects.get(pk=body['validation_assignment_id'])
+
+        validation_assignment_comment_data = {
+            'srv_id': validation_assignment.srv_id,
+            'user_id': request.user,
+            'comments': body['comment']
+        }
+
+        validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+        validation_assignment_comment.save()
+
+        # Need to return a template with the approval/denial details.
+        return HttpResponse(status=200)
 
 
 # Strictly HTML views (collection of multiple items)
