@@ -21,7 +21,6 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
     path('', views.Home.as_view(), name='home'),
-    path('metric_edit_view/<int:id>/', views.MetricEditView.as_view(), name='metric_edit_view'),
     path('subroutine_edit_view/<int:id>', views.SubroutineEditView.as_view(), name='subroutine_edit_view'),
     path('validation_item_edit_view/<int:id>', views.ValidationItemEditView.as_view(), name='validation_item_edit_view'),
     path('simulation_edit_view/<int:id>', views.SimulationEditView.as_view(), name='simulation_edit_view'),
@@ -40,5 +39,7 @@ urlpatterns = [
     path('validation_item/<int:id>/<str:method>/', views.ValidationAssignment.as_view(),
          name='validation_assignment_methods'),
     path('validation_item_comment/', views.ValidationAssignmentComment.as_view(),
-         name='validation_assignment_comment')
+         name='validation_assignment_comment'),
+    path('metric_view/', views.Metric.as_view(), name='metric_new_view'),
+    path('metric_view/<int:id>/', views.Metric.as_view(), name='metric_edit_view'),
 ]

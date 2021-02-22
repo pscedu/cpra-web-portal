@@ -18,9 +18,16 @@ class ValidationItem(models.Model):
 
 class Metric(models.Model):
     name = models.CharField(max_length=64, default="")
-    type = models.CharField(max_length=64, default="")
+    type = models.CharField(max_length=64, default="",  choices=[
+        ('static', 'Static'),
+        ('dynamic_graph', 'Live Graph'),
+        ('map', 'Map')
+    ])
     file_path = models.CharField(max_length=64, default="")
     graph_config = models.JSONField()
+
+    def __str__(self):
+        return self.name
 
 
 class WFSubroutineValidationItem(models.Model):

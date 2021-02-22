@@ -1,6 +1,36 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+
+<script>
+	$(document).ready(function(){
+		const csrftoken = Cookies.get('csrftoken');
+		$("#btn-metric-save").on("click", function(e){
+			let data = {}
+
+			{% if metric.id != None %}
+			  data['id'] = {{ metric.id }}
+
+			{% endif %}
+			// Gather data here to convert to JSON
+			// Iterate over form-control fields and get the data
+			$(".form-control").each(function(index, element){
+				let $element = $(element);
+				data[$element.attr('name')] = $element.val();
+			});
+
+			// perform post request
+			$.post({
+				url: "{% url 'metric_new_view' %}",
+				headers: {'X-CSRFToken': csrftoken},
+				data: JSON.stringify(data),
+				success: function(response){
+					window.location.replace(JSON.parse(response)['url'])
+				}
+			})
+		});
+	});
+</script>
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
 			<h1>{{ metric.name }}</h1>
@@ -13,23 +43,23 @@
 					<div class="row justify-content-center">
 						<form>
 						  <div class="form-group">
-							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ metric.name }}">
+							<label for="metric_name">Name</label>
+							<input name="name" id="metric_name" type="text" class="form-control" aria-describedby="emailHelp" value="{{ metric.name }}" required>
 						  </div>
 							<div class="form-group">
-							<label for="exampleSelectGroup">Type</label>
+							<label for="metric_type">Type</label>
 							  
-							<select value="{{ metric.type }}">
+							<select name="type" id="metric_type" class="form-control" value="{{ metric.type }}" required>
 								<option value="Live Graph">Live Graph</option>
 								<option value="Static">Static</option>
 								<option value="Map">Map</option>
 							</select>	
 						  </div>
 						  <div class="form-group">
-							<label for="examplePath">File Path</label>
-							<input type="text" class="form-control" id="examplePath" aria-describedby="emailHelp" value="{{ metric.file_path }}">
+							<label for="metric_file_path">File Path</label>
+							<input name="file_path" id="metric_file_path" type="text" class="form-control" aria-describedby="emailHelp" value="{{ metric.file_path }}" required>
 						  </div>
-<button type="submit" class="btn btn-primary">Save Changes</button>
+							<button id="btn-metric-save" type="button" class="btn btn-primary">Save Changes</button>
 						</form>
 					</div>
 				</div>
@@ -37,7 +67,8 @@
 					<div class="row justify-content-center">
 						<h2>Graph Configuration</h2>
 					</div>
-						<textarea class="form-control" id="exampleFormControlTextarea1">{{ metric.graph_config }}</textarea>
+						<label for="metric_graph_config" style="display: none;"></label>
+						<textarea name="graph_config" class="form-control" id="metric_graph_config">{{ metric.graph_config }}</textarea>
 				</div>
 			</div>
 		</div>

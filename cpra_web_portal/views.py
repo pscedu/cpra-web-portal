@@ -5,10 +5,11 @@ import datetime
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template import loader
 from django.utils import timezone, dateformat
 from django.views import View
+from django.urls import reverse
 
 from . import models
 
@@ -66,19 +67,7 @@ def get_static_metric(request):
         return HttpResponse(status=500)
 
 
-# Individual Item Views (Edit and Review)
-class MetricEditView(View):
-    def get(self, request, id):
-        context = {}
-        template = loader.get_template('metric_edit_view.html')
-
-        context['metric'] = models.Metric.objects.filter(id=id).first()
-
-        return HttpResponse(template.render(context, request))
-
-    post = get
-
-
+# Individual Item Views
 class SimulationEditView(View):
     def get(self, request, id):
         context = {}
@@ -224,6 +213,30 @@ class ValidationAssignmentComment(View):
 
         # Need to return a template with the approval/denial details.
         return HttpResponse(status=200)
+
+
+class Metric(View):
+    def get(self, request, id=None):
+        context = {}
+        template = loader.get_template('metric_edit_view.html')
+        context['metric'] = models.Metric.objects.filter(id=id).first() if id is not None else models.Metric()
+
+        return HttpResponse(template.render(context, request))
+
+    def post(self, request):
+        body = json.loads(request.body)
+
+        if 'id' in body:
+            metric = models.Metric.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(metric, attr, value)
+        else:
+            metric = models.Metric(**body)
+
+        metric.save()
+
+        return HttpResponse(json.dumps({'url': reverse('metric_edit_view', args=(metric.id,))}))
 
 
 # Strictly HTML views (collection of multiple items)
