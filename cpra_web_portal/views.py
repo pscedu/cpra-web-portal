@@ -113,20 +113,41 @@ class SimulationEditView(View):
 
 
 class SubroutineEditView(View):
-    def get(self, request, id):
+    def get(self, request, id=None):
         context = {}
         template = loader.get_template('subroutine_edit_view.html')
 
-        context['subroutine'] = models.Subroutine.objects.filter(id=id).first()
+        subroutine = models.Subroutine.objects.filter(id=id).first() if id is not None else models.Subroutine()
+
+        context['subroutine'] = subroutine
 
         context['wf_subroutine_validation_items'] = models.WFSubroutineValidationItem.objects.filter(
-            sub_id=id).select_related('vi_id').all()
+            sub_id=subroutine.id).select_related('vi_id').all()
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=subroutine.id).select_related('user_id').all()
 
         return HttpResponse(template.render(context, request))
 
-    post = get
+    def post(self, request):
+        body = json.loads(request.body)
+
+        # Pop the related tables
+        wf_subroutine_validation_items = body.pop('wf_subroutine_validation_items')
+        wf_assignments = body.pop('wf_assignments')
+
+        if 'id' in body:
+            subroutine = models.Subroutine.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(subroutine, attr, value)
+        else:
+            subroutine = models.Subroutine(**body)
+
+        subroutine.save()
+
+        # Update related tables
+
+        return HttpResponse(json.dumps({'url': reverse('subroutine_edit_view', args=(subroutine.id,))}))
 
 
 class UserView(View):

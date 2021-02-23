@@ -21,6 +21,7 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
     path('', views.Home.as_view(), name='home'),
+    path('subroutine_edit_view/', views.SubroutineEditView.as_view(), name='subroutine_new_view'),
     path('subroutine_edit_view/<int:id>/', views.SubroutineEditView.as_view(), name='subroutine_edit_view'),
     path('validation_item_edit_view/', views.ValidationItemEditView.as_view(), name='validation_item_new_view'),
     path('validation_item_edit_view/<int:id>/', views.ValidationItemEditView.as_view(), name='validation_item_edit_view'),

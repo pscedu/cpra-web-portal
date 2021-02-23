@@ -1,6 +1,40 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+
+<script>
+	$(document).ready(function(){
+		const csrftoken = Cookies.get('csrftoken');
+		$("#btn-subroutine-save").on("click", function(e){
+			let data = {
+				'wf_subroutine_validation_items': {},
+				'wf_assignments': {}
+			}
+
+			{% if subroutine.id != None %}
+			  data['id'] = {{ subroutine.id }}
+
+			{% endif %}
+			// Gather data here to convert to JSON
+			// Iterate over form-control fields and get the data
+			$(".form-control").each(function(index, element){
+				let $element = $(element);
+				data[$element.attr('name')] = $element.val();
+			});
+
+			// perform post request
+			$.post({
+				url: "{% url 'subroutine_new_view' %}",
+				headers: {'X-CSRFToken': csrftoken},
+				data: JSON.stringify(data),
+				success: function(response){
+					window.location.replace(JSON.parse(response)['url'])
+				}
+			})
+		});
+	});
+</script>
+
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
 			<h1>{{ subroutine.name }}</h1>
@@ -13,10 +47,10 @@
 					<div class="row justify-content-center">
 						<form>
 						  <div class="form-group">
-							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ subroutine.name }}">
+							<label for="subroutine-name">Name</label>
+							<input name="name" type="text" class="form-control" id="subroutine-name" aria-describedby="emailHelp" value="{{ subroutine.name }}">
 						  </div>
-						  <button type="submit" class="btn btn-primary">Save Changes</button>
+						  <button id="btn-subroutine-save" type="button" class="btn btn-primary">Save Changes</button>
 						</form>
 					</div>
 				</div>
