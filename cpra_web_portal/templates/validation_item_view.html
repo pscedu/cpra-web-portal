@@ -84,8 +84,9 @@
 				<div class="col-12">
 <!--							This is where the actual graph/static image will go -->
 					<div id="metric_container" class="row"></div>
-					<div id="static_metric_options" class="row" style="display: none;">
-<!--								This is where the options for static metrics will be shown-->
+					<div id="static_metric_options" class="row metric_options" style="display: none;">
+						<select class="form-control" id="select_static_metric_region"></select>
+						<select class="form-control" id="select_static_metric_data_points"></select>
 					</div>
 				</div>
 			</div>
@@ -147,39 +148,92 @@
 <script>
 
 	$(document).ready(function (){
+		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
-		let $metric_container = $('#metric_container')
 		let metric_select_val = $metric_select.val();
-		let metric_select_id = $metric_select.find('option:selected').data('metric_id')
 		let $metric_name = $('#metric_name');
-
-		let metric_data = {};
-		let files = [];
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
 		$metric_name.text(metric_select_val);
 
-		//Grab the needed data
-		// So what do we need? Type to set which options container to show
-		// We need.... the data to fill out said containers
-		$.get('/metric/?metric_id=' + metric_select_id + '&validation_assignment_id={{ validation_item.id }}', function(data){
-			data = JSON.parse(data);
-			metric_data = data['metric']
-			files = data['files']
+		metric_change();
 
-			// Lets just grab one of the files to display, use the first one in the list$metric_container.empty();
+		$metric_select.on('change', metric_change)
+
+		function metric_change(){
+			let metric_id = $metric_select.find('option:selected').data('metric_id');
+			//Grab the needed data
+			// So what do we need? Type to set which options container to show
+			// We need.... the data to fill out said containers
+			$.get('/metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}', function(data){
+				data = JSON.parse(data);
+				let metric_data = data['metric']
+				let files = data['files']
+
+				$metric_container.empty();
+
+				// hide option containers
+				$('.metric_options').hide();
+
+				// This is where we need to figure out which container we need populate
+				switch (metric_data['type']){
+					case 'static':
+						populate_static_metrics(metric_data, files)
+					default:
+						console.log(metric_data['type'])
+				}
+
+
+
+				// Lets just grab one of the files to display, use the first one in the list
+			});
+		}
+
+		function populate_static_metrics(metric, files){
+			let $static_metric_options = $('#static_metric_options');
+			let $select_static_metric_regions = $('#select_static_metric_region');
+			let $select_static_metric_data_points = $('#select_static_metric_data_points');
+
+			$select_static_metric_regions.empty();
+
+			for(let region in files){
+				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+			}
+
+			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
+			populate_static_metric_container();
+
+			$select_static_metric_regions.on('change', function(){
+				populate_static_metric_data_points($(this).val())
+				populate_static_metric_container();
+			});
+
+			$select_static_metric_data_points.on('change', function(){
+				populate_static_metric_container();
+			})
+
+			$static_metric_options.show();
+		}
+
+		function populate_static_metric_data_points(data_points){
+			data_points = JSON.parse(data_points);
+			let $select_static_metric_data_points = $('#select_static_metric_data_points');
+			$select_static_metric_data_points.empty();
+			for(let data_point in data_points){
+				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point]))
+			}
+		}
+
+		function populate_static_metric_container(){
 			$metric_container.empty();
+			let metric_id = $metric_select.find('option:selected').data('metric_id');
+			let file_name = $('#select_static_metric_data_points').val();
 			let img = new Image();
-			img.src = '/static_metric/?metric_id=' + metric_select_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + files[0];
+			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 			img.style.width = "80%"
 			$metric_container.append(img);
-		});
-
-
-		$metric_select.on('change', function(){
-			console.log(this.val());
-		});
+		}
 	})
 
 </script>

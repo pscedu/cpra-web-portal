@@ -17,11 +17,16 @@ from . import models
 # These are miscellaneous views? They are really Metrics requests though
 # so they could be merged under a "class Metric"
 def get_metric(request):
+    region_index = 12
+    datapoint_index = 11
+
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
 
-    files = []
+    # files will be structured as follows
+    # files = {'region': {'point': 'filename'}}
+    files = {}
 
     # I also need to get all of the files listed under this metric
     validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
@@ -34,7 +39,12 @@ def get_metric(request):
     )
 
     for file in os.listdir(file_path):
-        files.append(file)
+        file_name_list = file.split("_")
+        region = file_name_list[region_index]
+        if region in files:
+            files[region][file_name_list[datapoint_index]] = file
+        else:
+            files[region] = {file_name_list[datapoint_index]: file}
 
     response = {
         'metric': model_to_dict(metric),
