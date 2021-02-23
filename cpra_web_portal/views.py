@@ -2,7 +2,7 @@ import json
 import os
 import datetime
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
 from django.http import HttpResponse, HttpResponseRedirect
@@ -124,7 +124,42 @@ class UserItemView(View):
 
         return HttpResponse(template.render(context, request))
 
-    post = get
+
+class UserView(View):
+    def get(self, request, id=None):
+        context = {}
+        template = loader.get_template('user_item_view.html')
+
+        context['user_model'] = User.objects.filter(id=id).first() if id is not None else User()
+
+        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
+            '-datetime_approved') \
+                                               .select_related('user_id').select_related(
+            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
+
+        return HttpResponse(template.render(context, request))
+
+    def post(self, request):
+        body = json.loads(request.body)
+
+        group = body.pop('group')
+
+        if 'id' in body:
+            user = User.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(user, attr, value)
+        else:
+            user = User(**body)
+            user.set_password(User.objects.make_random_password())
+            # TODO: send email w/ password and how to login/change pw
+
+        user.save()
+
+        group_to_add = Group.objects.get(name=group)
+        group_to_add.user_set.add(user)
+
+        return HttpResponse(json.dumps({'url': reverse('user_edit_view', args=(user.id,))}))
 
 
 class ValidationItemView(View):

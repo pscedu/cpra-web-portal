@@ -19,19 +19,19 @@
 				</tr>
 			  </thead>
 			  <tbody>
-			  	{% for user in users %}
-						<tr style="cursor: pointer" onclick="window.location='{% url 'user_item_view' user.id %}'">
-						  <th scope="row">{{ user.username }}</th>
-						  <td>{% for group in user.groups.all %}
+			  	{% for user_item in users %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'user_edit_view' user_item.id %}'">
+						  <th scope="row">{{ user_item.username }}</th>
+						  <td>{% for group in user_item.groups.all %}
 								{{ group.name }}
 							  {% endfor %}
 						  </td>
 						  <td>
-							  {% if user.is_logged_in %}
+							  {% if user_item.is_logged_in %}
 								&#10003;
 							  {% endif %}
 						  </td>
-						  <td>{{ user.last_login }}</td>
+						  <td>{{ user_item.last_login }}</td>
 						</tr>
 				{% endfor %}
 			  </tbody>
@@ -39,7 +39,7 @@
         </div>
 	</div>
 	<div class="row">
-		<button class="btn btn-primary">New</button>
+		<button onclick="window.location='{% url 'user_new_view'  %}'" class="btn btn-primary">New</button>
 	</div>
 </div>
 {% endblock %}

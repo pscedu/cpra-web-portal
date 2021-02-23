@@ -1,9 +1,40 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+<script>
+	$(document).ready(function(){
+		const csrftoken = Cookies.get('csrftoken');
+		$("#btn-user-save").on("click", function(e){
+			let data = {}
+
+			{% if user_model.id != None %}
+			  data['id'] = {{ user_model.id }}
+
+			{% endif %}
+			// Gather data here to convert to JSON
+			// Iterate over form-control fields and get the data
+			$(".form-control").each(function(index, element){
+				let $element = $(element);
+				data[$element.attr('name')] = $element.val();
+			});
+
+			// perform post request
+			$.post({
+				url: "{% url 'user_new_view' %}",
+				headers: {'X-CSRFToken': csrftoken},
+				data: JSON.stringify(data),
+				success: function(response){
+					window.location.replace(JSON.parse(response)['url'])
+				}
+			})
+		});
+	});
+</script>
+
+
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
-			<h1>Juan Puerto</h1>
+			<h1>{{ user_model.username }}</h1>
 			</div>
 			<div class="row">
 				<div class="col-3 ">
@@ -13,27 +44,23 @@
 					<div class="row justify-content-center">
 						<form>
 						  <div class="form-group">
-							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ user.username }}">
+							<label for="user_username">Name</label>
+							<input name="username" type="text" class="form-control" id="user_username" value="{{ user_model.username }}">
 						  </div>
 						  <div class="form-group">
-							<label for="exampleInputPassword1">Password</label>
-							<input type="password" class="form-control" id="exampleInputPassword1" placeholder="Password" value="{{ user.password }}">
-						  </div>
-						  <div class="form-group">
-							<label for="exampleInputEmail1">Email address</label>
-							<input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp" value="{{ user.email }}">
+							<label for="user_email">Email address</label>
+							<input name="email" type="email" class="form-control" id="user_email" aria-describedby="emailHelp" value="{{ user_model.email }}">
 						  </div>
 						  <div class="form-group">
 <!--							  TODO: Need to add actual functionality here	-->
-							<label for="exampleSelectGroup">Group</label>
+							<label for="user_group">Group</label>
 							  
-							<select>
+							<select name="group" class="form-control" id="user_group">
 								<option value="Admin">Admin</option>
 								<option value="User">User</option>
-							</select>	
+							</select>
 						  </div>
-						  <button type="submit" class="btn btn-primary">Save Changes</button>
+						  <button id="btn-user-save" type="button" class="btn btn-primary">Save Changes</button>
 						</form>
 					</div>
 				</div>
