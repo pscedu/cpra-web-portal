@@ -150,19 +150,19 @@
 	$(document).ready(function (){
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
-		let metric_select_val = $metric_select.val();
 		let $metric_name = $('#metric_name');
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
-		$metric_name.text(metric_select_val);
 
 		metric_change();
 
 		$metric_select.on('change', metric_change)
 
 		function metric_change(){
+			$metric_name.text($metric_select.val());
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
+
 			//Grab the needed data
 			// So what do we need? Type to set which options container to show
 			// We need.... the data to fill out said containers
