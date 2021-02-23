@@ -6,14 +6,23 @@ class Simulation(models.Model):
     name = models.CharField(max_length=64, default="")
     results_dir = models.CharField(max_length=64, default="")
 
+    def __str__(self):
+        return self.name
+
 
 class Subroutine(models.Model):
     name = models.CharField(max_length=64, default="")
+
+    def __str__(self):
+        return self.name
 
 
 class ValidationItem(models.Model):
     name = models.CharField(max_length=64, default="")
     description = models.TextField(null=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Metric(models.Model):
