@@ -69,26 +69,47 @@ def get_static_metric(request):
 
 # Individual Item Views
 class SimulationEditView(View):
-    def get(self, request, id):
+    def get(self, request, id=None):
         context = {}
         template = loader.get_template('simulation_edit_view.html')
 
-        context['simulation'] = models.Simulation.objects.filter(id=id).first()
+        simulation = models.Simulation.objects.filter(id=id).first() if id is not None else models.Simulation()
+
+        context['simulation'] = simulation
 
         context['wf_simulation_subroutines'] = []
 
-        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=id).all():
+        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=simulation.id).all():
             for subroutine_id in models.WFSubroutineValidationItem.objects.filter(
                     list_id=wf_simulation_subroutine.sub_vi_list_id).select_related('sub_id').values(
                     'sub_id').distinct():
                 context['wf_simulation_subroutines'].append(
                     models.Subroutine.objects.filter(id=subroutine_id['sub_id']).first())
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=simulation.id).select_related('user_id').all()
 
         return HttpResponse(template.render(context, request))
 
-    post = get
+    def post(self, request):
+        body = json.loads(request.body)
+
+        # Pop the related tables
+        wf_simulation_subroutines = body.pop('wf_simulation_subroutines')
+        wf_assignments = body.pop('wf_assignments')
+
+        if 'id' in body:
+            simulation = models.Simulation.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(simulation, attr, value)
+        else:
+            simulation = models.Simulation(**body)
+
+        simulation.save()
+
+        # Update related tables
+
+        return HttpResponse(json.dumps({'url': reverse('simulation_edit_view', args=(simulation.id,))}))
 
 
 class SubroutineEditView(View):
@@ -106,23 +127,6 @@ class SubroutineEditView(View):
         return HttpResponse(template.render(context, request))
 
     post = get
-
-
-class UserItemView(View):
-    def get(self, request, id):
-        context = {}
-        template = loader.get_template('user_item_view.html')
-
-        user = User.objects.filter(id=id).first()
-
-        context['user'] = user
-
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
-            '-datetime_approved') \
-                                               .select_related('user_id').select_related(
-            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
-
-        return HttpResponse(template.render(context, request))
 
 
 class UserView(View):
@@ -194,20 +198,41 @@ class ValidationItemView(View):
 
 
 class ValidationItemEditView(View):
-    def get(self, request, id):
+    def get(self, request, id=None):
         context = {}
         template = loader.get_template('validation_item_edit_view.html')
 
-        context['validation_item'] = models.ValidationItem.objects.filter(id=id).first()
+        validation_item = models.ValidationItem.objects.filter(id=id).first() if id is not None else models.ValidationItem()
 
-        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=id).select_related(
+        context['validation_item'] = validation_item
+
+        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=validation_item.id).select_related(
             'metric_id').all()
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=validation_item.id).select_related('user_id').all()
 
         return HttpResponse(template.render(context, request))
 
-    post = get
+    def post(self, request):
+        body = json.loads(request.body)
+
+        # Pop the related tables
+        validation_item_metrics = body.pop('validation_item_metrics')
+        wf_assignments = body.pop('wf_assignments')
+
+        if 'id' in body:
+            validation_item = models.ValidationItem.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(validation_item, attr, value)
+        else:
+            validation_item = models.ValidationItem(**body)
+
+        validation_item.save()
+
+        # Update related tables
+
+        return HttpResponse(json.dumps({'url': reverse('validation_item_edit_view', args=(validation_item.id,))}))
 
 
 class ValidationAssignment(View):

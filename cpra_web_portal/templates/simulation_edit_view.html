@@ -1,6 +1,40 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+
+<script>
+	$(document).ready(function(){
+		const csrftoken = Cookies.get('csrftoken');
+		$("#btn-simulation-save").on("click", function(e){
+			let data = {
+				'wf_simulation_subroutines': {},
+				'wf_assignments': {}
+			}
+
+			{% if simulation.id != None %}
+			  data['id'] = {{ simulation.id }}
+
+			{% endif %}
+			// Gather data here to convert to JSON
+			// Iterate over form-control fields and get the data
+			$(".form-control").each(function(index, element){
+				let $element = $(element);
+				data[$element.attr('name')] = $element.val();
+			});
+
+			// perform post request
+			$.post({
+				url: "{% url 'simulation_new_view' %}",
+				headers: {'X-CSRFToken': csrftoken},
+				data: JSON.stringify(data),
+				success: function(response){
+					window.location.replace(JSON.parse(response)['url'])
+				}
+			})
+		});
+	});
+</script>
+
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
 			<h1>{{ simulation.name }}</h1>
@@ -13,14 +47,14 @@
 					<div class="row justify-content-center">
 						<form>
 						  <div class="form-group">
-							<label for="exampleInputName">Name</label>
-							<input type="text" class="form-control" id="exampleInputName" aria-describedby="emailHelp" value="{{ simulation.name }}">
+							<label for="simulation-name">Name</label>
+							<input name="name" type="text" class="form-control" id="simulation-name" aria-describedby="emailHelp" value="{{ simulation.name }}">
 						  </div>
 						  <div class="form-group">
-							<label for="examplePath">Results Directory</label>
-							<input type="text" class="form-control" id="examplePath" aria-describedby="emailHelp" value="{{ simulation.results_dir }}">
+							<label for="simulation-results-dir">Results Directory</label>
+							<input name="results_dir" type="text" class="form-control" id="simulation-results-dir" aria-describedby="emailHelp" value="{{ simulation.results_dir }}">
 						  </div>
-						  <button type="submit" class="btn btn-primary">Save Changes</button>
+						  <button id="btn-simulation-save" type="button" class="btn btn-primary">Save Changes</button>
 						</form>
 					</div>
 				</div>
