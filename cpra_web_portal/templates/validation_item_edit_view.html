@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
 <script>
 	$(document).ready(function(){
+		let data = {
+			'validation_item_metrics': {},
+			'wf_assignments': {}
+		}
 		const csrftoken = Cookies.get('csrftoken');
 		$("#btn-validation-item-save").on("click", function(e){
-			let data = {
-				'validation_item_metrics': {},
-				'wf_assignments': {}
-			}
 
 			{% if validation_item.id != None %}
 			  data['id'] = {{ validation_item.id }}
@@ -32,6 +33,38 @@
 				}
 			})
 		});
+
+		$('.delete').on('click', function(e){
+			let $this = $(this);
+			let $tr_parent = $this.parents('tr');
+			let row_type = $this.data('row_type');
+			let row_id = $tr_parent.data('id');
+			if('delete' in data[row_type])
+				data[row_type]['delete'].push(row_id)
+			else
+				data[row_type]['delete'] = [row_id]
+
+			$tr_parent.remove();
+
+			console.log(data);
+		});
+
+		// TODO: Implement adding functionality
+		// $('.add').on('click', function(e){
+		// 	let $this = $(this);
+		// 	let $tr_parent = $this.parents('tr');
+		// 	let row_type = $this.data('row_type');
+		// 	let row_id = $tr_parent.data('id');
+		// 	console.log(row_type);
+		// 	if('delete' in data[row_type])
+		// 		data[row_type]['delete'].push(row_id)
+		// 	else
+		// 		data[row_type]['delete'] = [row_id]
+		//
+		// 	$tr_parent.remove();
+		//
+		// 	console.log(data);
+		// });
 	});
 </script>
 
@@ -66,21 +99,25 @@
 						<tr>
 						  <th scope="col">Metric</th>
 							<th scope="col">Type</th>
+							<th></th>
 						</tr>
 					  </thead>
 					  <tbody>
 					    {% for validation_item_metric in validation_item_metrics %}
-						<tr style="cursor: pointer" onclick="window.location='{% url 'metric_edit_view' validation_item_metric.metric_id_id %}'">
-						  <th scope="row">{{ validation_item_metric.metric_id.name }}</th>
-						  <td scope="row">{{ validation_item.metric_id.type }}</td>
+						<tr data-id="{{ validation_item_metric.id }}">
+						  <th style="cursor: pointer" onclick="window.location='{% url 'metric_edit_view' validation_item_metric.metric_id_id %}'" scope="row">{{ validation_item_metric.metric_id.name }}</th>
+						  <td scope="row">{{ validation_item_metric.metric_id.type }}</td>
+							<td>
+								<a style="cursor: pointer" data-row_type="validation_item_metrics" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
 						</tr>
 					    {% endfor %}
 					  </tbody>
 					</table>
+						<button class="btn btn-primary add">New</button>
 						</div>
-					</div>
-					<div class="row">
-						<button class="btn btn-primary">New</button>
 					</div>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
 						<div class="col-12">
@@ -89,20 +126,24 @@
 					  <thead>
 						<tr>
 						  <th scope="col">User</th>
+							<th></th>
 						</tr>
 					  </thead>
 					  <tbody>
 					  	{% for wf_assignment in wf_assignments %}
-						<tr>
-						  <th scope="row">{{ wf_assignment.user_id.name }}</th>
+						<tr data-id="{{ wf_assignment.id }}">
+						  <th scope="row">{{ wf_assignment.user_id.username }}</th>
+							<td>
+								<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
 						</tr>
 					  	{% endfor %}
 					  </tbody>
 					</table>
 							
-					<div class="row">
-						<button class="btn btn-primary">New</button>
-					</div>
+						<button class="btn btn-primary add">New</button>
 						</div>
 					</div>
 				</div>

@@ -14,6 +14,21 @@ from django.urls import reverse
 from . import models
 
 
+# TODO: Move to utility.py
+def update_related_tables(related_tables):
+    from django.apps import apps
+    for related_table, actions in related_tables.items():
+        related_table_model = apps.get_model('cpra_web_portal', related_table)
+        for action in actions:
+            if action == 'delete':
+                related_table_model.objects.filter(id__in=actions[action]).delete()
+            elif action == 'add':
+                items_to_add = []
+                for item_to_add in actions[action]:
+                    items_to_add.append(related_table_model(**item_to_add))
+                related_table_model.objects.bulk_create(items_to_add)
+
+
 # These are miscellaneous views? They are really Metrics requests though
 # so they could be merged under a "class Metric"
 def get_metric(request):
@@ -248,8 +263,12 @@ class ValidationItemEditView(View):
         body = json.loads(request.body)
 
         # Pop the related tables
-        validation_item_metrics = body.pop('validation_item_metrics')
-        wf_assignments = body.pop('wf_assignments')
+        related_tables = {
+            'ValidationItemMetrics': body.pop('validation_item_metrics'),
+            'WFAssignment': body.pop('wf_assignments')
+        }
+
+        # TODO: Need to add modals for adding items
 
         if 'id' in body:
             validation_item = models.ValidationItem.objects.filter(id=body['id']).first()
@@ -262,6 +281,7 @@ class ValidationItemEditView(View):
         validation_item.save()
 
         # Update related tables
+        update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('validation_item_edit_view', args=(validation_item.id,))}))
 

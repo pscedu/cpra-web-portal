@@ -51,9 +51,9 @@ class WFSimulationSubroutine(models.Model):
 
 
 class WFAssignment(models.Model):
-    sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE)
-    sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
-    vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
+    sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE, null=True)
+    sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE, null=True)
+    vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE, null=True)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
