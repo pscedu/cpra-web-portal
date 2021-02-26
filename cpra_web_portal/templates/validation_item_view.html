@@ -289,7 +289,7 @@
 			let labels = []
 			for(let year = 1; year <= 50; year++)
 				labels.push(year)
-			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384'}]}
+			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name, function(response){
 				response = JSON.parse(response)
