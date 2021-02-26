@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.css" integrity="sha512-C7hOmCgGzihKXzyPU/z4nv97W0d9bv4ALuuEbSf6hm93myico9qa0hv4dODThvCsqQUmKmLcJmlpRmCaApr83g==" crossorigin="anonymous" />
 <script>
 	$(document).ready(function(){
 		const user_name = "{{ user.username }}"
@@ -48,23 +49,13 @@
 				}
 			});
 		});
-		$("#btn-deny").on("click", function(){
-			$.ajax({
-				url: "{% url 'validation_assignment_methods' validation_item.id 'deny' %}" ,
-				type: 'PUT',
-				headers: {'X-CSRFToken': csrftoken},
-				success: function(data){
-					// delete the entry
-				}
-			});
-		});
 	});
 
 </script>
 
 <div class="container-fluid">
 	<div class="row">
-		<div class="col-9">
+		<div class="col-10">
 			<div class="row my-4">
 				<div class="col-2">
 					<select id="metric_select" class="form-control">
@@ -81,25 +72,36 @@
 				</div>
 			</div>
 			<div class="row flex-grow-1">
-				<div class="col-12">
-<!--							This is where the actual graph/static image will go -->
-					<div id="metric_container" class="row"></div>
+				<div class="col-1">
 					<div id="static_metric_options" class="row metric_options" style="display: none;">
+						<label for="select_static_metric_region">Region</label>
 						<select class="form-control" id="select_static_metric_region"></select>
+						<label for="select_static_metric_data_points">Data Points</label>
 						<select class="form-control" id="select_static_metric_data_points"></select>
 					</div>
+					<div id="dynamic_graph_metric_options" class="row metric_options" style="display: none;">
+						<label for="select_static_metric_region">Region</label>
+						<select class="form-control" id="select_dynamic_graph_metric_region"></select>
+						<label for="select_static_metric_data_points">Data Points</label>
+						<select class="form-control" id="select_dynamic_graph_metric_data_points"></select>
+					</div>
+				</div>
+				<div class="col-11">
+<!--							This is where the actual graph/static image will go -->
+					<div id="metric_container" class="row px-2"></div>
+
 				</div>
 			</div>
 		</div>
-		<div class="col-3 bg-light" style="border: 1px solid #C5C5C5">
+		<div class="col-2 bg-light" style="border: 1px solid #C5C5C5">
 			<h3>
 				{{ validation_item.srv_id.sr_id.sim_id.name }}
-				{{ validation_item.sr_id.name }}
+				{{ validation_item.srv_id.sr_id.name }}
 			</h3>
-			<h4>
+			<h5>
 				{{ validation_item.srv_id.sub_id.name }}
 				{{ validation_item.srv_id.vi_id.name }}
-			</h4>
+			</h5>
 			<p>{{ validation_item.srv_id.vi_id.description }}</p>
 			<div class="row my-2 py-2" style="border-top: 1px solid black;">
 				<div class="col-12">
@@ -127,7 +129,6 @@
 					</div>
 						<div class="btn-group">
 							<button id="btn-approve" class="btn btn-success">Approve</button>
-							<button id="btn-deny" class="btn btn-danger">Deny</button>
 						</div>
 				</div>
 			</div>
@@ -180,8 +181,13 @@
 				switch (metric_data['type']){
 					case 'static':
 						populate_static_metrics(metric_data, files)
+						return
+					case 'dynamic_graph':
+						populate_dynamic_graph_metrics(metric_data, files)
+						return
 					default:
 						console.log(metric_data['type'])
+						return
 				}
 
 
@@ -231,8 +237,72 @@
 			let file_name = $('#select_static_metric_data_points').val();
 			let img = new Image();
 			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
-			img.style.width = "80%"
+			img.style.width = "85%"
 			$metric_container.append(img);
+		}
+
+		function populate_dynamic_graph_metrics(metric, files){
+			let $canvas = $('<canvas id="canvas-metric"></canvas>')
+			$metric_container.append($canvas)
+
+			let $dynamic_graph_metric_options = $('#dynamic_graph_metric_options');
+			let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
+			let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
+
+			$select_dynamic_graph_metric_regions.empty();
+
+			for(let region in files){
+				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+			}
+
+			populate_dynamic_graph_metric_data_points($select_dynamic_graph_metric_regions.find('option:selected').val());
+			populate_dynamic_graph_metric_container(metric['graph_config']);
+
+			$select_dynamic_graph_metric_regions.on('change', function(){
+				populate_dynamic_graph_metric_data_points($(this).val())
+				populate_dynamic_graph_metric_container(metric['graph_config']);
+			});
+
+			$select_dynamic_graph_metric_data_points.on('change', function(){
+				populate_dynamic_graph_metric_container(metric['graph_config']);
+			})
+
+			$dynamic_graph_metric_options.show();
+		}
+
+
+		function populate_dynamic_graph_metric_data_points(data_points){
+			data_points = JSON.parse(data_points);
+			let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
+			$select_dynamic_graph_metric_data_points.empty();
+			for(let data_point in data_points){
+				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point]))
+			}
+		}
+
+		function populate_dynamic_graph_metric_container(chart_config){
+			let $canvas = $('#canvas-metric');
+			$canvas.empty();
+			const metric_id = $metric_select.find('option:selected').data('metric_id');
+			const file_name = $('#select_dynamic_graph_metric_data_points').val();
+			const column_name = chart_config['misc']['column_name'];
+			let labels = []
+			for(let year = 1; year <= 50; year++)
+				labels.push(year)
+			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false}]}
+
+			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name, function(response){
+				response = JSON.parse(response)
+				response.forEach(function(e, i){
+					graph_data['datasets'][0]['data'].push({
+						x: i+1,
+						y: parseFloat(e[column_name])
+					})
+				})
+
+				chart_config['data'] = graph_data
+				let chart = new Chart($canvas, chart_config)
+			})
 		}
 	})
 

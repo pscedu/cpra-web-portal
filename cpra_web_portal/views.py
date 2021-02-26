@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+import csv
 
 from django.contrib.auth.models import User, Group
 from django.contrib.sessions.models import Session
@@ -54,6 +55,9 @@ def get_metric(request):
     )
 
     for file in os.listdir(file_path):
+        if os.path.isdir(os.path.join(file_path, file)):
+            continue
+
         file_name_list = file.split("_")
         region = file_name_list[region_index]
         if region in files:
@@ -89,6 +93,33 @@ def get_static_metric(request):
         with open(file_path, "rb") as f:
             return HttpResponse(f.read(), content_type="image/jpeg")
     except:
+        return HttpResponse(status=500)
+
+
+def get_dynamic_graph_metric(request):
+    file_name = request.GET.get('file_name')
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
+        .select_related('srv_id__sr_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.srv_id.sr_id.sim_id.results_dir,
+        validation_assignment.srv_id.sr_id.results_file_path,
+        metric.file_path,
+        file_name
+    )
+
+
+    try:
+        with open(file_path, "r") as f:
+            dict_reader = csv.DictReader(f)
+            json_from_csv = json.dumps(list(dict_reader))
+            return HttpResponse(json_from_csv)
+    except:
+        print('hmm')
         return HttpResponse(status=500)
 
 
