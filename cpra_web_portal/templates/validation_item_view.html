@@ -57,14 +57,14 @@
 	<div class="row">
 		<div class="col-10">
 			<div class="row my-4">
-				<div class="col-2">
+				<div class="col-3">
 					<select id="metric_select" class="form-control">
 						{% for metric in metrics %}
 							<option data-metric_id="{{ metric.id }}">{{ metric.name }}</option>
 						{% endfor %}
 					</select>
 				</div>
-				<div class="col-8">
+				<div class="col-7">
 					<h1 id="metric_name" style="text-align: center;"></h1>
 				</div>
 				<div class="col-2">
@@ -289,7 +289,7 @@
 			let labels = []
 			for(let year = 1; year <= 50; year++)
 				labels.push(year)
-			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false}]}
+			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384'}]}
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name, function(response){
 				response = JSON.parse(response)
