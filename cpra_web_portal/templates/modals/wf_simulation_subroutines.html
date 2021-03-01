@@ -1,0 +1,16 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> New Simulation - Subroutine Workflow </h4>
+{% endblock %}
+{% block modal_body %}
+        <label for="select-simulation-subroutines">Subroutine</label>
+        <select name="sub_id_id" id="select-simulation-subroutines" class="modal-form-control form-control">
+        {% for subroutine_option in subroutines %}
+            <option value="{{ subroutine_option.id }}">{{ subroutine_option.name }}</option>
+        {% endfor %}
+        </select>
+{% endblock %}
+{% block modal_footer %}
+    <button id="simulation-subroutines-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}

@@ -137,12 +137,8 @@ class SimulationEditView(View):
 
         context['wf_simulation_subroutines'] = []
 
-        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=simulation.id).all():
-            for subroutine_id in models.WFSubroutineValidationItem.objects.filter(
-                    list_id=wf_simulation_subroutine.sub_vi_list_id).select_related('sub_id').values(
-                    'sub_id').distinct():
-                context['wf_simulation_subroutines'].append(
-                    models.Subroutine.objects.filter(id=subroutine_id['sub_id']).first())
+        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=simulation.id).select_related('sub_id').all():
+            context['wf_simulation_subroutines'].append(wf_simulation_subroutine.sub_id)
 
         context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=simulation.id).select_related('user_id').all()
 
@@ -150,12 +146,15 @@ class SimulationEditView(View):
 
     def post(self, request):
         body = json.loads(request.body)
+        print(body)
 
         # Pop the related tables
-        wf_simulation_subroutines = body.pop('wf_simulation_subroutines')
-        wf_assignments = body.pop('wf_assignments')
+        related_tables = {
+            'WFSimulationSubroutine': body.pop('wf_simulation_subroutines'),
+            'WFAssignment': body.pop('wf_assignments')
+        }
 
-        if 'id' in body:
+        if body['id']:
             simulation = models.Simulation.objects.filter(id=body['id']).first()
             for attr, value in body.items():
                 if attr != 'id':
@@ -166,6 +165,8 @@ class SimulationEditView(View):
         simulation.save()
 
         # Update related tables
+        related_tables['parent_table'] = {'id_field': 'sim_id_id', 'id_value': simulation.id}
+        update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('simulation_edit_view', args=(simulation.id,))}))
 
@@ -572,5 +573,18 @@ class SubroutineModal(View):
         elif type == 'wf_subroutine_validation_items':
             context['validation_items'] = models.ValidationItem.objects.all()
             template = loader.get_template('modals/wf_subroutine_validation_items.html')
+
+        return HttpResponse(template.render(context, request))
+
+
+class SimulationModal(View):
+    def get(self, request, type):
+        context = {}
+        if type == 'wf_assignment':
+            context['users'] = User.objects.all()
+            template = loader.get_template('modals/wf_assignment.html')
+        elif type == 'wf_simulation_subroutines':
+            context['subroutines'] = models.Subroutine.objects.all()
+            template = loader.get_template('modals/wf_simulation_subroutines.html')
 
         return HttpResponse(template.render(context, request))
