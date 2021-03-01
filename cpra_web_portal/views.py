@@ -18,6 +18,7 @@ from . import models
 # TODO: Move to utility.py
 def update_related_tables(related_tables):
     from django.apps import apps
+    parent_table = related_tables.pop('parent_table')
     for related_table, actions in related_tables.items():
         related_table_model = apps.get_model('cpra_web_portal', related_table)
         for action in actions:
@@ -26,6 +27,7 @@ def update_related_tables(related_tables):
             elif action == 'add':
                 items_to_add = []
                 for item_to_add in actions[action]:
+                    item_to_add[parent_table['id_field']] = parent_table['id_value']
                     items_to_add.append(related_table_model(**item_to_add))
                 related_table_model.objects.bulk_create(items_to_add)
 
@@ -301,7 +303,7 @@ class ValidationItemEditView(View):
 
         # TODO: Need to add modals for adding items
 
-        if 'id' in body:
+        if body['id']:
             validation_item = models.ValidationItem.objects.filter(id=body['id']).first()
             for attr, value in body.items():
                 if attr != 'id':
@@ -312,6 +314,7 @@ class ValidationItemEditView(View):
         validation_item.save()
 
         # Update related tables
+        related_tables['parent_table'] = {'id_field': 'vi_id_id', 'id_value': validation_item.id}
         update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('validation_item_edit_view', args=(validation_item.id,))}))
@@ -551,5 +554,8 @@ class ValidationItemModal(View):
         if type == 'wf_assignment':
             context['users'] = User.objects.all()
             template = loader.get_template('modals/wf_assignment.html')
+        elif type == 'validation_item_metrics':
+            context['metrics'] = models.Metric.objects.all()
+            template = loader.get_template('modals/validation_item_metrics.html')
 
         return HttpResponse(template.render(context, request))

@@ -5,17 +5,19 @@
       rel="stylesheet">
 <script>
 	$(document).ready(function(){
+		{% if validation_item.id != None %}
+			const vi_id = {{ validation_item.id }}
+		{% else %}
+		 	const vi_id = null
+		{% endif %}
+
 		let data = {
 			'validation_item_metrics': {},
 			'wf_assignments': {}
 		}
 		const csrftoken = Cookies.get('csrftoken');
 		$("#btn-validation-item-save").on("click", function(e){
-
-			{% if validation_item.id != None %}
-			  data['id'] = {{ validation_item.id }}
-
-			{% endif %}
+			data['id'] = vi_id
 			// Gather data here to convert to JSON
 			// Iterate over form-control fields and get the data
 			$(".form-control").each(function(index, element){
@@ -34,7 +36,7 @@
 			})
 		});
 
-		$('.delete').on('click', function(e){
+		$(document).on('click', '.delete', function(e){
 			let $this = $(this);
 			let $tr_parent = $this.parents('tr');
 			let row_type = $this.data('row_type');
@@ -51,7 +53,7 @@
 		$('#wf-assignment-modal').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
-			$(this).empty();
+			$modal.empty();
 			$.get("{% url 'validation_item_modal_view' 'wf_assignment' %}", function(response){
 				$modal.append(response);
 				$('#wf-assignment-save').on('click', function(){
@@ -60,22 +62,46 @@
 
 					$("#wf-assignment-container").append('<tr data-id="">' +
 							'<th scope="row">'+username+'</th>' +
-							'<td>' +
-							'<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">' +
-							'<span style="color: red" class="material-icons">delete</span>' +
-							'</a>' +
-							'</td>' +
 							'</tr>'
 					);
 
 					let row_type = 'wf_assignments'
 					if('add' in data[row_type])
-						data[row_type]['add'].push({user_id_id: user_id, vi_id_id: {{ validation_item.id }} })
+						data[row_type]['add'].push({user_id_id: user_id })
 					else
-						data[row_type]['add'] = [{user_id_id: user_id, vi_id_id: {{ validation_item.id }} }]
+						data[row_type]['add'] = [{user_id_id: user_id }]
 
 					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 					bs_modal.hide();
+					$modal.empty();
+				});
+			})
+		});
+
+		$('#validation-item-metrics-modal').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'validation_item_modal_view' 'validation_item_metrics' %}", function(response){
+				$modal.append(response);
+				$('#validation-item-metrics-save').on('click', function(){
+					let metrics_name = $('#select-validation-item-metrics').find('option:selected').text();
+					let metric_id = parseInt($('#select-validation-item-metrics').val());
+
+					$("#validation-item-metrics-container").append('<tr data-id="">' +
+							'<th scope="row">'+metrics_name+'</th>' +
+							'</tr>'
+					);
+
+					let row_type = 'validation_item_metrics'
+					if('add' in data[row_type])
+						data[row_type]['add'].push({metric_id_id: metric_id })
+					else
+						data[row_type]['add'] = [{metric_id_id: metric_id }]
+
+					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+					bs_modal.hide();
+					$modal.empty();
 				});
 			})
 		});
@@ -89,6 +115,7 @@
 </div>
 
 <div class="modal fade" id="validation-item-metrics-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
 </div>
 
 <div class="container-fluid">
@@ -125,7 +152,7 @@
 							<th></th>
 						</tr>
 					  </thead>
-					  <tbody>
+					  <tbody id="validation-item-metrics-container">
 					    {% for validation_item_metric in validation_item_metrics %}
 						<tr data-id="{{ validation_item_metric.id }}">
 						  <th style="cursor: pointer" onclick="window.location='{% url 'metric_edit_view' validation_item_metric.metric_id_id %}'" scope="row">{{ validation_item_metric.metric_id.name }}</th>
@@ -139,7 +166,7 @@
 					    {% endfor %}
 					  </tbody>
 					</table>
-						<button	class="btn btn-primary add">New</button>
+						<button data-bs-toggle="modal" data-bs-target="#validation-item-metrics-modal" class="btn btn-primary add">New</button>
 						</div>
 					</div>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
