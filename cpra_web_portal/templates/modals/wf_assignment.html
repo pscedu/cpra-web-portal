@@ -1,0 +1,16 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> New Assignment </h4>
+{% endblock %}
+{% block modal_body %}
+        <label for="select-wf-assignment-user">User</label>
+        <select name="user_id_id" id="select-wf-assignment-user" class="modal-form-control form-control">
+        {% for user_option in users %}
+            <option value="{{ user_option.id }}">{{ user_option.username }}</option>
+        {% endfor %}
+        </select>
+{% endblock %}
+{% block modal_footer %}
+    <button id="wf-assignment-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}

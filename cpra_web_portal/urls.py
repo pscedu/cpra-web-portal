@@ -47,4 +47,5 @@ urlpatterns = [
          name='validation_assignment_comment'),
     path('metric_view/', views.Metric.as_view(), name='metric_new_view'),
     path('metric_view/<int:id>/', views.Metric.as_view(), name='metric_edit_view'),
+    path('validation_item/modal/<str:type>', views.ValidationItemModal.as_view(), name='validation_item_modal_view')
 ]

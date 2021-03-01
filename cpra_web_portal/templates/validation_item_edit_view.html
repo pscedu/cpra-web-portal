@@ -39,34 +39,57 @@
 			let $tr_parent = $this.parents('tr');
 			let row_type = $this.data('row_type');
 			let row_id = $tr_parent.data('id');
-			if('delete' in data[row_type])
-				data[row_type]['delete'].push(row_id)
-			else
-				data[row_type]['delete'] = [row_id]
+			if(row_id!='')
+				if('delete' in data[row_type])
+					data[row_type]['delete'].push(row_id)
+				else
+					data[row_type]['delete'] = [row_id]
 
 			$tr_parent.remove();
-
-			console.log(data);
 		});
 
-		// TODO: Implement adding functionality
-		// $('.add').on('click', function(e){
-		// 	let $this = $(this);
-		// 	let $tr_parent = $this.parents('tr');
-		// 	let row_type = $this.data('row_type');
-		// 	let row_id = $tr_parent.data('id');
-		// 	console.log(row_type);
-		// 	if('delete' in data[row_type])
-		// 		data[row_type]['delete'].push(row_id)
-		// 	else
-		// 		data[row_type]['delete'] = [row_id]
-		//
-		// 	$tr_parent.remove();
-		//
-		// 	console.log(data);
-		// });
+		$('#wf-assignment-modal').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$(this).empty();
+			$.get("{% url 'validation_item_modal_view' 'wf_assignment' %}", function(response){
+				$modal.append(response);
+				$('#wf-assignment-save').on('click', function(){
+					let username = $('#select-wf-assignment-user').find('option:selected').text();
+					let user_id = parseInt($('#select-wf-assignment-user').val());
+
+					$("#wf-assignment-container").append('<tr data-id="">' +
+							'<th scope="row">'+username+'</th>' +
+							'<td>' +
+							'<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">' +
+							'<span style="color: red" class="material-icons">delete</span>' +
+							'</a>' +
+							'</td>' +
+							'</tr>'
+					);
+
+					let row_type = 'wf_assignments'
+					if('add' in data[row_type])
+						data[row_type]['add'].push({user_id_id: user_id, vi_id_id: {{ validation_item.id }} })
+					else
+						data[row_type]['add'] = [{user_id_id: user_id, vi_id_id: {{ validation_item.id }} }]
+
+					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+					bs_modal.hide();
+				});
+			})
+		});
 	});
 </script>
+
+
+
+<div class="modal fade" id="wf-assignment-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+
+<div class="modal fade" id="validation-item-metrics-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+</div>
 
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
@@ -116,7 +139,7 @@
 					    {% endfor %}
 					  </tbody>
 					</table>
-						<button class="btn btn-primary add">New</button>
+						<button	class="btn btn-primary add">New</button>
 						</div>
 					</div>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
@@ -129,7 +152,7 @@
 							<th></th>
 						</tr>
 					  </thead>
-					  <tbody>
+					  <tbody id="wf-assignment-container">
 					  	{% for wf_assignment in wf_assignments %}
 						<tr data-id="{{ wf_assignment.id }}">
 						  <th scope="row">{{ wf_assignment.user_id.username }}</th>
@@ -143,11 +166,25 @@
 					  </tbody>
 					</table>
 							
-						<button class="btn btn-primary add">New</button>
+						<button data-bs-toggle="modal" data-bs-target="#wf-assignment-modal" class="btn btn-primary add">New</button>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
+
+<div id="container-templates" style="display: none;">
+		<tr id="wf-assignment-container-template" data-id="">
+						  <th scope="row" id="wf-assignment-username"></th>
+							<td>
+								<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
+		</tr>
+	<div id="approval-container-template" class="list-group-item-action p-2">
+		<h5 id="data-approval-template"></h5>
+	</div>
+</div>
 
 {% endblock %}

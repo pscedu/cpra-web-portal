@@ -543,3 +543,13 @@ class ValidationItemsListView(View):
         return HttpResponse(template.render(context, request))
 
     post = get
+
+
+class ValidationItemModal(View):
+    def get(self, request, type):
+        context = {}
+        if type == 'wf_assignment':
+            context['users'] = User.objects.all()
+            template = loader.get_template('modals/wf_assignment.html')
+
+        return HttpResponse(template.render(context, request))
