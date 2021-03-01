@@ -190,10 +190,12 @@ class SubroutineEditView(View):
         body = json.loads(request.body)
 
         # Pop the related tables
-        wf_subroutine_validation_items = body.pop('wf_subroutine_validation_items')
-        wf_assignments = body.pop('wf_assignments')
+        related_tables = {
+            'WFSubroutineValidationItem': body.pop('wf_subroutine_validation_items'),
+            'WFAssignment': body.pop('wf_assignments')
+        }
 
-        if 'id' in body:
+        if body['id']:
             subroutine = models.Subroutine.objects.filter(id=body['id']).first()
             for attr, value in body.items():
                 if attr != 'id':
@@ -204,6 +206,8 @@ class SubroutineEditView(View):
         subroutine.save()
 
         # Update related tables
+        related_tables['parent_table'] = {'id_field': 'sub_id_id', 'id_value': subroutine.id}
+        update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('subroutine_edit_view', args=(subroutine.id,))}))
 
@@ -300,8 +304,6 @@ class ValidationItemEditView(View):
             'ValidationItemMetrics': body.pop('validation_item_metrics'),
             'WFAssignment': body.pop('wf_assignments')
         }
-
-        # TODO: Need to add modals for adding items
 
         if body['id']:
             validation_item = models.ValidationItem.objects.filter(id=body['id']).first()
@@ -557,5 +559,18 @@ class ValidationItemModal(View):
         elif type == 'validation_item_metrics':
             context['metrics'] = models.Metric.objects.all()
             template = loader.get_template('modals/validation_item_metrics.html')
+
+        return HttpResponse(template.render(context, request))
+
+
+class SubroutineModal(View):
+    def get(self, request, type):
+        context = {}
+        if type == 'wf_assignment':
+            context['users'] = User.objects.all()
+            template = loader.get_template('modals/wf_assignment.html')
+        elif type == 'wf_subroutine_validation_items':
+            context['validation_items'] = models.ValidationItem.objects.all()
+            template = loader.get_template('modals/wf_subroutine_validation_items.html')
 
         return HttpResponse(template.render(context, request))

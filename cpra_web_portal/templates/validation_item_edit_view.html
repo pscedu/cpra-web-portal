@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet">
 <script>
 	$(document).ready(function(){
 		{% if validation_item.id != None %}
@@ -199,19 +197,5 @@
 				</div>
 			</div>
 		</div>
-
-<div id="container-templates" style="display: none;">
-		<tr id="wf-assignment-container-template" data-id="">
-						  <th scope="row" id="wf-assignment-username"></th>
-							<td>
-								<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">
-									<span style="color: red" class="material-icons">delete</span>
-								</a>
-                        	</td>
-		</tr>
-	<div id="approval-container-template" class="list-group-item-action p-2">
-		<h5 id="data-approval-template"></h5>
-	</div>
-</div>
 
 {% endblock %}

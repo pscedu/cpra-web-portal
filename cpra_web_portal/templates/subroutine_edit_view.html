@@ -4,17 +4,20 @@
 
 <script>
 	$(document).ready(function(){
+		{% if subroutine.id != None %}
+			const sub_id = {{ subroutine.id }}
+		{% else %}
+		 	const sub_id = null
+		{% endif %}
+
+		let data = {
+			'wf_subroutine_validation_items': {},
+			'wf_assignments': {}
+		}
 		const csrftoken = Cookies.get('csrftoken');
 		$("#btn-subroutine-save").on("click", function(e){
-			let data = {
-				'wf_subroutine_validation_items': {},
-				'wf_assignments': {}
-			}
+			data['id'] = sub_id;
 
-			{% if subroutine.id != None %}
-			  data['id'] = {{ subroutine.id }}
-
-			{% endif %}
 			// Gather data here to convert to JSON
 			// Iterate over form-control fields and get the data
 			$(".form-control").each(function(index, element){
@@ -32,8 +35,86 @@
 				}
 			})
 		});
+
+		$(document).on('click', '.delete', function(e){
+			let $this = $(this);
+			let $tr_parent = $this.parents('tr');
+			let row_type = $this.data('row_type');
+			let row_id = $tr_parent.data('id');
+			if(row_id!='')
+				if('delete' in data[row_type])
+					data[row_type]['delete'].push(row_id)
+				else
+					data[row_type]['delete'] = [row_id]
+
+			$tr_parent.remove();
+		});
+
+		$('#wf-assignment-modal').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'subroutine_modal_view' 'wf_assignment' %}", function(response){
+				$modal.append(response);
+				$('#wf-assignment-save').on('click', function(){
+					let username = $('#select-wf-assignment-user').find('option:selected').text();
+					let user_id = parseInt($('#select-wf-assignment-user').val());
+
+					$("#wf-assignment-container").append('<tr data-id="">' +
+							'<th scope="row">'+username+'</th>' +
+							'</tr>'
+					);
+
+					let row_type = 'wf_assignments'
+					if('add' in data[row_type])
+						data[row_type]['add'].push({user_id_id: user_id })
+					else
+						data[row_type]['add'] = [{user_id_id: user_id }]
+
+					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+					bs_modal.hide();
+					$modal.empty();
+				});
+			})
+		});
+
+		$('#wf-subroutine-validation-items-modal').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'subroutine_modal_view' 'wf_subroutine_validation_items' %}", function(response){
+				$modal.append(response);
+				$('#subroutine-validation-items-save').on('click', function(){
+					let validation_item_name = $('#select-subroutine-validation-items').find('option:selected').text();
+					let validation_item_id = parseInt($('#select-subroutine-validation-items').val());
+
+					$("#wf-subroutine-validation-items-container").append('<tr data-id="">' +
+							'<th scope="row">'+validation_item_name+'</th>' +
+							'</tr>'
+					);
+
+					let row_type = 'wf_subroutine_validation_items'
+					if('add' in data[row_type])
+						data[row_type]['add'].push({vi_id_id: validation_item_id })
+					else
+						data[row_type]['add'] = [{vi_id_id: validation_item_id }]
+
+					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+					bs_modal.hide();
+					$modal.empty();
+				});
+			})
+		});
 	});
 </script>
+
+<div class="modal fade" id="wf-assignment-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+
+<div class="modal fade" id="wf-subroutine-validation-items-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
 
 <div class="container-fluid">
 			<div class="row justify-content-center my-4">
@@ -65,20 +146,24 @@
 					  <thead>
 						<tr>
 						  <th scope="col">Validation Item</th>
+							<th></th>
 						</tr>
 					  </thead>
-					  <tbody>
+					  <tbody id="wf-subroutine-validation-items-container">
 					  {% for wf_subroutine_validation_item in wf_subroutine_validation_items %}
-						<tr style="cursor:pointer;" onclick="window.location='{% url 'validation_item_edit_view' wf_subroutine_validation_item.vi_id.id %}'">
-						  <th scope="row">{{ wf_subroutine_validation_item.vi_id.name }}</th>
+						<tr data-id="{{ wf_subroutine_validation_item.id }}">
+						  <th style="cursor:pointer;" onclick="window.location='{% url 'validation_item_edit_view' wf_subroutine_validation_item.vi_id.id %}'" scope="row">{{ wf_subroutine_validation_item.vi_id.name }}</th>
+							<td>
+								<a style="cursor: pointer" data-row_type="wf_subroutine_validation_items" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
 						</tr>
 					  {% endfor %}
 					  </tbody>
 					</table>
+						<button data-bs-toggle="modal" data-bs-target="#wf-subroutine-validation-items-modal" class="btn btn-primary add">New</button>
 						</div>
-					</div>
-					<div class="row">
-						<button class="btn btn-primary">New</button>
 					</div>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
 						<div class="col-12">
@@ -87,19 +172,23 @@
 					  <thead>
 						<tr>
 						  <th scope="col">User</th>
+							<th></th>
 						</tr>
 					  </thead>
-					  <tbody>
+					  <tbody id="wf-assignment-container">
 					  	{% for wf_assignment in wf_assignments %}
-						<tr>
-						  <th scope="row">{{ wf_assignment.user_id.name }}</th>
+						<tr data-id="{{ wf_assignment.id }}">
+						  <th scope="row">{{ wf_assignment.user_id.username }}</th>
+							<td>
+								<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
 						</tr>
 					  	{% endfor %}
 					  </tbody>
 					</table>
-					<div class="row">
-						<button class="btn btn-primary">New</button>
-					</div>
+						<button data-bs-toggle="modal" data-bs-target="#wf-assignment-modal" class="btn btn-primary add">New</button>
 						</div>
 					</div>
 				</div>

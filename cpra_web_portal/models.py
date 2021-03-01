@@ -42,12 +42,11 @@ class Metric(models.Model):
 class WFSubroutineValidationItem(models.Model):
     sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
     vi_id = models.ForeignKey(ValidationItem, on_delete=models.CASCADE)
-    list_id = models.IntegerField()
 
 
 class WFSimulationSubroutine(models.Model):
     sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE)
-    sub_vi_list_id = models.IntegerField()
+    sub_id = models.ForeignKey(Subroutine, on_delete=models.CASCADE)
 
 
 class WFAssignment(models.Model):

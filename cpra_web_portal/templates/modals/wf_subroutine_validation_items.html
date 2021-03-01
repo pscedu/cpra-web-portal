@@ -1,0 +1,16 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> New Subroutine - Validation Item Workflow </h4>
+{% endblock %}
+{% block modal_body %}
+        <label for="select-subroutine-validation-items">Validation Item</label>
+        <select name="vi_id_id" id="select-subroutine-validation-items" class="modal-form-control form-control">
+        {% for validation_item_option in validation_items %}
+            <option value="{{ validation_item_option.id }}">{{ validation_item_option.name }}</option>
+        {% endfor %}
+        </select>
+{% endblock %}
+{% block modal_footer %}
+    <button id="subroutine-validation-items-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}
