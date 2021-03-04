@@ -12,7 +12,7 @@
 			<div class="list-group">
 				{% for simulation_run in simulation_runs %}
 				<a href="{% url 'subroutines_list_view' %}?sr_id={{ simulation_run.id }}" class="list-group-item">
-					<h5 class="mb-1">{{ simulation_run.simulation.name }} {{ simulation_run.name }}</h5>
+					<h5 class="mb-1">{{ simulation_run.sim_id.name }} {{ simulation_run.name }}</h5>
 					<p class="mb-1">{{ simulation_run.datetime_created }}</p>
 				</a>
 				{% endfor %}
