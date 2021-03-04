@@ -10,6 +10,12 @@
 		{% else %}
 			$("#btn-remove-approval").hide();
 		{% endif %}
+
+		{% if validation_item.srv_id.is_flagged %}
+			$("#btn-flag").hide();
+		{% else %}
+			$("#btn-unflag").hide();
+		{% endif %}
 		const user_name = "{{ user.username }}"
 		const csrftoken = Cookies.get('csrftoken');
 
@@ -64,14 +70,37 @@
 				url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
 				type: 'PUT',
 				headers: {'X-CSRFToken': csrftoken},
-				success: function(data){
+				success: function(){
 					$("#container-approvals").find('.list-group-item-action').each(function(i, e){
-						if($(e).find('strong').text() == user_name){
+						if($(e).find('strong').text() == user_name)
 							e.remove();
-						}
 					})
 					$this.hide();
 					$("#btn-approve").show();
+				}
+			});
+		});
+		$("#btn-flag").on("click", function(){
+			let $this = $(this);
+			$.ajax({
+				url: "{% url 'validation_assignment_methods' validation_item.id 'flag' %}" ,
+				type: 'PUT',
+				headers: {'X-CSRFToken': csrftoken},
+				success: function(){
+					$this.hide();
+					$("#btn-unflag").show();
+				}
+			});
+		});
+		$("#btn-unflag").on("click", function(){
+			let $this = $(this);
+			$.ajax({
+				url: "{% url 'validation_assignment_methods' validation_item.id 'unflag' %}" ,
+				type: 'PUT',
+				headers: {'X-CSRFToken': csrftoken},
+				success: function(){
+					$this.hide();
+					$("#btn-flag").show();
 				}
 			});
 		});
@@ -90,11 +119,15 @@
 						{% endfor %}
 					</select>
 				</div>
-				<div class="col-7">
+				<div class="col-6">
 					<h1 id="metric_name" style="text-align: center;"></h1>
 				</div>
-				<div class="col-2">
-					<button class="btn btn-primary">Export</button>
+				<div class="col-3">
+					<button id="btn-flag" class="btn btn-danger">Flag</button>
+					<button id="btn-unflag" class="btn btn-success">Un-flag</button>
+					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
+					<button id="btn-approve" class="btn btn-success">Approve</button>
+					<button class="btn btn-primary disabled">Export</button>
 				</div>
 			</div>
 			<div class="row flex-grow-1">
@@ -155,8 +188,6 @@
 						{% endfor %}
 					</div>
 						<div class="btn-group">
-							<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
-							<button id="btn-approve" class="btn btn-success">Approve</button>
 						</div>
 				</div>
 			</div>

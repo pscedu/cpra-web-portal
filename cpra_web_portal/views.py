@@ -327,6 +327,7 @@ class ValidationAssignment(View):
     def put(self, request, id, method):
         response = {}
         validation_item = models.ValidationAssignment.objects.get(pk=id)
+        srv = validation_item.srv_id
         if method == 'approve':
             validation_item.is_approved = 1
             validation_item.datetime_approved = datetime.datetime.now()
@@ -335,6 +336,12 @@ class ValidationAssignment(View):
         elif method == 'remove_approval':
             validation_item.is_approved = 0
             validation_item.datetime_approved = None
+        elif method == 'flag':
+            srv.is_flagged = 1
+            srv.save()
+        elif method == 'unflag':
+            srv.is_flagged = 0
+            srv.save()
         else:
             return HttpResponse(status=500)
 
