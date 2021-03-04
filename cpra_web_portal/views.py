@@ -325,21 +325,22 @@ class ValidationItemEditView(View):
 
 class ValidationAssignment(View):
     def put(self, request, id, method):
+        response = {}
         validation_item = models.ValidationAssignment.objects.get(pk=id)
         if method == 'approve':
             validation_item.is_approved = 1
             validation_item.datetime_approved = datetime.datetime.now()
-        elif method == 'deny':
-            validation_item.is_approved = -1
+            df = dateformat.DateFormat(validation_item.datetime_approved)
+            response['datetime_approved'] = df.format('N j, Y, P')
+        elif method == 'remove_approval':
+            validation_item.is_approved = 0
+            validation_item.datetime_approved = None
         else:
             return HttpResponse(status=500)
 
         validation_item.save()
 
         # TODO: Add something here that updates related items
-
-        df = dateformat.DateFormat(validation_item.datetime_approved)
-        response = {'datetime_approved': df.format('N j, Y, P')}
 
         return HttpResponse(json.dumps(response))
 
