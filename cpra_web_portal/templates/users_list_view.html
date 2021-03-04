@@ -36,10 +36,8 @@
 				{% endfor %}
 			  </tbody>
 			</table>
+		<button onclick="window.location='{% url 'user_new_view' %}'" class="btn btn-primary">New</button>
         </div>
-	</div>
-	<div class="row">
-		<button onclick="window.location='{% url 'user_new_view'  %}'" class="btn btn-primary">New</button>
 	</div>
 </div>
 {% endblock %}
