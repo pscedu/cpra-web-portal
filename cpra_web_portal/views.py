@@ -11,8 +11,27 @@ from django.template import loader
 from django.utils import timezone, dateformat
 from django.views import View
 from django.urls import reverse
+from django.db.models import Sum, Count
 
 from . import models
+
+
+def update_approval(validation_assignment):
+    # Get all of the related validation assignments
+    srv = models.SimulationRunValidation.objects.get(id=validation_assignment.srv_id_id)
+    sim_run = models.SimulationRun.objects.get(id=srv.sr_id_id)
+
+    # Get
+    sum_count_related_vas = models.ValidationAssignment.objects.filter(srv_id=validation_assignment.srv_id).aggregate(
+        num_related=Count('id'), num_approved=Sum('is_approved'))
+
+    srv.is_approved = sum_count_related_vas['num_related'] == sum_count_related_vas['num_approved']
+    srv.save()
+
+    sum_count_related_srvs = models.SimulationRunValidation.objects.filter(sr_id=srv.sr_id).aggregate(
+        num_related=Count('id'), num_approved=Sum('is_approved'))
+    sim_run.is_approved = sum_count_related_srvs['num_related'] == sum_count_related_srvs['num_approved']
+    sim_run.save()
 
 
 # TODO: Move to utility.py
@@ -348,6 +367,8 @@ class ValidationAssignment(View):
         validation_item.save()
 
         # TODO: Add something here that updates related items
+        if method in ['approve', 'remove_approval']:
+            update_approval(validation_item)
 
         return HttpResponse(json.dumps(response))
 
@@ -448,9 +469,7 @@ class SimulationRunsListView(View):
     def get(self, request):
         context = {}
         template = loader.get_template('simulation_runs_list_view.html')
-        sim_runs = models.SimulationRun.objects.all().select_related('sim_id')
-        for sim_run in sim_runs:
-            sim_run.simulation = sim_run.sim_id
+        sim_runs = models.SimulationRun.objects.filter(is_approved=False).select_related('sim_id')
 
         context['simulation_runs'] = sim_runs
         return HttpResponse(template.render(context, request))
@@ -463,7 +482,7 @@ class SubroutinesListView(View):
         simulation_run_id = request.GET.get('sr_id')
         context = {}
 
-        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related(
+        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False).select_related(
             'srv_id__sub_id')
 
         if simulation_run_id:
@@ -475,11 +494,12 @@ class SubroutinesListView(View):
         for subroutine in subroutines:
             validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']). \
                 select_related('srv_id__sr_id').select_related('srv_id__sub_id').first()
-            grouped_validation_assignments.append({
-                'sr_id': validation_assignment.srv_id.sr_id,
-                'sub_id': validation_assignment.srv_id.sub_id,
-                'sim_id': validation_assignment.srv_id.sr_id.sim_id
-            })
+            if validation_assignment:
+                grouped_validation_assignments.append({
+                    'sr_id': validation_assignment.srv_id.sr_id,
+                    'sub_id': validation_assignment.srv_id.sub_id,
+                    'sim_id': validation_assignment.srv_id.sr_id.sim_id
+                })
 
         context['grouped_validation_assignments'] = grouped_validation_assignments
 
@@ -542,7 +562,7 @@ class ValidationItemsListView(View):
         simulation_run_id = request.GET.get('sr_id')
         sub_id = request.GET.get('sub_id')
 
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False)
 
         if simulation_run_id:
             validation_assignments = validation_assignments.filter(srv_id__sr_id=simulation_run_id)
