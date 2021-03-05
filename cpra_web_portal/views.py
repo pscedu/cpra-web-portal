@@ -488,12 +488,11 @@ class SubroutinesListView(View):
         if simulation_run_id:
             subroutines = subroutines.filter(srv_id__sr_id=simulation_run_id)
 
-        subroutines = list(subroutines.values('id', 'srv_id__sub_id').distinct())
+        subroutines = subroutines.values('id', 'srv_id', 'srv_id__sub_id').annotate(num_vas=Count('srv_id__sub_id'))
 
         grouped_validation_assignments = []
         for subroutine in subroutines:
-            validation_assignment = models.ValidationAssignment.objects.filter(id=subroutine['id']). \
-                select_related('srv_id__sr_id').select_related('srv_id__sub_id').first()
+            validation_assignment = models.ValidationAssignment.objects.get(id=subroutine['id'])
             if validation_assignment:
                 grouped_validation_assignments.append({
                     'sr_id': validation_assignment.srv_id.sr_id,
