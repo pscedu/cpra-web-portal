@@ -482,23 +482,22 @@ class SubroutinesListView(View):
         simulation_run_id = request.GET.get('sr_id')
         context = {}
 
-        subroutines = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False).select_related(
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False).select_related(
             'srv_id__sub_id')
 
         if simulation_run_id:
-            subroutines = subroutines.filter(srv_id__sr_id=simulation_run_id)
+            validation_assignments = validation_assignments.filter(srv_id__sr_id=simulation_run_id)
 
-        subroutines = subroutines.values('id', 'srv_id', 'srv_id__sub_id').annotate(num_vas=Count('srv_id__sub_id'))
-
+        subroutines = []
         grouped_validation_assignments = []
-        for subroutine in subroutines:
-            validation_assignment = models.ValidationAssignment.objects.get(id=subroutine['id'])
-            if validation_assignment:
+        for validation_assignment in validation_assignments:
+            if validation_assignment.srv_id.sub_id not in subroutines:
                 grouped_validation_assignments.append({
                     'sr_id': validation_assignment.srv_id.sr_id,
                     'sub_id': validation_assignment.srv_id.sub_id,
                     'sim_id': validation_assignment.srv_id.sr_id.sim_id
                 })
+                subroutines.append(validation_assignment.srv_id.sub_id)
 
         context['grouped_validation_assignments'] = grouped_validation_assignments
 
