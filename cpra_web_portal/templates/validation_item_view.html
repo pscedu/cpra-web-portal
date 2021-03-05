@@ -223,7 +223,10 @@
 		function metric_change(){
 			$metric_name.text($metric_select.val());
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
-
+			if(metric_id===undefined) {
+				$metric_name.text('No metrics defined')
+				return;
+			}
 			//Grab the needed data
 			// So what do we need? Type to set which options container to show
 			// We need.... the data to fill out said containers
