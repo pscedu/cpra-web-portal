@@ -57,9 +57,19 @@ def get_metric(request):
     region_index = 12
     datapoint_index = 11
 
+    # / MP2023_S04_G030_C000_U00_V00_SLA_O_10_10_W_lndtyp30.png
+
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
+
+    if "map" in metric.type:
+        # TODO: for maps, we just need the year since its coastwide
+        parent_index = 0
+        child_index = 9
+    else:
+        parent_index = 12
+        child_index = 11
 
     # files will be structured as follows
     # files = {'region': {'point': 'filename'}}
@@ -80,11 +90,11 @@ def get_metric(request):
             continue
 
         file_name_list = file.split("_")
-        region = file_name_list[region_index]
-        if region in files:
-            files[region][file_name_list[datapoint_index]] = file
+        parent = file_name_list[parent_index]
+        if parent in files:
+            files[parent][file_name_list[child_index]] = file
         else:
-            files[region] = {file_name_list[datapoint_index]: file}
+            files[parent] = {file_name_list[child_index]: file}
 
     response = {
         'metric': model_to_dict(metric),
@@ -140,9 +150,30 @@ def get_dynamic_graph_metric(request):
             json_from_csv = json.dumps(list(dict_reader))
             return HttpResponse(json_from_csv)
     except:
-        print('hmm')
         return HttpResponse(status=500)
 
+
+def get_static_map(request):
+    file_name = request.GET.get('file_name')
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
+        .select_related('srv_id__sr_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.srv_id.sr_id.sim_id.results_dir,
+        validation_assignment.srv_id.sr_id.results_file_path,
+        metric.file_path,
+        file_name
+    )
+
+    try:
+        with open(file_path, "rb") as f:
+            return HttpResponse(f.read(), content_type="image/jpeg")
+    except:
+        return HttpResponse(status=500)
 
 # Individual Item Views
 class SimulationEditView(View):
