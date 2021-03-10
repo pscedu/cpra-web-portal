@@ -44,7 +44,6 @@ def set_filter_values(filters, request):
 def filter_queryset(queryset, request):
     filter_dict = {}
     for query_object in request.GET:
-        print(query_object)
         if 'in' in query_object:
             value = request.GET.get(query_object).split(',')
         else:
@@ -571,13 +570,14 @@ class SubroutinesListView(View):
         subroutines = []
         grouped_validation_assignments = []
         for validation_assignment in validation_assignments:
-            if validation_assignment.srv_id.sub_id not in subroutines:
+            sub_id_sr_id_combo = validation_assignment.srv_id.sr_id.name + validation_assignment.srv_id.sub_id.name
+            if sub_id_sr_id_combo not in subroutines:
                 grouped_validation_assignments.append({
                     'sr_id': validation_assignment.srv_id.sr_id,
                     'sub_id': validation_assignment.srv_id.sub_id,
                     'sim_id': validation_assignment.srv_id.sr_id.sim_id
                 })
-                subroutines.append(validation_assignment.srv_id.sub_id)
+                subroutines.append(sub_id_sr_id_combo)
 
         context = {
             'grouped_validation_assignments': grouped_validation_assignments,
