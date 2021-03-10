@@ -12,8 +12,46 @@ from django.utils import timezone, dateformat
 from django.views import View
 from django.urls import reverse
 from django.db.models import Sum, Count
+from django.apps import apps
 
 from . import models
+
+
+def populate_filters(filters):
+    for filter_id, filter in filters.items():
+        filter['options'] = []
+        if filter['data_source'] == 'query':
+            for filter_option in apps.get_model('cpra_web_portal', filter['data_source_model']).objects.all():
+                filter_option = model_to_dict(filter_option)
+                filter['options'].append({
+                    'value': str(filter_option[filter['data_source_value']]),
+                    'text': filter_option[filter['data_source_text']]
+                })
+
+
+def set_filter_values(filters, request):
+    for query_object in request.GET:
+        if query_object in filters:
+            value = request.GET.get(query_object)
+            filter_type = filters[query_object]['data_source_value_type']
+            if filter_type == 'list':
+                value = value.split(",")
+            elif filter_type == 'int':
+                value = int(value)
+            filters[query_object]['value'] = value
+
+
+def filter_queryset(queryset, request):
+    filter_dict = {}
+    for query_object in request.GET:
+        print(query_object)
+        if 'in' in query_object:
+            value = request.GET.get(query_object).split(',')
+        else:
+            value = request.GET.get(query_object)
+        filter_dict[query_object] = value
+
+    return queryset.filter(**filter_dict)
 
 
 def update_approval(validation_assignment):
@@ -174,6 +212,7 @@ def get_static_map(request):
             return HttpResponse(f.read(), content_type="image/jpeg")
     except:
         return HttpResponse(status=500)
+
 
 # Individual Item Views
 class SimulationEditView(View):
@@ -498,11 +537,21 @@ class Home(View):
 # List Views of items
 class SimulationRunsListView(View):
     def get(self, request):
-        context = {}
         template = loader.get_template('simulation_runs_list_view.html')
         sim_runs = models.SimulationRun.objects.filter(is_approved=False).select_related('sim_id')
 
-        context['simulation_runs'] = sim_runs
+        filters = models.SimulationRun.get_list_view_filters()
+
+        populate_filters(filters)
+
+        if len(request.GET) > 0:
+            set_filter_values(filters, request)
+            sim_runs = filter_queryset(sim_runs, request)
+
+        context = {
+            'filters': filters,
+            'simulation_runs': sim_runs
+        }
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -510,14 +559,14 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
-        simulation_run_id = request.GET.get('sr_id')
-        context = {}
-
         validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False).select_related(
             'srv_id__sub_id')
 
-        if simulation_run_id:
-            validation_assignments = validation_assignments.filter(srv_id__sr_id=simulation_run_id)
+        filters = models.Subroutine.get_list_view_filters()
+        populate_filters(filters)
+        if len(request.GET) > 0:
+            set_filter_values(filters, request)
+            validation_assignments = filter_queryset(validation_assignments, request)
 
         subroutines = []
         grouped_validation_assignments = []
@@ -530,7 +579,10 @@ class SubroutinesListView(View):
                 })
                 subroutines.append(validation_assignment.srv_id.sub_id)
 
-        context['grouped_validation_assignments'] = grouped_validation_assignments
+        context = {
+            'grouped_validation_assignments': grouped_validation_assignments,
+            'filters': filters
+        }
 
         template = loader.get_template('subroutines_list_view.html')
         return HttpResponse(template.render(context, request))
@@ -587,20 +639,19 @@ class UsersListView(View):
 
 class ValidationItemsListView(View):
     def get(self, request):
-        context = {}
-        simulation_run_id = request.GET.get('sr_id')
-        sub_id = request.GET.get('sub_id')
-
         validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False)
 
-        if simulation_run_id:
-            validation_assignments = validation_assignments.filter(srv_id__sr_id=simulation_run_id)
+        filters = models.ValidationItem.get_list_view_filters()
+        populate_filters(filters)
+        if len(request.GET) > 0:
+            set_filter_values(filters, request)
+            validation_assignments = filter_queryset(validation_assignments, request)
 
-        if sub_id:
-            validation_assignments = validation_assignments.filter(srv_id__sub_id=sub_id)
-
-        context['validation_assignments'] = validation_assignments.select_related('srv_id__sr_id').select_related(
-            'srv_id__sub_id').select_related('srv_id__vi_id').all()
+        context = {
+            'validation_assignments': validation_assignments.select_related('srv_id__sr_id').select_related(
+                                        'srv_id__sub_id').select_related('srv_id__vi_id').all(),
+            'filters': filters
+        }
 
         template = loader.get_template('validation_items_list_view.html')
         return HttpResponse(template.render(context, request))
