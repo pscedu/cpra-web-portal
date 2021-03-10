@@ -73,8 +73,6 @@ TEMPLATES = [
     },
 ]
 
-print(TEMPLATES[0]['DIRS'])
-
 WSGI_APPLICATION = 'cpra_web_portal.wsgi.application'
 
 
