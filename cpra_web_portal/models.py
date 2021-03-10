@@ -16,6 +16,29 @@ class Subroutine(models.Model):
     def __str__(self):
         return self.name
 
+    @staticmethod
+    def get_list_view_filters():
+        return {
+            'srv_id__sr_id__in': {
+                'name': 'Simulation Run',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'SimulationRun',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'srv_id__sub_id__in': {
+                'name': 'Subroutine',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'Subroutine',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            }
+        }
+
 
 class ValidationItem(models.Model):
     name = models.CharField(max_length=64, default="")
@@ -23,6 +46,38 @@ class ValidationItem(models.Model):
 
     def __str__(self):
         return self.name
+
+    @staticmethod
+    def get_list_view_filters():
+        return {
+            'srv_id__sr_id__in': {
+                'name': 'Simulation Run',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'SimulationRun',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'srv_id__sub_id__in': {
+                'name': 'Subroutine',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'Subroutine',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'srv_id__vi_id__in': {
+                'name': 'Validation Item',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'ValidationItem',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            }
+        }
 
 
 class Metric(models.Model):
@@ -63,6 +118,23 @@ class SimulationRun(models.Model):
     datetime_approved = models.DateTimeField(null=True)
     is_approved = models.SmallIntegerField(default=0)
     results_file_path = models.CharField(max_length=64, default="")
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def get_list_view_filters():
+        return {
+            'sim_id_id__in': {
+                'name': 'Simulation',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'Simulation',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            }
+        }
 
 
 class SimulationRunValidation(models.Model):
