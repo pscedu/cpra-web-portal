@@ -234,7 +234,6 @@ class SimulationEditView(View):
 
     def post(self, request):
         body = json.loads(request.body)
-        print(body)
 
         # Pop the related tables
         related_tables = {
