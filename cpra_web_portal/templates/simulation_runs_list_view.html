@@ -2,16 +2,15 @@
 {% load static %}
 {% block content %}
 <div class="container">
-	<div class="row my-2">
-		<div class="col-12">
-			<h1>Simulation Runs</h1>
-		</div>
-	</div>
 	<div class="row">
-		<div class="col-12">
+		<div class="col-2">
+			{% include 'components/filter_sidebar.html'  %}
+		</div>
+		<div class="col-8 offset-2">
+			<h1>Simulation Runs</h1>
 			<div class="list-group">
 				{% for simulation_run in simulation_runs %}
-				<a href="{% url 'subroutines_list_view' %}?sr_id={{ simulation_run.id }}" class="list-group-item">
+				<a href="{% url 'subroutines_list_view' %}?srv_id__sr_id__in={{ simulation_run.id }}" class="list-group-item">
 					<h5 class="mb-1">{{ simulation_run.sim_id.name }} {{ simulation_run.name }}</h5>
 					<p class="mb-1">{{ simulation_run.datetime_created }}</p>
 				</a>

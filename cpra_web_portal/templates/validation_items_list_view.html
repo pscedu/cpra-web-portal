@@ -2,13 +2,12 @@
 {% load static %}
 {% block content %}
 <div class="container">
-	<div class="row my-2">
-		<div class="col-12">
-			<h1>Validation Items</h1>
-		</div>
-	</div>
 	<div class="row">
-		<div class="col-12">
+		<div class="col-2">
+			{% include 'components/filter_sidebar.html'  %}
+		</div>
+		<div class="col-8 offset-2">
+			<h1>Validation Items</h1>
 			<div class="list-group">
 				{% for validation_assignment in validation_assignments %}
 					<a href="{% url 'validation_item_view' validation_assignment.id %}" class="list-group-item">
