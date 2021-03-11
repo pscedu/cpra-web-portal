@@ -153,6 +153,38 @@ class ValidationAssignment(models.Model):
     is_approved = models.SmallIntegerField(default=0)
     datetime_approved = models.DateTimeField(null=True)
 
+    @staticmethod
+    def get_list_view_filters():
+        return {
+            'srv_id__sr_id__in': {
+                'name': 'Simulation Run',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'SimulationRun',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'srv_id__sub_id__in': {
+                'name': 'Subroutine',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'Subroutine',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'srv_id__vi_id__in': {
+                'name': 'Validation Item',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'ValidationItem',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            }
+        }
+
 
 class ValidationAssignmentComment(models.Model):
     srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
