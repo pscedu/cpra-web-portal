@@ -124,5 +124,9 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login'
 LOGOUT_REDIRECT_URL = '/'
 
-
-#/pylon5/bcz3a2p/ewhite12/MP2023/ICM/S04/G031/geomorph/output_qaqc/ecoregion_points/plots
+EMAIL_HOST = ""
+EMAIL_HOST_PASSWORD = ""
+EMAIL_HOST_USER = ""
+EMAIL_PORT = "587"
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_USE_TLS = True
