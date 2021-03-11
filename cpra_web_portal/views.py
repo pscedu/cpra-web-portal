@@ -599,6 +599,15 @@ class Tasks(View):
         template = loader.get_template('tasks.html')
         tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user) \
             .select_related('srv_id__sr_id__sim_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')
+
+        filters = models.ValidationAssignment.get_list_view_filters()
+        populate_filters(filters)
+        if len(request.GET) > 0:
+            set_filter_values(filters, request)
+            tasks = filter_queryset(tasks, request)
+
+        context['filters'] = filters
+
         for task in tasks:
             # We need to get all of the Validation Assignments with the same sr_id, sub_id, and vi_id
             # check whether they've been flagged by other users
