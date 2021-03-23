@@ -124,6 +124,7 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login'
 LOGOUT_REDIRECT_URL = '/'
 
+DEFAULT_FROM_EMAIL = "do-not-reply@cpra-web-portal.psc.edu"
 EMAIL_HOST = ""
 EMAIL_HOST_PASSWORD = ""
 EMAIL_HOST_USER = ""
