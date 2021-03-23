@@ -190,7 +190,7 @@ def get_dynamic_graph_metric(request):
         return HttpResponse(status=500)
 
 
-def get_static_map(request):
+def get_map_metric(request):
     file_name = request.GET.get('file_name')
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
@@ -208,7 +208,7 @@ def get_static_map(request):
 
     try:
         with open(file_path, "rb") as f:
-            return HttpResponse(f.read(), content_type="image/jpeg")
+            return HttpResponse(f.read(), content_type="image/png")
     except:
         return HttpResponse(status=500)
 
@@ -326,8 +326,15 @@ class UserView(View):
                     setattr(user, attr, value)
         else:
             user = User(**body)
-            user.set_password(User.objects.make_random_password())
-            # TODO: send email w/ password and how to login/change pw
+            pw = User.objects.make_random_password()
+            user.set_password(pw)
+
+            user.email_user(
+                'Welcome to the CPRA QA/QC Portal',
+                "Hello " + user.username + ",\n\nYou have been added to the CPRA Web Portal."
+                "\n\nPlease visit the following URL to setup your password: " + request.build_absolute_uri(reverse('password_reset')) +
+                "\n\nHappy QA/QCing!"
+            )
 
         user.save()
 
