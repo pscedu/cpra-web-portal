@@ -89,6 +89,7 @@ class Metric(models.Model):
     ])
     file_path = models.CharField(max_length=64, default="")
     graph_config = models.JSONField()
+    file_name_regex = models.CharField(max_length=64, default="")
 
     def __str__(self):
         return self.name
