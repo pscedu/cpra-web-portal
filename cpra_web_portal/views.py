@@ -6,113 +6,22 @@ import csv
 from django.contrib.auth.models import User, Group
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.template import loader
 from django.utils import timezone, dateformat
 from django.views import View
 from django.urls import reverse
-from django.db.models import Sum, Count
-from django.apps import apps
 
-from . import models
-
-
-def populate_filters(filters):
-    for filter_id, filter in filters.items():
-        filter['options'] = []
-        if filter['data_source'] == 'query':
-            for filter_option in apps.get_model('cpra_web_portal', filter['data_source_model']).objects.all():
-                filter_option = model_to_dict(filter_option)
-                filter['options'].append({
-                    'value': str(filter_option[filter['data_source_value']]),
-                    'text': filter_option[filter['data_source_text']]
-                })
-
-
-def set_filter_values(filters, request):
-    for query_object in request.GET:
-        if query_object in filters:
-            value = request.GET.get(query_object)
-            filter_type = filters[query_object]['data_source_value_type']
-            if filter_type == 'list':
-                value = value.split(",")
-            elif filter_type == 'int':
-                value = int(value)
-            filters[query_object]['value'] = value
-
-
-def filter_queryset(queryset, request):
-    filter_dict = {}
-    for query_object in request.GET:
-        if 'in' in query_object:
-            value = request.GET.get(query_object).split(',')
-        else:
-            value = request.GET.get(query_object)
-        filter_dict[query_object] = value
-
-    return queryset.filter(**filter_dict)
-
-
-def update_approval(validation_assignment):
-    # Get all of the related validation assignments
-    srv = models.SimulationRunValidation.objects.get(id=validation_assignment.srv_id_id)
-    sim_run = models.SimulationRun.objects.get(id=srv.sr_id_id)
-
-    # Get
-    sum_count_related_vas = models.ValidationAssignment.objects.filter(srv_id=validation_assignment.srv_id).aggregate(
-        num_related=Count('id'), num_approved=Sum('is_approved'))
-
-    srv.is_approved = sum_count_related_vas['num_related'] == sum_count_related_vas['num_approved']
-    srv.save()
-
-    sum_count_related_srvs = models.SimulationRunValidation.objects.filter(sr_id=srv.sr_id).aggregate(
-        num_related=Count('id'), num_approved=Sum('is_approved'))
-    sim_run.is_approved = sum_count_related_srvs['num_related'] == sum_count_related_srvs['num_approved']
-    sim_run.save()
-
-
-# TODO: Move to utility.py
-def update_related_tables(related_tables):
-    from django.apps import apps
-    parent_table = related_tables.pop('parent_table')
-    for related_table, actions in related_tables.items():
-        related_table_model = apps.get_model('cpra_web_portal', related_table)
-        for action in actions:
-            if action == 'delete':
-                related_table_model.objects.filter(id__in=actions[action]).delete()
-            elif action == 'add':
-                items_to_add = []
-                for item_to_add in actions[action]:
-                    item_to_add[parent_table['id_field']] = parent_table['id_value']
-                    items_to_add.append(related_table_model(**item_to_add))
-                related_table_model.objects.bulk_create(items_to_add)
+from . import models, utils
 
 
 # These are miscellaneous views? They are really Metrics requests though
 # so they could be merged under a "class Metric"
 def get_metric(request):
-    region_index = 12
-    datapoint_index = 11
-
-    # / MP2023_S04_G030_C000_U00_V00_SLA_O_10_10_W_lndtyp30.png
-
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
 
-    if "map" in metric.type:
-        # TODO: for maps, we just need the year since its coastwide
-        parent_index = 0
-        child_index = 9
-    else:
-        parent_index = 12
-        child_index = 11
-
-    # files will be structured as follows
-    # files = {'region': {'point': 'filename'}}
-    files = {}
-
-    # I also need to get all of the files listed under this metric
     validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
         .select_related('srv_id__sr_id').first()
 
@@ -122,16 +31,7 @@ def get_metric(request):
         metric.file_path
     )
 
-    for file in os.listdir(file_path):
-        if os.path.isdir(os.path.join(file_path, file)):
-            continue
-
-        file_name_list = file.split("_")
-        parent = file_name_list[parent_index]
-        if parent in files:
-            files[parent][file_name_list[child_index]] = file
-        else:
-            files[parent] = {file_name_list[child_index]: file}
+    files = utils.get_metric_files(metric, file_path)
 
     response = {
         'metric': model_to_dict(metric),
@@ -169,6 +69,7 @@ def get_dynamic_graph_metric(request):
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
+    metric_data_model = metric.graph_config['misc']['data_model']
 
     validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
         .select_related('srv_id__sr_id').first()
@@ -177,15 +78,30 @@ def get_dynamic_graph_metric(request):
         validation_assignment.srv_id.sr_id.sim_id.results_dir,
         validation_assignment.srv_id.sr_id.results_file_path,
         metric.file_path,
-        file_name
+        file_name if metric_data_model == 'extraction_points' else ''
     )
 
+    json_from_csv = []
 
     try:
-        with open(file_path, "r") as f:
-            dict_reader = csv.DictReader(f)
-            json_from_csv = json.dumps(list(dict_reader))
-            return HttpResponse(json_from_csv)
+        if metric_data_model == 'extraction_points':
+            with open(file_path, "r") as f:
+                dict_reader = csv.DictReader(f)
+                json_from_csv = list(dict_reader)
+        else:
+            for file in (file for file in os.listdir(file_path) if metric.file_name_regex in file):
+                with open(os.path.join(file_path, file), 'r') as f:
+                    if metric_data_model == 'hydro_compartments':
+                        # TODO: This needs to be sorted by the year
+                        csv_reader = list(csv.DictReader(f))
+                        json_from_csv.append(csv_reader[int(file_name)-1])
+                    elif metric_data_model == 'daily_hydro_compartments':
+                        csv_reader = csv.reader(f)
+                        # for this one, we need to iterate over each of these lines and get the column
+                        for row in csv_reader:
+                            json_from_csv.append({'value': row[int(file_name)-1]})
+
+        return HttpResponse(json.dumps(json_from_csv))
     except:
         return HttpResponse(status=500)
 
@@ -225,10 +141,12 @@ class SimulationEditView(View):
 
         context['wf_simulation_subroutines'] = []
 
-        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(sim_id=simulation.id).select_related('sub_id').all():
+        for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(
+                sim_id=simulation.id).select_related('sub_id').all():
             context['wf_simulation_subroutines'].append(wf_simulation_subroutine.sub_id)
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=simulation.id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=simulation.id).select_related(
+            'user_id').all()
 
         return HttpResponse(template.render(context, request))
 
@@ -253,7 +171,7 @@ class SimulationEditView(View):
 
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'sim_id_id', 'id_value': simulation.id}
-        update_related_tables(related_tables)
+        utils.update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('simulation_edit_view', args=(simulation.id,))}))
 
@@ -270,7 +188,8 @@ class SubroutineEditView(View):
         context['wf_subroutine_validation_items'] = models.WFSubroutineValidationItem.objects.filter(
             sub_id=subroutine.id).select_related('vi_id').all()
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=subroutine.id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(sub_id=subroutine.id).select_related(
+            'user_id').all()
 
         return HttpResponse(template.render(context, request))
 
@@ -295,7 +214,7 @@ class SubroutineEditView(View):
 
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'sub_id_id', 'id_value': subroutine.id}
-        update_related_tables(related_tables)
+        utils.update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('subroutine_edit_view', args=(subroutine.id,))}))
 
@@ -332,7 +251,8 @@ class UserView(View):
             user.email_user(
                 'Welcome to the CPRA QA/QC Portal',
                 "Hello " + user.username + ",\n\nYou have been added to the CPRA Web Portal."
-                "\n\nPlease visit the following URL to setup your password: " + request.build_absolute_uri(reverse('password_reset')) +
+                                           "\n\nPlease visit the following URL to setup your password: " + request.build_absolute_uri(
+                    reverse('password_reset')) +
                 "\n\nHappy QA/QCing!"
             )
 
@@ -380,14 +300,17 @@ class ValidationItemEditView(View):
         context = {}
         template = loader.get_template('validation_item_edit_view.html')
 
-        validation_item = models.ValidationItem.objects.filter(id=id).first() if id is not None else models.ValidationItem()
+        validation_item = models.ValidationItem.objects.filter(
+            id=id).first() if id is not None else models.ValidationItem()
 
         context['validation_item'] = validation_item
 
-        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(vi_id=validation_item.id).select_related(
+        context['validation_item_metrics'] = models.ValidationItemMetrics.objects.filter(
+            vi_id=validation_item.id).select_related(
             'metric_id').all()
 
-        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=validation_item.id).select_related('user_id').all()
+        context['wf_assignments'] = models.WFAssignment.objects.filter(vi_id=validation_item.id).select_related(
+            'user_id').all()
 
         return HttpResponse(template.render(context, request))
 
@@ -412,7 +335,7 @@ class ValidationItemEditView(View):
 
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'vi_id_id', 'id_value': validation_item.id}
-        update_related_tables(related_tables)
+        utils.update_related_tables(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('validation_item_edit_view', args=(validation_item.id,))}))
 
@@ -443,7 +366,7 @@ class ValidationAssignment(View):
 
         # TODO: Add something here that updates related items
         if method in ['approve', 'remove_approval']:
-            update_approval(validation_item)
+            utils.update_approval(validation_item)
 
         return HttpResponse(json.dumps(response))
 
@@ -547,11 +470,11 @@ class SimulationRunsListView(View):
 
         filters = models.SimulationRun.get_list_view_filters()
 
-        populate_filters(filters)
+        utils.populate_filters(filters)
 
         if len(request.GET) > 0:
-            set_filter_values(filters, request)
-            sim_runs = filter_queryset(sim_runs, request)
+            utils.set_filter_values(filters, request)
+            sim_runs = utils.filter_queryset(sim_runs, request)
 
         context = {
             'filters': filters,
@@ -564,14 +487,15 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False).select_related(
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id,
+                                                                            is_approved=False).select_related(
             'srv_id__sub_id')
 
         filters = models.Subroutine.get_list_view_filters()
-        populate_filters(filters)
+        utils.populate_filters(filters)
         if len(request.GET) > 0:
-            set_filter_values(filters, request)
-            validation_assignments = filter_queryset(validation_assignments, request)
+            utils.set_filter_values(filters, request)
+            validation_assignments = utils.filter_queryset(validation_assignments, request)
 
         subroutines = []
         grouped_validation_assignments = []
@@ -608,10 +532,10 @@ class Tasks(View):
             .select_related('srv_id__sr_id__sim_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')
 
         filters = models.ValidationAssignment.get_list_view_filters()
-        populate_filters(filters)
+        utils.populate_filters(filters)
         if len(request.GET) > 0:
-            set_filter_values(filters, request)
-            tasks = filter_queryset(tasks, request)
+            utils.set_filter_values(filters, request)
+            tasks = utils.filter_queryset(tasks, request)
 
         context['filters'] = filters
 
@@ -657,14 +581,14 @@ class ValidationItemsListView(View):
         validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False)
 
         filters = models.ValidationItem.get_list_view_filters()
-        populate_filters(filters)
+        utils.populate_filters(filters)
         if len(request.GET) > 0:
-            set_filter_values(filters, request)
-            validation_assignments = filter_queryset(validation_assignments, request)
+            utils.set_filter_values(filters, request)
+            validation_assignments = utils.filter_queryset(validation_assignments, request)
 
         context = {
             'validation_assignments': validation_assignments.select_related('srv_id__sr_id').select_related(
-                                        'srv_id__sub_id').select_related('srv_id__vi_id').all(),
+                'srv_id__sub_id').select_related('srv_id__vi_id').all(),
             'filters': filters
         }
 
