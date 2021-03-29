@@ -89,10 +89,9 @@ def get_dynamic_graph_metric(request):
                 dict_reader = csv.DictReader(f)
                 json_from_csv = list(dict_reader)
         else:
-            for file in (file for file in os.listdir(file_path) if metric.file_name_regex in file):
+            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
                 with open(os.path.join(file_path, file), 'r') as f:
                     if metric_data_model == 'hydro_compartments':
-                        # TODO: This needs to be sorted by the year
                         csv_reader = list(csv.DictReader(f))
                         json_from_csv.append(csv_reader[int(file_name)-1])
                     elif metric_data_model == 'daily_hydro_compartments':
