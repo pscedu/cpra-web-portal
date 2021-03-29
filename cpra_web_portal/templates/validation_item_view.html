@@ -356,21 +356,25 @@
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
 			const file_name = $('#select_dynamic_graph_metric_data_points').val();
 			const column_name = chart_config['misc']['column_name'];
-			let labels = []
-			for(let year = 1; year <= 50; year++)
-				labels.push(year)
-			let graph_data = {'labels': labels, 'datasets':[{'label': file_name, 'data': [], 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name, function(response){
 				response = JSON.parse(response)
+				let max_tick = response.length;
+				let graph_data = []
 				response.forEach(function(e, i){
-					graph_data['datasets'][0]['data'].push({
-						x: i+1,
+					graph_data.push({
+						x: i,
 						y: parseFloat(e[column_name])
 					})
 				})
 
-				chart_config['data'] = graph_data
+				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
+
+				let labels = []
+				for(let year = 0; year <= max_tick; year++)
+					labels.push(year)
+
+				chart_config['data'] = {'labels': labels, 'datasets':[{'label': file_name, 'data': graph_data, 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
 				let chart = new Chart($canvas, chart_config)
 			})
 		}
