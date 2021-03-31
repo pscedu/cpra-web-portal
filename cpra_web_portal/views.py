@@ -171,6 +171,8 @@ class SimulationEditView(View):
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'sim_id_id', 'id_value': simulation.id}
         utils.update_related_tables(related_tables)
+        related_tables['parent_table'] = {'id_field': 'sr_id__sim_id_id', 'id_value': simulation.id}
+        utils.create_tasks(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('simulation_edit_view', args=(simulation.id,))}))
 
@@ -214,6 +216,8 @@ class SubroutineEditView(View):
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'sub_id_id', 'id_value': subroutine.id}
         utils.update_related_tables(related_tables)
+        related_tables['parent_table'] = {'id_field': 'sub_id_id', 'id_value': subroutine.id}
+        utils.create_tasks(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('subroutine_edit_view', args=(subroutine.id,))}))
 
@@ -335,6 +339,8 @@ class ValidationItemEditView(View):
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'vi_id_id', 'id_value': validation_item.id}
         utils.update_related_tables(related_tables)
+        related_tables['parent_table'] = {'id_field': 'vi_id_id', 'id_value': validation_item.id}
+        utils.create_tasks(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('validation_item_edit_view', args=(validation_item.id,))}))
 
