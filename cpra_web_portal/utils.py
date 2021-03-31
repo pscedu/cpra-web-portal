@@ -78,6 +78,21 @@ def update_related_tables(related_tables):
                 related_table_model.objects.bulk_create(items_to_add)
 
 
+def create_tasks(related_tables):
+    parent_table = related_tables.get('parent_table')
+    wf_assignment = related_tables.get('WFAssignment')
+    if 'add' in wf_assignment:
+        for assignment in wf_assignment['add']:
+            filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
+            srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
+            for srv in srvs:
+                if not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
+                    # Then we need to create the validation assignment
+                    va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
+                    va.save()
+
+
+
 def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
