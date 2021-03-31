@@ -217,13 +217,16 @@
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
+		let $select_static_metric_regions = $('#select_static_metric_region');
+		let $select_static_metric_data_points = $('#select_static_metric_data_points');
+		let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
+		let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
+		let $select_map_year = $('#select_map_year')
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
 
 		metric_change();
-
-		$metric_select.on('change', metric_change)
 
 		function metric_change(){
 			$metric_name.text($metric_select.val());
@@ -269,8 +272,6 @@
 
 		function populate_static_metrics(metric, files){
 			let $static_metric_options = $('#static_metric_options');
-			let $select_static_metric_regions = $('#select_static_metric_region');
-			let $select_static_metric_data_points = $('#select_static_metric_data_points');
 
 			$select_static_metric_regions.empty();
 
@@ -281,21 +282,11 @@
 			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
 			populate_static_metric_container();
 
-			$select_static_metric_regions.on('change', function(){
-				populate_static_metric_data_points($(this).val())
-				populate_static_metric_container();
-			});
-
-			$select_static_metric_data_points.on('change', function(){
-				populate_static_metric_container();
-			})
-
 			$static_metric_options.show();
 		}
 
 		function populate_static_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
-			let $select_static_metric_data_points = $('#select_static_metric_data_points');
 			$select_static_metric_data_points.empty();
 			for(let data_point in data_points){
 				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point]))
@@ -305,7 +296,7 @@
 		function populate_static_metric_container(){
 			$metric_container.empty();
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
-			let file_name = $('#select_static_metric_data_points').val();
+			let file_name = $select_static_metric_data_points.val();
 			let img = new Image();
 			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 			img.style.width = "85%"
@@ -317,8 +308,7 @@
 			$metric_container.append($canvas)
 
 			let $dynamic_graph_metric_options = $('#dynamic_graph_metric_options');
-			let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
-			let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
+			$dynamic_graph_metric_options.data('graph_config', metric['graph_config']);
 
 			$select_dynamic_graph_metric_regions.empty();
 
@@ -329,32 +319,23 @@
 			populate_dynamic_graph_metric_data_points($select_dynamic_graph_metric_regions.find('option:selected').val());
 			populate_dynamic_graph_metric_container(metric['graph_config']);
 
-			$select_dynamic_graph_metric_regions.on('change', function(){
-				populate_dynamic_graph_metric_data_points($(this).val())
-				populate_dynamic_graph_metric_container(metric['graph_config']);
-			});
-
-			$select_dynamic_graph_metric_data_points.on('change', function(){
-				populate_dynamic_graph_metric_container(metric['graph_config']);
-			})
-
 			$dynamic_graph_metric_options.show();
 		}
 
 		function populate_dynamic_graph_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
-			let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
 			$select_dynamic_graph_metric_data_points.empty();
 			for(let data_point in data_points){
 				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point]))
 			}
 		}
 
-		function populate_dynamic_graph_metric_container(chart_config){
+		function populate_dynamic_graph_metric_container(){
 			let $canvas = $('#canvas-metric');
+			let chart_config = $('#dynamic_graph_metric_options').data('graph_config');
 			$canvas.empty();
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
-			const file_name = $('#select_dynamic_graph_metric_data_points').val();
+			const file_name = $select_dynamic_graph_metric_data_points.val();
 			const column_name = chart_config['misc']['column_name'];
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name, function(response){
@@ -381,7 +362,6 @@
 
 		function populate_map_metrics(metric, files){
 			let $map_metric_options = $('#map_metric_options');
-			let $select_map_year = $('#select_map_year');
 
 			$select_map_year.empty();
 
@@ -391,10 +371,6 @@
 
 			populate_map_metric_container();
 
-			$select_map_year.on('change', function(){
-				populate_map_metric_container();
-			})
-
 			$map_metric_options.show();
 		}
 
@@ -402,7 +378,7 @@
 			$metric_container.empty();
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
-			let file_name = $('#select_map_year').val();
+			let file_name = $select_map_year.val();
 			let img = new Image();
 			img.src = '/map_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 			$metric_container.append(img);
@@ -419,6 +395,34 @@
 			})
 
 		}
+
+		// Start Listener Region
+
+		$metric_select.on('change', metric_change);
+
+		$select_static_metric_regions.on('change', function(){
+				populate_static_metric_data_points($(this).val())
+				populate_static_metric_container();
+			});
+
+		$select_static_metric_data_points.on('change', function(){
+				populate_static_metric_container();
+			});
+
+		$select_dynamic_graph_metric_regions.on('change', function(){
+			populate_dynamic_graph_metric_data_points($(this).val())
+			populate_dynamic_graph_metric_container();
+		});
+
+		$select_dynamic_graph_metric_data_points.on('change', function(){
+			populate_dynamic_graph_metric_container();
+		});
+
+		$select_map_year.on('change', function(){
+			populate_map_metric_container();
+		});
+
+		// End Listener Region
 	})
 
 </script>
