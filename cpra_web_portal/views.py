@@ -385,7 +385,9 @@ class ValidationAssignmentComment(View):
         validation_assignment_comment_data = {
             'srv_id': validation_assignment.srv_id,
             'user_id': request.user,
-            'comments': body['comment']
+            'comments': body['comment'],
+            'metric_id_id': body.get('metric_id', None),
+            'metric_options': body.get('metric_options', None)
         }
 
         validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
@@ -638,5 +640,18 @@ class SimulationModal(View):
         elif type == 'wf_simulation_subroutines':
             context['subroutines'] = models.Subroutine.objects.all()
             template = loader.get_template('modals/wf_simulation_subroutines.html')
+
+        return HttpResponse(template.render(context, request))
+
+
+class CommentModal(View):
+    def get(self, request, type):
+        context = {}
+        if type == 'misc':
+            template = loader.get_template('modals/misc_comment.html')
+        elif type == 'approve':
+            template = loader.get_template('modals/approve_comment.html')
+        elif type == 'flag':
+            template = loader.get_template('modals/flag_comment.html')
 
         return HttpResponse(template.render(context, request))
