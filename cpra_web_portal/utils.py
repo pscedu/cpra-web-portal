@@ -92,7 +92,6 @@ def create_tasks(related_tables):
                     va.save()
 
 
-
 def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
