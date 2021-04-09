@@ -41,6 +41,23 @@ def get_metric(request):
     return HttpResponse(json.dumps(response))
 
 
+def get_comments(request):
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric_id = request.GET.get('metric_id')
+    metric_options = json.loads(request.GET.get('metric_options'))
+
+    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment_id, metric_id=None)
+
+    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment_id, metric_options=metric_options)
+
+    response = []
+    # Prep the comments for response
+    for comment in srv_comments.union(metric_comments):
+        response.append({'user_name': comment.user_id.username, 'comment': comment.comments})
+
+    return HttpResponse(json.dumps(response))
+
+
 def get_static_metric(request):
     file_name = request.GET.get('file_name')
     metric_id = request.GET.get('metric_id')
