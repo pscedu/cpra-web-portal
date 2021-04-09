@@ -50,5 +50,7 @@ urlpatterns = [
     path('metric_view/<int:id>/', views.Metric.as_view(), name='metric_edit_view'),
     path('validation_item/modal/<str:type>', views.ValidationItemModal.as_view(), name='validation_item_modal_view'),
     path('subroutine/modal/<str:type>', views.SubroutineModal.as_view(), name='subroutine_modal_view'),
-    path('simulation/modal/<str:type>', views.SimulationModal.as_view(), name='simulation_modal_view')
+    path('simulation/modal/<str:type>', views.SimulationModal.as_view(), name='simulation_modal_view'),
+    path('comment/modal/<str:type>', views.CommentModal.as_view(), name='comment_modal_view'),
+    path('comment/', views.get_comments, name='get_comments')
 ]

@@ -47,6 +47,46 @@
 				$(this).val = '';
 			}
 		});
+
+		$('#modal-misc-comment').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
+				$modal.append(response);
+				$('#misc-comment-save').on('click', function(){
+					let comment = $('#textarea-comment').val();
+					let is_output_item_assigned = $('#checkbox-is-output-item').is(':checked');
+					let body = {
+						comment: comment,
+						validation_assignment_id: {{ validation_item.id }}
+					}
+
+					if(is_output_item_assigned){
+						body['metric_options'] = {}
+						$('.metric_options:visible').find('.form-control').each(function(index, element){
+							body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
+						})
+						body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
+					}
+
+
+					$.post({
+						url: "{% url 'validation_assignment_comment' %}",
+						headers: {'X-CSRFToken': csrftoken},
+						data: JSON.stringify(body),
+						success: function(){
+							add_comment({'user_name': user_name, 'comment': comment})
+							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+							bs_modal.hide();
+							$modal.empty();
+						}
+					});
+				});
+
+			});
+		});
+
 		$("#btn-approve").on("click", function(){
 			let $this = $(this);
 			$.ajax({
@@ -105,115 +145,6 @@
 				}
 			});
 		});
-	});
-
-</script>
-
-<div class="container-fluid">
-	<div class="row">
-		<div class="col-10">
-			<div class="row my-4">
-				<div class="col-3">
-					<select id="metric_select" class="form-control">
-						{% for metric in metrics %}
-							<option data-metric_id="{{ metric.id }}">{{ metric.name }}</option>
-						{% endfor %}
-					</select>
-				</div>
-				<div class="col-6">
-					<h1 id="metric_name" style="text-align: center;"></h1>
-				</div>
-				<div class="col-3">
-					<button id="btn-flag" class="btn btn-danger">Flag</button>
-					<button id="btn-unflag" class="btn btn-success">Un-flag</button>
-					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
-					<button id="btn-approve" class="btn btn-success">Approve</button>
-					<button class="btn btn-primary disabled">Export</button>
-				</div>
-			</div>
-			<div class="row flex-grow-1">
-				<div class="col-1">
-					<div id="static_metric_options" class="row metric_options" style="display: none;">
-						<label for="select_static_metric_region">Region</label>
-						<select class="form-control" id="select_static_metric_region"></select>
-						<label for="select_static_metric_data_points">Data Points</label>
-						<select class="form-control" id="select_static_metric_data_points"></select>
-					</div>
-					<div id="dynamic_graph_metric_options" class="row metric_options" style="display: none;">
-						<label for="select_dynamic_graph_metric_region">Region</label>
-						<select class="form-control" id="select_dynamic_graph_metric_region"></select>
-						<label for="select_dynamic_graph_metric_data_points">Data Points</label>
-						<select class="form-control" id="select_dynamic_graph_metric_data_points"></select>
-					</div>
-					<div id="map_metric_options" class="row metric_options" style="display: none;">
-						<label for="select_map_year">Year</label>
-						<select class="form-control" id="select_map_year"></select>
-					</div>
-				</div>
-				<div class="col-10 offset-1">
-<!--							This is where the actual graph/static image will go -->
-					<div id="metric_container" class="row px-2"></div>
-
-				</div>
-			</div>
-		</div>
-		<div class="col-2 bg-light" style="border: 1px solid #C5C5C5">
-			<h3>
-				{{ validation_item.srv_id.sr_id.sim_id.name }}
-				{{ validation_item.srv_id.sr_id.name }}
-			</h3>
-			<h5>
-				{{ validation_item.srv_id.sub_id.name }}
-				{{ validation_item.srv_id.vi_id.name }}
-			</h5>
-			<p>{{ validation_item.srv_id.vi_id.description }}</p>
-			<div class="row my-2 py-2" style="border-top: 1px solid black;">
-				<div class="col-12">
-					<h4>Comments</h4>
-					<div id="container-comments" class="list-group">
-						{% for comment in comments %}
-							<div class="list-group-item-action">
-								<strong>{{ comment.user.username }}</strong>
-								<p>{{ comment.comment }}</p>
-							</div>
-						{% endfor %}
-					</div>
-					<input id="input-add-comment" class="form-control" placeholder="Add comment">
-				</div>
-			</div>
-			<div class="row my-2 py-2" style=" border-top: 1px solid black;">
-				<div class="col-12">
-					<h4>Approvals</h4>
-					<div id="container-approvals" class="list-group">
-						{% for approval in approvals %}
-						<div class="list-group-item-action">
-							<strong>{{ approval.user.username }}</strong>
-							<p>{{ approval.datetime_approved }}</p>
-						</div>
-						{% endfor %}
-					</div>
-						<div class="btn-group">
-						</div>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>
-
-<div id="container-templates" style="display: none;">
-	<div id="comment-container-template" class="list-group-item-action">
-		<strong id="user-comment-template"> </strong>
-		<p id="comments-comment-template"> </p>
-	</div>
-	<div id="approval-container-template" class="list-group-item-action">
-		<strong id="user-approval-template"></strong>
-		<p id="datetime-approval-template"></p>
-	</div>
-</div>
-
-<script>
-
-	$(document).ready(function (){
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
@@ -221,7 +152,7 @@
 		let $select_static_metric_data_points = $('#select_static_metric_data_points');
 		let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
 		let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
-		let $select_map_year = $('#select_map_year')
+		let $select_map_year = $('#select_map_year');
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
@@ -252,21 +183,19 @@
 				switch (metric_data['type']){
 					case 'static':
 						populate_static_metrics(metric_data, files)
-						return
+						break;
 					case 'dynamic_graph':
 						populate_dynamic_graph_metrics(metric_data, files)
-						return
+						break;
 					case 'map':
 						populate_map_metrics(metric_data, files)
-						return
+						break;
 					default:
 						console.log(metric_data['type'])
-						return
+						break;
 				}
 
-
-
-				// Lets just grab one of the files to display, use the first one in the list
+				load_comments();
 			});
 		}
 
@@ -396,6 +325,41 @@
 
 		}
 
+		function load_comments(){
+			// I have the metric id, and can get the metric options
+			console.log('hello world');
+			clear_comments();
+
+			let metric_id = $('#metric_select').find('option:selected').data('metric_id');
+			let metric_options = {}
+			$('.metric_options:visible').find('.form-control').each(function(index, element){
+				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
+			});
+			metric_options = encodeURI(JSON.stringify(metric_options))
+
+			$.get("{% url 'get_comments' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(data){
+				add_comments(JSON.parse(data));
+			})
+		}
+
+		function clear_comments(){
+			$("#container-comments").empty();
+		}
+
+		function add_comments(comments_list){
+			for(let comment of comments_list){
+				add_comment(comment);
+			}
+		}
+
+		function add_comment(comment_dict){
+			let $comment_container = $('#comment-container-template').clone();
+			$comment_container.id = '';
+			$comment_container.find('#user-comment-template').text(comment_dict['user_name']).id = '';
+			$comment_container.find('#comments-comment-template').text(comment_dict['comment']).id='';
+			$("#container-comments").append($comment_container);
+		}
+
 		// Start Listener Region
 
 		$metric_select.on('change', metric_change);
@@ -403,26 +367,139 @@
 		$select_static_metric_regions.on('change', function(){
 				populate_static_metric_data_points($(this).val())
 				populate_static_metric_container();
+				load_comments();
 			});
 
 		$select_static_metric_data_points.on('change', function(){
 				populate_static_metric_container();
+				load_comments();
 			});
 
 		$select_dynamic_graph_metric_regions.on('change', function(){
 			populate_dynamic_graph_metric_data_points($(this).val())
 			populate_dynamic_graph_metric_container();
+			load_comments();
 		});
 
 		$select_dynamic_graph_metric_data_points.on('change', function(){
 			populate_dynamic_graph_metric_container();
+			load_comments();
 		});
 
 		$select_map_year.on('change', function(){
 			populate_map_metric_container();
+			load_comments();
 		});
 
 		// End Listener Region
+	});
+</script>
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-10">
+			<div class="row my-4">
+				<div class="col-3">
+					<select name="metric" id="metric_select" class="form-control">
+						{% for metric in metrics %}
+							<option data-metric_id="{{ metric.id }}"
+							>{{ metric.name }}</option>
+						{% endfor %}
+					</select>
+				</div>
+				<div class="col-6">
+					<h1 id="metric_name" style="text-align: center;"></h1>
+				</div>
+				<div class="col-3">
+					<button id="btn-flag" class="btn btn-danger">Flag</button>
+					<button id="btn-unflag" class="btn btn-success">Un-flag</button>
+					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
+					<button id="btn-approve" class="btn btn-success">Approve</button>
+					<button class="btn btn-primary disabled">Export</button>
+				</div>
+			</div>
+			<div class="row flex-grow-1">
+				<div class="col-1">
+					<div id="static_metric_options" class="row metric_options" style="display: none;">
+						<label for="select_static_metric_region">Region</label>
+						<select name="region" class="form-control" id="select_static_metric_region"></select>
+						<label for="select_static_metric_data_points">Data Points</label>
+						<select name="data_point" class="form-control" id="select_static_metric_data_points"></select>
+					</div>
+					<div id="dynamic_graph_metric_options" class="row metric_options" style="display: none;">
+						<label for="select_dynamic_graph_metric_region">Region</label>
+						<select name="region" class="form-control" id="select_dynamic_graph_metric_region"></select>
+						<label for="select_dynamic_graph_metric_data_points">Data Points</label>
+						<select name="data_point" class="form-control" id="select_dynamic_graph_metric_data_points"></select>
+					</div>
+					<div id="map_metric_options" class="row metric_options" style="display: none;">
+						<label for="select_map_year">Year</label>
+						<select name="year" class="form-control" id="select_map_year"></select>
+					</div>
+				</div>
+				<div class="col-10 offset-1">
+<!--							This is where the actual graph/static image will go -->
+					<div id="metric_container" class="row px-2"></div>
+
+				</div>
+			</div>
+		</div>
+		<div class="col-2 bg-light" style="border: 1px solid #C5C5C5">
+			<h3>
+				{{ validation_item.srv_id.sr_id.sim_id.name }}
+				{{ validation_item.srv_id.sr_id.name }}
+			</h3>
+			<h5>
+				{{ validation_item.srv_id.sub_id.name }}
+				{{ validation_item.srv_id.vi_id.name }}
+			</h5>
+			<p>{{ validation_item.srv_id.vi_id.description }}</p>
+			<div class="row my-2 py-2" style="border-top: 1px solid black;">
+				<div class="col-12">
+					<h4>Comments</h4>
+					<div id="container-comments" class="list-group">
+					</div>
+					<button id="btn-new-comment" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-misc-comment">New</button>
+				</div>
+			</div>
+			<div class="row my-2 py-2" style=" border-top: 1px solid black;">
+				<div class="col-12">
+					<h4>Approvals</h4>
+					<div id="container-approvals" class="list-group">
+						{% for approval in approvals %}
+						<div class="list-group-item-action">
+							<strong>{{ approval.user.username }}</strong>
+							<p>{{ approval.datetime_approved }}</p>
+						</div>
+						{% endfor %}
+					</div>
+						<div class="btn-group">
+						</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="container-templates" style="display: none;">
+	<div id="comment-container-template" class="list-group-item-action">
+		<strong id="user-comment-template"> </strong>
+		<p id="comments-comment-template"> </p>
+	</div>
+	<div id="approval-container-template" class="list-group-item-action">
+		<strong id="user-approval-template"></strong>
+		<p id="datetime-approval-template"></p>
+	</div>
+</div>
+
+<div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+
+<script>
+
+	$(document).ready(function (){
+
 	})
 
 </script>

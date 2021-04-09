@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import urllib
 
 
 class Simulation(models.Model):
@@ -189,9 +190,10 @@ class ValidationAssignment(models.Model):
 
 class ValidationAssignmentComment(models.Model):
     srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
+    metric_id = models.ForeignKey(Metric, on_delete=models.CASCADE, null=True, default=None)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
-    snapshot_url = models.CharField(max_length=100, default="")
+    metric_options = models.JSONField(null=True, default=None)
 
 
 class ValidationItemMetrics(models.Model):
