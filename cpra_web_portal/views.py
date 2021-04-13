@@ -52,8 +52,11 @@ def get_comments(request):
 
     response = []
     # Prep the comments for response
-    for comment in srv_comments.union(metric_comments):
-        response.append({'user_name': comment.user_id.username, 'comment': comment.comments})
+    for comment in metric_comments.union(srv_comments):
+        user_name = comment.user_id.username
+        comment_dict = model_to_dict(comment)
+        comment_dict['user_name'] = user_name
+        response.append(comment_dict)
 
     return HttpResponse(json.dumps(response))
 
@@ -402,7 +405,9 @@ class ValidationAssignmentComment(View):
         validation_assignment_comment_data = {
             'srv_id': validation_assignment.srv_id,
             'user_id': request.user,
-            'comments': body['comment'],
+            'comments': body['comments'],
+            'is_flag': body.get('is_flag', 0),
+            'is_approval': body.get('is_approval', 0),
             'metric_id_id': body.get('metric_id', None),
             'metric_options': body.get('metric_options', None)
         }
@@ -666,8 +671,8 @@ class CommentModal(View):
         context = {}
         if type == 'misc':
             template = loader.get_template('modals/misc_comment.html')
-        elif type == 'approve':
-            template = loader.get_template('modals/approve_comment.html')
+        elif type == 'approval':
+            template = loader.get_template('modals/approval_comment.html')
         elif type == 'flag':
             template = loader.get_template('modals/flag_comment.html')
 
