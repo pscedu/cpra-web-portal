@@ -194,6 +194,8 @@ class ValidationAssignmentComment(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
     metric_options = models.JSONField(null=True, default=None)
+    is_approval = models.SmallIntegerField(default=0)
+    is_flag = models.SmallIntegerField(default=0)
 
 
 class ValidationItemMetrics(models.Model):
