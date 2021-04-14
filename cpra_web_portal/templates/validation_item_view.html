@@ -130,7 +130,13 @@
 						data: JSON.stringify(body),
 						success: function(){
 							body['user_name'] = user_name
-							// TODO: Add comment if there is no review item yet. If there is a review item - replace it with this one.
+
+							$('.review-comment').each(function(){
+								if($(this).find('strong').text() === user_name){
+									$(this).remove();
+								}
+							})
+
 							add_comment(body)
 							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 							bs_modal.hide();
@@ -437,7 +443,7 @@
 			$comment_container.find('#comments-comment-template').text(comment_dict['comments']).attr('id', '');
 
 			if(comment_dict['is_review'])
-				$comment_container.addClass(comment_dict['is_flag'] ? 'list-group-item-danger' : 'list-group-item-info');
+				$comment_container.addClass(comment_dict['is_flag'] ? 'list-group-item-danger' : 'list-group-item-info').addClass('review-comment');
 			else if(comment_dict['is_approval'])
 				$comment_container.addClass('list-group-item-success');
 
