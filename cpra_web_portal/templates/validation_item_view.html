@@ -12,8 +12,9 @@
 			$("#btn-remove-approval").hide();
 		{% endif %}
 
+		// TODO: Probably just remove this.
 		{% if validation_item.srv_id.is_flagged %}
-			$("#btn-flag").hide();
+			$("#btn-review").hide();
 		{% else %}
 			$("#btn-unflag").hide();
 		{% endif %}
@@ -89,39 +90,38 @@
 		});
 
 
-		$('#modal-flag-comment').on('show.bs.modal', function(e){
+		$('#modal-review-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'flag' %}", function(response){
+
+			let metric_id = $('#metric_select').find('option:selected').data('metric_id');
+			let metric_options = {}
+			$('.metric_options:visible').find('.form-control').each(function(index, element){
+				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
+			});
+			metric_options = encodeURI(JSON.stringify(metric_options))
+
+			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
 				$modal.append(response);
-				$('#misc-comment-save').on('click', function(){
+				$('#review-comment-save').on('click', function(){
+					let radio_id = $('.form-check-input:radio:checked').attr('id');
 					let comment = $('#textarea-comment').val();
-					let is_output_item_assigned = $('#checkbox-is-output-item').is(':checked');
+					let is_flag = radio_id === 'not-intuitive' ? $('#checkbox-flag').is(':checked') : 0;
+
 					let body = {
 						comments: comment,
-					    is_flag: 1,
-						validation_assignment_id: {{ validation_item.id }}
+					    is_flag: is_flag,
+						is_review: 1,
+						review_option: radio_id,
+						validation_assignment_id: {{ validation_item.id }},
 					}
 
-					if(is_output_item_assigned){
-						body['metric_options'] = {}
-						$('.metric_options:visible').find('.form-control').each(function(index, element){
-							body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
-						})
-						body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
-					}
-					else{
-						$.ajax({
-							url: "{% url 'validation_assignment_methods' validation_item.id 'flag' %}" ,
-							type: 'PUT',
-							headers: {'X-CSRFToken': csrftoken},
-							success: function(){
-								$('#btn-flag').hide();
-								$("#btn-unflag").show();
-							}
-						});
-					}
+					body['metric_options'] = {}
+					$('.metric_options:visible').find('.form-control').each(function (index, element) {
+						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
+					})
+					body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
 
 
 					$.post({
@@ -130,6 +130,7 @@
 						data: JSON.stringify(body),
 						success: function(){
 							body['user_name'] = user_name
+							// TODO: Add comment if there is no review item yet. If there is a review item - replace it with this one.
 							add_comment(body)
 							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 							bs_modal.hide();
@@ -138,6 +139,8 @@
 						}
 					});
 				});
+
+
 
 			});
 		});
@@ -148,7 +151,7 @@
 			$modal.empty();
 			$.get("{% url 'comment_modal_view' 'approval' %}", function(response){
 				$modal.append(response);
-				$('#misc-comment-save').on('click', function(){
+				$('#approval-comment-save').on('click', function(){
 					let comment = $('#textarea-comment').val();
 
 					let body = {
@@ -173,8 +176,6 @@
 						}
 					});
 
-
-
 					$.post({
 						url: "{% url 'validation_assignment_comment' %}",
 						headers: {'X-CSRFToken': csrftoken},
@@ -188,23 +189,11 @@
 
 						}
 					});
-
-						$.ajax({
-							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
-							type: 'PUT',
-							headers: {'X-CSRFToken': csrftoken},
-							success: function(data){
-
-							}
-						});
 				});
 
 			});
 		});
 
-		$("#btn-approve").on("click", function(){
-
-		});
 		$("#btn-remove-approval").on("click", function(){
 			let $this = $(this);
 			$.ajax({
@@ -218,6 +207,7 @@
 					})
 					$this.hide();
 					$("#btn-approve").show();
+					load_comments();
 				}
 			});
 		});
@@ -442,16 +432,14 @@
 
 		function add_comment(comment_dict){
 			let $comment_container = $('#comment-container-template').clone();
-			$comment_container.id = '';
-			$comment_container.find('#user-comment-template').text(comment_dict['user_name']).id = '';
-			$comment_container.find('#comments-comment-template').text(comment_dict['comments']).id='';
+			$comment_container.attr('id', '');
+			$comment_container.find('#user-comment-template').text(comment_dict['user_name']).attr('id', '')
+			$comment_container.find('#comments-comment-template').text(comment_dict['comments']).attr('id', '');
 
-			if(comment_dict['is_flag']){
-				$comment_container.addClass('list-group-item-danger');
-			}
-			else if(comment_dict['is_approval']){
+			if(comment_dict['is_review'])
+				$comment_container.addClass(comment_dict['is_flag'] ? 'list-group-item-danger' : 'list-group-item-info');
+			else if(comment_dict['is_approval'])
 				$comment_container.addClass('list-group-item-success');
-			}
 
 			let comment_container = comment_dict['metric_id'] != undefined ? $("#container-oi-comments") : $("#container-vi-comments");
 
@@ -510,7 +498,7 @@
 					<h1 id="metric_name" style="text-align: center;"></h1>
 				</div>
 				<div class="col-3">
-					<button id="btn-flag" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal-flag-comment">Flag</button>
+					<button id="btn-review" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-review-comment">Review</button>
 					<button id="btn-unflag" class="btn btn-success">Un-flag</button>
 					<button class="btn btn-primary disabled">Export</button>
 				</div>
@@ -598,7 +586,7 @@
 <div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
-<div class="modal fade" id="modal-flag-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="modal-review-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
 <div class="modal fade" id="modal-approval-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
