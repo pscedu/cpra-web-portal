@@ -196,6 +196,8 @@ class ValidationAssignmentComment(models.Model):
     metric_options = models.JSONField(null=True, default=None)
     is_approval = models.SmallIntegerField(default=0)
     is_flag = models.SmallIntegerField(default=0)
+    is_review = models.SmallIntegerField(default=0)
+    review_option = models.CharField(max_length=50, default=None, null=True)
 
 
 class ValidationItemMetrics(models.Model):
