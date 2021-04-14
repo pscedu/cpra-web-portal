@@ -389,7 +389,6 @@ class ValidationAssignment(View):
 
         validation_item.save()
 
-        # TODO: Add something here that updates related items
         if method in ['approve', 'remove_approval']:
             utils.update_approval(validation_item)
 
@@ -408,12 +407,28 @@ class ValidationAssignmentComment(View):
             'comments': body['comments'],
             'is_flag': body.get('is_flag', 0),
             'is_approval': body.get('is_approval', 0),
+            'is_review': body.get('is_review', 0),
+            'review_option': body.get('review_option', None),
             'metric_id_id': body.get('metric_id', None),
             'metric_options': body.get('metric_options', None)
         }
 
-        validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-        validation_assignment_comment.save()
+        # For review comments, we should update an existing review comment if it exists.
+        if validation_assignment_comment_data['is_review']:
+            validation_assignment_review_comment = models.ValidationAssignmentComment.objects.filter(
+                srv_id=validation_assignment_comment_data['srv_id'],
+                metric_id_id=validation_assignment_comment_data['metric_id_id'],
+                metric_options=validation_assignment_comment_data['metric_options'],
+                user_id=validation_assignment_comment_data['user_id'],
+                is_review=1)
+            if validation_assignment_review_comment is None:
+                validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+                validation_assignment_comment.save()
+            else:
+                validation_assignment_review_comment.update(**validation_assignment_comment_data)
+        else:
+            validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+            validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
         return HttpResponse(status=200)
@@ -673,7 +688,17 @@ class CommentModal(View):
             template = loader.get_template('modals/misc_comment.html')
         elif type == 'approval':
             template = loader.get_template('modals/approval_comment.html')
-        elif type == 'flag':
-            template = loader.get_template('modals/flag_comment.html')
+        elif type == 'review':
+            validation_assignment_id = request.GET.get('validation_assignment_id')
+            metric_id = request.GET.get('metric_id')
+            metric_options = json.loads(request.GET.get('metric_options', '{}'))
+            comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
+                                                                        srv_id=validation_assignment_id,
+                                                                        metric_options=metric_options,
+                                                                        is_review=1,
+                                                                        user_id=request.user).first()
+            context['comment'] = comment
+            # Check to see if a review of this output item already exists. If so, grab it.
+            template = loader.get_template('modals/review_comment.html')
 
         return HttpResponse(template.render(context, request))
