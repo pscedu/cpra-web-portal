@@ -1,0 +1,66 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> Review Output Item </h4>
+{% endblock %}
+{% block modal_body %}
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="first-check" id="intuitive-no-comment" {% if not comment or comment.review_option == 'intuitive-no-comment' %} checked {% endif %}>
+  <label class="form-check-label" for="intuitive-no-comment">
+    Run looks intuitive, no comment.
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="first-check" id="intuitive-comment" {% if comment.review_option == 'intuitive-comment' %} checked {% endif %}>
+  <label class="form-check-label" for="intuitive-comment">
+    Run looks intuitive, will comment.
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="first-check" id="not-intuitive" {% if comment.review_option == 'not-intuitive' %} checked {% endif %}>
+  <label class="form-check-label" for="not-intuitive">
+    Run does not look intuitive.
+  </label>
+</div>
+
+<div id="container-checkbox-flag" class="form-check"
+     {% if comment.review_option != 'not-intuitive' %} style="display: none;" {% endif %}>
+  <input class="form-check-input" type="checkbox" value="" id="checkbox-flag" {% if comment.is_flag %} checked {% endif %}>
+  <label class="form-check-label" for="checkbox-flag">
+    Does the run need to be flagged for review?
+  </label>
+</div>
+
+            <!--        Comment text area -->
+<div id="container-textarea-comment" class="form-floating"
+     {% if comment.review_option == 'intuitive-no-comment' %} style="display: none;" {% endif %}>
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;">{{ comment.comments }}</textarea>
+        <label for="textarea-comment">Comment</label>
+</div>
+
+
+<script>
+    $(document).ready(function(){
+        $('.form-check-input:radio').on('change', function(){
+            let radio_id = $(this).attr('id');
+            if(radio_id==='not-intuitive'){
+                $('#container-textarea-comment').show();
+                $('#container-checkbox-flag').show();
+            }
+            else{
+                $('#container-checkbox-flag').hide();
+                $('#checkbox-flag').prop('checked', false);
+                if(radio_id === 'intuitive-comment')
+                    $('#container-textarea-comment').show();
+                else if(radio_id === 'intuitive-no-comment'){
+                    $('#container-textarea-comment').hide();
+                    $('#textarea-comment').val('Run looks intuitive, no comment.');
+                }
+            }
+        });
+    })
+</script>
+{% endblock %}
+{% block modal_footer %}
+    <button id="review-comment-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}
