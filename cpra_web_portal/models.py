@@ -37,6 +37,13 @@ class Subroutine(models.Model):
                 'data_source_value': 'id',
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
+            },
+            'is_approved': {
+                'name': 'Approved',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int'
             }
         }
 
@@ -77,6 +84,13 @@ class ValidationItem(models.Model):
                 'data_source_value': 'id',
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
+            },
+            'srv_id__is_approved': {
+                'name': 'Approved',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int'
             }
         }
 
@@ -135,6 +149,13 @@ class SimulationRun(models.Model):
                 'data_source_value': 'id',
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
+            },
+            'is_approved': {
+                'name': 'Approved',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int'
             }
         }
 

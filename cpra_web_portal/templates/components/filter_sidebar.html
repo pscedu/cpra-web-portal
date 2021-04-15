@@ -6,8 +6,9 @@
 </div>
 {% for filter_id, filter in filters.items %}
 <div class="row my-2">
+    {% if filter.type in 'multiselect,select' %}
     <label for="{{ filter_id }}">{{ filter.name }}</label>
-    <select id="{{ filter_id }}" class="form-control"
+    <select id="{{ filter_id }}" class="form-control filter-item"
     {% if filter.type == "multiselect" %}
     multiple
     {% endif %}
@@ -20,6 +21,15 @@
         >{{ option.text }}</option>
         {% endfor %}
     </select>
+    {% else %}
+    {% if filter.type == 'checkbox' %}
+<div class="form-check my-2">
+  <input class="form-check-input filter-item" type="checkbox" value="{{ filter.value }}" id="{{ filter_id }}"
+  {% if filter.value == 1 %} checked {% endif %}>
+  <label class="form-check-label" for="{{ filter_id }}">{{ filter.name }}</label>
+</div>
+      {% endif %}
+    {% endif %}
 </div>
 {% endfor %}
 <div class="row my-2">
@@ -32,7 +42,7 @@
     })
     function filter(){
         let filters = {};
-        Array.from(document.getElementsByClassName('form-control')).forEach(function(el){
+        Array.from(document.getElementsByClassName('filter-item')).forEach(function(el){
             let val;
             if(el.nodeName==="SELECT"){
                 val = []
@@ -40,11 +50,15 @@
                     val.push(parseInt(e.id))
                 })
             }
+            else if(el.type === 'checkbox'){
+                val = el.checked ? '1' : '0'
+            }
             else{
                 val = el.value
             }
 
-            if(el.value)
+            console.log(val)
+            if(val !== undefined && val.length >0)
                 filters[el.getAttribute('id')] = val
         })
 

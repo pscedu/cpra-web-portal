@@ -510,7 +510,7 @@ class Home(View):
 class SimulationRunsListView(View):
     def get(self, request):
         template = loader.get_template('simulation_runs_list_view.html')
-        sim_runs = models.SimulationRun.objects.filter(is_approved=False).select_related('sim_id')
+        sim_runs = models.SimulationRun.objects.all().select_related('sim_id')
 
         filters = models.SimulationRun.get_list_view_filters()
 
@@ -518,7 +518,8 @@ class SimulationRunsListView(View):
 
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            sim_runs = utils.filter_queryset(sim_runs, request)
+
+        sim_runs = utils.filter_queryset(sim_runs, filters)
 
         context = {
             'filters': filters,
@@ -531,15 +532,15 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id,
-                                                                            is_approved=False).select_related(
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related(
             'srv_id__sub_id')
 
         filters = models.Subroutine.get_list_view_filters()
         utils.populate_filters(filters)
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            validation_assignments = utils.filter_queryset(validation_assignments, request)
+
+        validation_assignments = utils.filter_queryset(validation_assignments, filters)
 
         subroutines = []
         grouped_validation_assignments = []
@@ -565,7 +566,6 @@ class SubroutinesListView(View):
 
 
 class Tasks(View):
-
     def get(self, request):
         context = {
             'open_tasks': [],
@@ -577,9 +577,11 @@ class Tasks(View):
 
         filters = models.ValidationAssignment.get_list_view_filters()
         utils.populate_filters(filters)
+
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            tasks = utils.filter_queryset(tasks, request)
+
+        tasks = utils.filter_queryset(tasks, filters)
 
         context['filters'] = filters
 
@@ -622,13 +624,14 @@ class UsersListView(View):
 
 class ValidationItemsListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False)
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
 
         filters = models.ValidationItem.get_list_view_filters()
         utils.populate_filters(filters)
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            validation_assignments = utils.filter_queryset(validation_assignments, request)
+
+        validation_assignments = utils.filter_queryset(validation_assignments, filters)
 
         context = {
             'validation_assignments': validation_assignments.select_related('srv_id__sr_id').select_related(
