@@ -376,6 +376,14 @@ class ValidationAssignment(View):
             df = dateformat.DateFormat(validation_item.datetime_approved)
             response['datetime_approved'] = df.format('N j, Y, P')
         elif method == 'remove_approval':
+            # TODO: Ask whether we should remove approval comment or modify it to not be an approval (modify comment?)
+            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
+            # Deletion
+            comment.delete()
+            # Modification
+            # comment.comments = "UNAPPROVED: " + comment.comments
+            # comment.is_approval = 0
+            # comment.save()
             validation_item.is_approved = 0
             validation_item.datetime_approved = None
         elif method == 'flag':
