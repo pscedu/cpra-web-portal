@@ -46,9 +46,11 @@ def get_comments(request):
     metric_id = request.GET.get('metric_id')
     metric_options = json.loads(request.GET.get('metric_options'))
 
-    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment_id, metric_id=None)
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
 
-    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment_id, metric_options=metric_options)
+    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment.srv_id, metric_id=None)
+
+    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment.srv_id, metric_options=metric_options)
 
     response = []
     # Prep the comments for response
@@ -376,14 +378,8 @@ class ValidationAssignment(View):
             df = dateformat.DateFormat(validation_item.datetime_approved)
             response['datetime_approved'] = df.format('N j, Y, P')
         elif method == 'remove_approval':
-            # TODO: Ask whether we should remove approval comment or modify it to not be an approval (modify comment?)
             comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
-            # Deletion
             comment.delete()
-            # Modification
-            # comment.comments = "UNAPPROVED: " + comment.comments
-            # comment.is_approval = 0
-            # comment.save()
             validation_item.is_approved = 0
             validation_item.datetime_approved = None
         elif method == 'flag':
@@ -429,7 +425,7 @@ class ValidationAssignmentComment(View):
                 metric_options=validation_assignment_comment_data['metric_options'],
                 user_id=validation_assignment_comment_data['user_id'],
                 is_review=1)
-            if validation_assignment_review_comment is None:
+            if not validation_assignment_review_comment:
                 validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
                 validation_assignment_comment.save()
             else:
@@ -703,8 +699,9 @@ class CommentModal(View):
             validation_assignment_id = request.GET.get('validation_assignment_id')
             metric_id = request.GET.get('metric_id')
             metric_options = json.loads(request.GET.get('metric_options', '{}'))
+            validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
             comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
-                                                                        srv_id=validation_assignment_id,
+                                                                        srv_id=validation_assignment.srv_id,
                                                                         metric_options=metric_options,
                                                                         is_review=1,
                                                                         user_id=request.user).first()
