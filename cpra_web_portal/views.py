@@ -46,14 +46,19 @@ def get_comments(request):
     metric_id = request.GET.get('metric_id')
     metric_options = json.loads(request.GET.get('metric_options'))
 
-    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment_id, metric_id=None)
+    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
 
-    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment_id, metric_options=metric_options)
+    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment.srv_id, metric_id=None)
+
+    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment.srv_id, metric_options=metric_options)
 
     response = []
     # Prep the comments for response
-    for comment in srv_comments.union(metric_comments):
-        response.append({'user_name': comment.user_id.username, 'comment': comment.comments})
+    for comment in metric_comments.union(srv_comments):
+        user_name = comment.user_id.username
+        comment_dict = model_to_dict(comment)
+        comment_dict['user_name'] = user_name
+        response.append(comment_dict)
 
     return HttpResponse(json.dumps(response))
 
@@ -373,6 +378,8 @@ class ValidationAssignment(View):
             df = dateformat.DateFormat(validation_item.datetime_approved)
             response['datetime_approved'] = df.format('N j, Y, P')
         elif method == 'remove_approval':
+            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
+            comment.delete()
             validation_item.is_approved = 0
             validation_item.datetime_approved = None
         elif method == 'flag':
@@ -386,7 +393,6 @@ class ValidationAssignment(View):
 
         validation_item.save()
 
-        # TODO: Add something here that updates related items
         if method in ['approve', 'remove_approval']:
             utils.update_approval(validation_item)
 
@@ -402,13 +408,31 @@ class ValidationAssignmentComment(View):
         validation_assignment_comment_data = {
             'srv_id': validation_assignment.srv_id,
             'user_id': request.user,
-            'comments': body['comment'],
+            'comments': body['comments'],
+            'is_flag': body.get('is_flag', 0),
+            'is_approval': body.get('is_approval', 0),
+            'is_review': body.get('is_review', 0),
+            'review_option': body.get('review_option', None),
             'metric_id_id': body.get('metric_id', None),
             'metric_options': body.get('metric_options', None)
         }
 
-        validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-        validation_assignment_comment.save()
+        # For review comments, we should update an existing review comment if it exists.
+        if validation_assignment_comment_data['is_review']:
+            validation_assignment_review_comment = models.ValidationAssignmentComment.objects.filter(
+                srv_id=validation_assignment_comment_data['srv_id'],
+                metric_id_id=validation_assignment_comment_data['metric_id_id'],
+                metric_options=validation_assignment_comment_data['metric_options'],
+                user_id=validation_assignment_comment_data['user_id'],
+                is_review=1)
+            if not validation_assignment_review_comment:
+                validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+                validation_assignment_comment.save()
+            else:
+                validation_assignment_review_comment.update(**validation_assignment_comment_data)
+        else:
+            validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+            validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
         return HttpResponse(status=200)
@@ -490,7 +514,7 @@ class Home(View):
 class SimulationRunsListView(View):
     def get(self, request):
         template = loader.get_template('simulation_runs_list_view.html')
-        sim_runs = models.SimulationRun.objects.filter(is_approved=False).select_related('sim_id')
+        sim_runs = models.SimulationRun.objects.all().select_related('sim_id')
 
         filters = models.SimulationRun.get_list_view_filters()
 
@@ -498,7 +522,8 @@ class SimulationRunsListView(View):
 
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            sim_runs = utils.filter_queryset(sim_runs, request)
+
+        sim_runs = utils.filter_queryset(sim_runs, filters)
 
         context = {
             'filters': filters,
@@ -511,15 +536,15 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id,
-                                                                            is_approved=False).select_related(
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related(
             'srv_id__sub_id')
 
         filters = models.Subroutine.get_list_view_filters()
         utils.populate_filters(filters)
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            validation_assignments = utils.filter_queryset(validation_assignments, request)
+
+        validation_assignments = utils.filter_queryset(validation_assignments, filters)
 
         subroutines = []
         grouped_validation_assignments = []
@@ -545,7 +570,6 @@ class SubroutinesListView(View):
 
 
 class Tasks(View):
-
     def get(self, request):
         context = {
             'open_tasks': [],
@@ -557,9 +581,11 @@ class Tasks(View):
 
         filters = models.ValidationAssignment.get_list_view_filters()
         utils.populate_filters(filters)
+
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            tasks = utils.filter_queryset(tasks, request)
+
+        tasks = utils.filter_queryset(tasks, filters)
 
         context['filters'] = filters
 
@@ -602,13 +628,14 @@ class UsersListView(View):
 
 class ValidationItemsListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id, is_approved=False)
+        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
 
         filters = models.ValidationItem.get_list_view_filters()
         utils.populate_filters(filters)
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
-            validation_assignments = utils.filter_queryset(validation_assignments, request)
+
+        validation_assignments = utils.filter_queryset(validation_assignments, filters)
 
         context = {
             'validation_assignments': validation_assignments.select_related('srv_id__sr_id').select_related(
@@ -666,9 +693,20 @@ class CommentModal(View):
         context = {}
         if type == 'misc':
             template = loader.get_template('modals/misc_comment.html')
-        elif type == 'approve':
-            template = loader.get_template('modals/approve_comment.html')
-        elif type == 'flag':
-            template = loader.get_template('modals/flag_comment.html')
+        elif type == 'approval':
+            template = loader.get_template('modals/approval_comment.html')
+        elif type == 'review':
+            validation_assignment_id = request.GET.get('validation_assignment_id')
+            metric_id = request.GET.get('metric_id')
+            metric_options = json.loads(request.GET.get('metric_options', '{}'))
+            validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
+            comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
+                                                                        srv_id=validation_assignment.srv_id,
+                                                                        metric_options=metric_options,
+                                                                        is_review=1,
+                                                                        user_id=request.user).first()
+            context['comment'] = comment
+            # Check to see if a review of this output item already exists. If so, grab it.
+            template = loader.get_template('modals/review_comment.html')
 
         return HttpResponse(template.render(context, request))

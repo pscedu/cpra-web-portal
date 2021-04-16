@@ -18,6 +18,8 @@ def populate_filters(filters):
                     'value': str(filter_option[filter['data_source_value']]),
                     'text': filter_option[filter['data_source_text']]
                 })
+        if 'default' in filter:
+            filter['value'] = filter['default']
 
 
 def set_filter_values(filters, request):
@@ -34,12 +36,9 @@ def set_filter_values(filters, request):
 
 def filter_queryset(queryset, request):
     filter_dict = {}
-    for query_object in request.GET:
-        if 'in' in query_object:
-            value = request.GET.get(query_object).split(',')
-        else:
-            value = request.GET.get(query_object)
-        filter_dict[query_object] = value
+    for filter_id, filter_obj in request.items():
+        if 'value' in filter_obj:
+            filter_dict[filter_id] = filter_obj['value']
 
     return queryset.filter(**filter_dict)
 

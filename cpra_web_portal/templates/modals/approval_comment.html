@@ -1,0 +1,15 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> New Approval </h4>
+{% endblock %}
+{% block modal_body %}
+            <!--        Comment text area -->
+<div class="form-floating">
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"></textarea>
+        <label for="textarea-comment">Comment</label>
+</div>
+{% endblock %}
+{% block modal_footer %}
+    <button id="approval-comment-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}
