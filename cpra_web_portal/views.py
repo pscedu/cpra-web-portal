@@ -11,6 +11,8 @@ from django.template import loader
 from django.utils import timezone, dateformat
 from django.views import View
 from django.urls import reverse
+from django.core.cache import cache
+import pandas as pa
 
 from . import models, utils
 
@@ -105,26 +107,32 @@ def get_dynamic_graph_metric(request):
 
     json_from_csv = []
 
-    try:
-        if metric_data_model == 'extraction_points':
-            with open(file_path, "r") as f:
-                dict_reader = csv.DictReader(f)
-                json_from_csv = list(dict_reader)
-        else:
-            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
-                with open(os.path.join(file_path, file), 'r') as f:
-                    if metric_data_model == 'hydro_compartments':
-                        csv_reader = list(csv.DictReader(f))
-                        json_from_csv.append(csv_reader[int(file_name)-1])
-                    elif metric_data_model == 'daily_hydro_compartments':
-                        csv_reader = csv.reader(f)
-                        # for this one, we need to iterate over each of these lines and get the column
-                        for row in csv_reader:
-                            json_from_csv.append({'value': row[int(file_name)-1]})
+    if metric_data_model == 'extraction_points':
+        with open(file_path, "r") as f:
+            dict_reader = csv.DictReader(f)
+            json_from_csv = list(dict_reader)
+    else:
+        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+            with open(os.path.join(file_path, file), 'r') as f:
+                if metric_data_model == 'hydro_compartments':
+                    csv_reader = list(csv.DictReader(f))
+                    json_from_csv.append(csv_reader[int(file_name)-1])
+                elif metric_data_model == 'daily_hydro_compartments':
+                    # for this one, we need to iterate over each of these lines and get the column
+                    result = None
+                    if not cache.keys(file+'_'+file_name):
+                        csv_reader = pa.read_csv(f, header=None)
+                        for col in csv_reader.columns:
+                            cache.set(file+'_'+str(col), csv_reader[col])
+                            if col == int(file_name)-1:
+                                result = csv_reader[col]
 
-        return HttpResponse(json.dumps(json_from_csv))
-    except:
-        return HttpResponse(status=500)
+                    result = cache.get(file+'_'+str(int(file_name)-1)) if result is None else result
+
+                    for row in result:
+                        json_from_csv.append({'value': row})
+
+    return HttpResponse(json.dumps(json_from_csv))
 
 
 def get_map_metric(request):
