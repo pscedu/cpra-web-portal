@@ -8,5 +8,15 @@
   },
   "ALLOWED_HOSTS": [],
   "DEBUG": true,
-  "FIXTURE_DIRS": ""
+  "FIXTURE_DIRS": "",
+  "EMAIL": {
+    "DEFAULT_FROM_EMAIL": "",
+    "EMAIL_HOST": "",
+    "EMAIL_HOST_PASSWORD": "",
+    "EMAIL_HOST_USER": "",
+    "EMAIL_PORT": "",
+    "EMAIL_BACKEND": "",
+    "EMAIL_USE_TLS": true
+  },
+  "CACHES": {}
 }
