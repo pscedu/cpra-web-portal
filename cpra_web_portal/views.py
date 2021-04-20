@@ -129,7 +129,12 @@ def get_dynamic_graph_metric(request):
 
                     result = cache.get(file+'_'+str(int(file_name)-1)) if result is None else result
 
-                    for row in result:
+                    # We only want to get a set of years (if the year is not -1)
+                    year = int(request.GET.get('year'))
+                    first_day = (year-1)*365 if year > 0 else 0
+                    last_day = year*365 if year > 0 else len(result)
+
+                    for row in result[first_day:last_day]:
                         json_from_csv.append({'value': row})
 
     return HttpResponse(json.dumps(json_from_csv))
