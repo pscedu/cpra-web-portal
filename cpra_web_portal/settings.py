@@ -124,21 +124,12 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login'
 LOGOUT_REDIRECT_URL = '/'
 
-DEFAULT_FROM_EMAIL = "CPRA NoReply <cpra-web-portal@psc.edu>"
-EMAIL_HOST = ""
-EMAIL_HOST_PASSWORD = ""
-EMAIL_HOST_USER = ""
-EMAIL_PORT = ""
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = settings['EMAIL']['DEFAULT_FROM_EMAIL']
+EMAIL_HOST = settings['EMAIL']['EMAIL_HOST']
+EMAIL_HOST_PASSWORD = settings['EMAIL']['EMAIL_HOST_PASSWORD']
+EMAIL_HOST_USER = settings['EMAIL']['EMAIL_HOST_USER']
+EMAIL_PORT = settings['EMAIL']['EMAIL_PORT']
+EMAIL_BACKEND = settings['EMAIL']['EMAIL_BACKEND']
+EMAIL_USE_TLS = settings['EMAIL']['EMAIL_USE_TLS']
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-        "TIMEOUT": 300
-    }
-}
+CACHES = settings['CACHES']
