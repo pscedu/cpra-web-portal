@@ -1,9 +1,11 @@
 import os
 import csv
+import pandas as pa
 
 from django.forms.models import model_to_dict
 from django.db.models import Sum, Count
 from django.apps import apps
+from django.core.cache import cache
 
 from . import models
 
@@ -130,10 +132,24 @@ def get_dynamic_graph_metric_files(metric, file_path):
     first_file_path = os.path.join(file_path, first_file)
 
     with open(first_file_path, 'r') as f:
-        dict_reader = csv.DictReader(f)
-        num_compartments = len(list(dict_reader)) if dynamic_graph_data_model == 'hydro_compartments' else len(next(dict_reader))
+        if dynamic_graph_data_model == 'daily_hydro_compartments':
+            if not cache.keys(first_file + '_0'):
+                csv_reader = pa.read_csv(f, header=None)
+                num_cols = 0
+                for col in csv_reader.columns:
+                    cache.set(first_file + '_' + str(col), csv_reader[col])
+                    num_cols += 1
+            else:
+                csv_reader = cache.get(first_file+'_0')
+                num_cols = len(cache.keys(first_file+'_*'))
+            num_rows = len(csv_reader)
+        else:
+            df = pa.read_csv(f)
+            num_rows = len(df)
+            num_cols = len(df.columns)
 
-    for x in range(1, num_compartments+1):
+    for x in range(1, num_cols+1):
         files['Coastwide'][str(x)] = str(x)
 
+    metric.graph_config['misc']['num_rows'] = num_rows
     return files
