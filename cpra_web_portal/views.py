@@ -24,12 +24,11 @@ def get_metric(request):
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
 
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
-        .select_related('srv_id__sr_id').first()
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related('sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.srv_id.sr_id.sim_id.results_dir,
-        validation_assignment.srv_id.sr_id.results_file_path,
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
         metric.file_path
     )
 
@@ -48,11 +47,11 @@ def get_comments(request):
     metric_id = request.GET.get('metric_id')
     metric_options = json.loads(request.GET.get('metric_options'))
 
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
 
-    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment.srv_id, metric_id=None)
+    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment, metric_id=None)
 
-    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment.srv_id, metric_options=metric_options)
+    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment, metric_options=metric_options)
 
     response = []
     # Prep the comments for response
@@ -71,12 +70,12 @@ def get_static_metric(request):
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
 
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
-        .select_related('srv_id__sr_id').first()
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
+        'sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.srv_id.sr_id.sim_id.results_dir,
-        validation_assignment.srv_id.sr_id.results_file_path,
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
         metric.file_path,
         file_name
     )
@@ -95,12 +94,11 @@ def get_dynamic_graph_metric(request):
     metric = models.Metric.objects.filter(id=metric_id).first()
     metric_data_model = metric.graph_config['misc']['data_model']
 
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
-        .select_related('srv_id__sr_id').first()
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related('sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.srv_id.sr_id.sim_id.results_dir,
-        validation_assignment.srv_id.sr_id.results_file_path,
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
         metric.file_path,
         file_name if metric_data_model == 'extraction_points' else ''
     )
@@ -146,12 +144,12 @@ def get_map_metric(request):
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
 
-    validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id) \
-        .select_related('srv_id__sr_id').first()
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
+        'sr_id').first()
 
     file_path = os.path.join(
-        validation_assignment.srv_id.sr_id.sim_id.results_dir,
-        validation_assignment.srv_id.sr_id.results_file_path,
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
         metric.file_path,
         file_name
     )
@@ -306,26 +304,49 @@ class ValidationItemView(View):
     def get(self, request, id):
         context = {}
 
-        validation_item = models.ValidationAssignment.objects.filter(id=id).select_related('srv_id__sr_id') \
-            .select_related('srv_id__sub_id').select_related('srv_id__vi_id').first()
+        srv = models.SimulationRunValidation.objects.filter(id=id).select_related('sr_id')\
+            .select_related('sub_id').select_related('vi_id').first()
 
-        context['validation_item'] = validation_item
+        context['validation_item'] = srv
 
         context['comments'] = []
         context['approvals'] = []
         context['metrics'] = []
 
-        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=validation_item.srv_id):
+        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=srv):
             context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
 
-        for approval in models.ValidationAssignment.objects.filter(srv_id=validation_item.srv_id, is_approved=1):
+        for approval in models.ValidationAssignment.objects.filter(srv_id=srv, is_approved=1):
             context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
 
         # Get related metrics
         for validation_item_metric in models.ValidationItemMetrics.objects.filter(
-                vi_id=validation_item.srv_id.vi_id).select_related('metric_id'):
+                vi_id=srv.vi_id).select_related('metric_id'):
             context['metrics'].append(
                 {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
+
+        # Check to see if there is an assignment for this user
+        edit_permission = False
+        is_approved = False
+
+        validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
+        context['validation_item_assignment'] = validation_item_assignment
+
+        context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
+
+        context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
+            else (request.user.groups.filter(name="Admin").exists() and srv.is_approved)
+
+        # { %
+        # if validation_item_assignment == None and not user | has_group: "Admin" %}
+        #
+        #
+        # { %
+        # if validation_item_assignment.is_approved or user | has_group: "Admin" and validation_item.is_approved %}
+        #
+        #
+        # { %
+        # if validation_item_assignment != None or user | has_group: "Admin" %}
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -383,31 +404,38 @@ class ValidationItemEditView(View):
 class ValidationAssignment(View):
     def put(self, request, id, method):
         response = {}
-        validation_item = models.ValidationAssignment.objects.get(pk=id)
-        srv = validation_item.srv_id
-        if method == 'approve':
-            validation_item.is_approved = 1
-            validation_item.datetime_approved = datetime.datetime.now()
-            df = dateformat.DateFormat(validation_item.datetime_approved)
-            response['datetime_approved'] = df.format('N j, Y, P')
-        elif method == 'remove_approval':
+
+        user = request.user
+        srv = models.SimulationRunValidation.objects.get(pk=id)
+        validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=user).first()
+
+        if validation_assignment:
+            if method == 'approve':
+                validation_assignment.is_approved = 1
+                validation_assignment.datetime_approved = datetime.datetime.now()
+                df = dateformat.DateFormat(validation_assignment.datetime_approved)
+                response['datetime_approved'] = df.format('N j, Y, P')
+            elif method == 'remove_approval':
+                validation_assignment.is_approved = 0
+                validation_assignment.datetime_approved = None
+
+            validation_assignment.save()
+            utils.update_approval(validation_assignment)
+
+        if method == 'remove_approval':
             comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
             comment.delete()
-            validation_item.is_approved = 0
-            validation_item.datetime_approved = None
-        elif method == 'flag':
-            srv.is_flagged = 1
-            srv.save()
-        elif method == 'unflag':
-            srv.is_flagged = 0
-            srv.save()
-        else:
-            return HttpResponse(status=500)
 
-        validation_item.save()
-
-        if method in ['approve', 'remove_approval']:
-            utils.update_approval(validation_item)
+        if user.groups.filter(name="Admin").exists():
+            if method == 'approve':
+                srv.is_approved = 1
+                srv.datetime_approved = datetime.datetime.now()
+                df = dateformat.DateFormat(srv.datetime_approved)
+                response['datetime_approved'] = df.format('N j, Y, P')
+            elif method == 'remove_approval':
+                srv.is_approved = 0
+                srv.datetime_approved = None
+            srv.save()
 
         return HttpResponse(json.dumps(response))
 
@@ -416,10 +444,10 @@ class ValidationAssignmentComment(View):
     def post(self, request):
         body = json.loads(request.body)
 
-        validation_assignment = models.ValidationAssignment.objects.get(pk=body['validation_assignment_id'])
+        validation_assignment = models.SimulationRunValidation.objects.get(pk=body['validation_assignment_id'])
 
         validation_assignment_comment_data = {
-            'srv_id': validation_assignment.srv_id,
+            'srv_id': validation_assignment,
             'user_id': request.user,
             'comments': body['comments'],
             'is_flag': body.get('is_flag', 0),
@@ -549,8 +577,7 @@ class SimulationRunsListView(View):
 
 class SubroutinesListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id).select_related(
-            'srv_id__sub_id')
+        validation_assignments = models.SimulationRunValidation.objects.select_related('sr_id').select_related('sub_id').all()
 
         filters = models.Subroutine.get_list_view_filters()
         utils.populate_filters(filters)
@@ -562,12 +589,12 @@ class SubroutinesListView(View):
         subroutines = []
         grouped_validation_assignments = []
         for validation_assignment in validation_assignments:
-            sub_id_sr_id_combo = validation_assignment.srv_id.sr_id.name + validation_assignment.srv_id.sub_id.name
+            sub_id_sr_id_combo = validation_assignment.sr_id.name + validation_assignment.sub_id.name
             if sub_id_sr_id_combo not in subroutines:
                 grouped_validation_assignments.append({
-                    'sr_id': validation_assignment.srv_id.sr_id,
-                    'sub_id': validation_assignment.srv_id.sub_id,
-                    'sim_id': validation_assignment.srv_id.sr_id.sim_id
+                    'sr_id': validation_assignment.sr_id,
+                    'sub_id': validation_assignment.sub_id,
+                    'sim_id': validation_assignment.sr_id.sim_id
                 })
                 subroutines.append(sub_id_sr_id_combo)
 
@@ -588,6 +615,7 @@ class Tasks(View):
             'open_tasks': [],
             'flagged_tasks': []
         }
+
         template = loader.get_template('tasks.html')
         tasks = models.ValidationAssignment.objects.all().filter(user_id=request.user) \
             .select_related('srv_id__sr_id__sim_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')
@@ -603,12 +631,12 @@ class Tasks(View):
         context['filters'] = filters
 
         for task in tasks:
-            # We need to get all of the Validation Assignments with the same sr_id, sub_id, and vi_id
-            # check whether they've been flagged by other users
-            if task.srv_id.is_flagged:
+            # Should check to see whether there are any comment flags for the SRV
+            flag_comments = models.ValidationAssignmentComment.objects.filter(srv_id=task.srv_id, is_flag=1).all()
+            if flag_comments:
                 context['flagged_tasks'].append(task)
             # If the user has not approved this task, then we need to add it to that list as well
-            if not task.is_approved:
+            if not task.is_approved and not task.srv_id.is_approved:
                 context['open_tasks'].append(task)
 
         return HttpResponse(template.render(context, request))
@@ -641,9 +669,9 @@ class UsersListView(View):
 
 class ValidationItemsListView(View):
     def get(self, request):
-        validation_assignments = models.ValidationAssignment.objects.filter(user_id=request.user.id)
+        validation_assignments = models.SimulationRunValidation.objects.all()
 
-        filters = models.ValidationItem.get_list_view_filters()
+        filters = models.SimulationRunValidation.get_list_view_filters()
         utils.populate_filters(filters)
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
@@ -651,8 +679,8 @@ class ValidationItemsListView(View):
         validation_assignments = utils.filter_queryset(validation_assignments, filters)
 
         context = {
-            'validation_assignments': validation_assignments.select_related('srv_id__sr_id').select_related(
-                'srv_id__sub_id').select_related('srv_id__vi_id').all(),
+            'validation_assignments': validation_assignments.select_related('sr_id').select_related(
+                'sub_id').select_related('vi_id').all(),
             'filters': filters
         }
 

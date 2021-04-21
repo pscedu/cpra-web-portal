@@ -1,23 +1,42 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load util_filters %}
 {% block content %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.panzoom/4.0.0/panzoom.min.js" integrity="sha512-9P4403el58YclVUmhMst5Bzpcy+i0V0F0wiMlrkTDgmVqYXhF+tccpnhGIHKzKPXKaTF0Q4J9UEhu2i6PckJWg==" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.css" integrity="sha512-C7hOmCgGzihKXzyPU/z4nv97W0d9bv4ALuuEbSf6hm93myico9qa0hv4dODThvCsqQUmKmLcJmlpRmCaApr83g==" crossorigin="anonymous" />
 <script>
 	$(document).ready(function(){
-		{% if validation_item.is_approved %}
-			$("#btn-approve").hide();
+		{% if edit_permission %}
+			$("#btn-remove-approval").on("click", function(){
+				let $this = $(this);
+				$.ajax({
+					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
+					type: 'PUT',
+					headers: {'X-CSRFToken': csrftoken},
+					success: function(){
+						$("#container-approvals").find('.list-group-item-action').each(function(i, e){
+							if($(e).find('strong').text() == user_name)
+								e.remove();
+						})
+						$this.hide();
+						$("#btn-approve").show();
+						load_comments();
+					}
+				});
+			});
+
+			{% if is_approved %}
+				$("#btn-approve").hide();
+			{% else %}
+				$("#btn-remove-approval").hide();
+			{% endif %}
 		{% else %}
-			$("#btn-remove-approval").hide();
+			$('#btn-approve').hide();
+			$('#btn-remove-approval').hide();
+			$('#btn-review').hide();
 		{% endif %}
 
-		// TODO: Probably just remove this.
-		{% if validation_item.srv_id.is_flagged %}
-			$("#btn-review").hide();
-		{% else %}
-			$("#btn-unflag").hide();
-		{% endif %}
 		const user_name = "{{ user.username }}"
 		const csrftoken = Cookies.get('csrftoken');
 
@@ -117,9 +136,6 @@
 						}
 					});
 				});
-
-
-
 			});
 		});
 
@@ -138,21 +154,23 @@
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
-					$.ajax({
-						url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
-						type: 'PUT',
-						headers: {'X-CSRFToken': csrftoken},
-						success: function(data){
-							$('#btn-approve').hide();
-							$("#btn-remove-approval").show();
-							data = JSON.parse(data);
-							let $approve_container = $('#approval-container-template').clone();
-							$approve_container.removeAttr('id');
-							$approve_container.find('#user-approval-template').text(user_name).removeAttr('id');
-							$approve_container.find('#datetime-approval-template').text(data['datetime_approved']).removeAttr('id');
-							$("#container-approvals").append($approve_container);
-						}
-					});
+					{% if edit_permission %}
+						$.ajax({
+							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
+							type: 'PUT',
+							headers: {'X-CSRFToken': csrftoken},
+							success: function(data){
+								$('#btn-approve').hide();
+								$("#btn-remove-approval").show();
+								data = JSON.parse(data);
+								let $approve_container = $('#approval-container-template').clone();
+								$approve_container.removeAttr('id');
+								$approve_container.find('#user-approval-template').text(user_name).removeAttr('id');
+								$approve_container.find('#datetime-approval-template').text(data['datetime_approved']).removeAttr('id');
+								$("#container-approvals").append($approve_container);
+							}
+						});
+					{% endif %}
 
 					$.post({
 						url: "{% url 'validation_assignment_comment' %}",
@@ -172,36 +190,7 @@
 			});
 		});
 
-		$("#btn-remove-approval").on("click", function(){
-			let $this = $(this);
-			$.ajax({
-				url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
-				type: 'PUT',
-				headers: {'X-CSRFToken': csrftoken},
-				success: function(){
-					$("#container-approvals").find('.list-group-item-action').each(function(i, e){
-						if($(e).find('strong').text() == user_name)
-							e.remove();
-					})
-					$this.hide();
-					$("#btn-approve").show();
-					load_comments();
-				}
-			});
-		});
 
-		$("#btn-unflag").on("click", function(){
-			let $this = $(this);
-			$.ajax({
-				url: "{% url 'validation_assignment_methods' validation_item.id 'unflag' %}" ,
-				type: 'PUT',
-				headers: {'X-CSRFToken': csrftoken},
-				success: function(){
-					$this.hide();
-					$("#btn-flag").show();
-				}
-			});
-		});
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
@@ -496,7 +485,6 @@
 				</div>
 				<div class="col-3">
 					<button id="btn-review" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-review-comment">Review</button>
-					<button id="btn-unflag" class="btn btn-success">Un-flag</button>
 					<button class="btn btn-primary disabled">Export</button>
 				</div>
 			</div>
@@ -532,14 +520,14 @@
 		</div>
 		<div class="col-2 bg-light" style="border: 1px solid #C5C5C5">
 			<h3>
-				{{ validation_item.srv_id.sr_id.sim_id.name }}
-				{{ validation_item.srv_id.sr_id.name }}
+				{{ validation_item.sr_id.sim_id.name }}
+				{{ validation_item.sr_id.name }}
 			</h3>
 			<h5>
-				{{ validation_item.srv_id.sub_id.name }}
-				{{ validation_item.srv_id.vi_id.name }}
+				{{ validation_item.sub_id.name }}
+				{{ validation_item.vi_id.name }}
 			</h5>
-			<p>{{ validation_item.srv_id.vi_id.description }}</p>
+			<p>{{ validation_item.vi_id.description }}</p>
 					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
 					<button id="btn-approve" data-bs-toggle="modal" data-bs-target="#modal-approval-comment" class="btn btn-success">Approve</button>
 			<div class="row my-2 py-2" style="border-top: 1px solid black;">
@@ -593,12 +581,4 @@
 <div class="modal fade" id="modal-approval-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
-
-<script>
-
-	$(document).ready(function (){
-
-	})
-
-</script>
 {% endblock %}

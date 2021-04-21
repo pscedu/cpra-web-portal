@@ -19,7 +19,7 @@
 				<div class="col-12">
 					<div class="list-group">
 						{% for open_task in open_tasks %}
-							<a href="{% url 'validation_item_view' open_task.id %}" class="list-group-item">
+							<a href="{% url 'validation_item_view' open_task.srv_id_id %}" class="list-group-item">
 							<h5 class="mb-1">
 								{{ open_task.srv_id.sr_id.sim_id.name }}
 								{{ open_task.srv_id.sr_id.name }}
@@ -29,14 +29,6 @@
 							<p class="mb-1">{{ open_task.srv_id.datetime_created }}</p>
 							</a>
 						{% endfor %}
-		<!--				<a href="#" class="list-group-item" style="background-color: #FFFD72">-->
-		<!--					<h5 class="mb-1">ICM - FWOA (G500) - ICM-Hydro - Salinity</h5>-->
-		<!--					<p class="mb-1">1/1/2021</p>-->
-		<!--				</a> -->
-		<!--				<a href="#" class="list-group-item" style="background-color: #FF7272">-->
-		<!--					<h5 class="mb-1">ICM - FWOA (G500) - ICM-Hydro - Salinity</h5>-->
-		<!--					<p class="mb-1">12/1/2020</p>-->
-		<!--				</a> -->
 					</div>
 				</div>
 			</div>
@@ -50,7 +42,7 @@
 				<div class="col-12">
 					<div class="list-group">
 						{% for flagged_task in flagged_tasks %}
-							<a href="{% url 'validation_item_view' flagged_task.id %}" class="list-group-item">
+							<a href="{% url 'validation_item_view' flagged_task.srv_id_id %}" class="list-group-item">
 							<h5 class="mb-1">
 								{{ flagged_task.srv_id.sr_id.sim_id.name }}
 								{{ flagged_task.srv_id.sr_id.name }}

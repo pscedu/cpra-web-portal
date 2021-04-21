@@ -20,7 +20,7 @@ class Subroutine(models.Model):
     @staticmethod
     def get_list_view_filters():
         return {
-            'srv_id__sr_id__in': {
+            'sr_id__in': {
                 'name': 'Simulation Run',
                 'type': 'multiselect',
                 'data_source': 'query',
@@ -29,7 +29,7 @@ class Subroutine(models.Model):
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
             },
-            'srv_id__sub_id__in': {
+            'sub_id__in': {
                 'name': 'Subroutine',
                 'type': 'multiselect',
                 'data_source': 'query',
@@ -58,7 +58,7 @@ class ValidationItem(models.Model):
     @staticmethod
     def get_list_view_filters():
         return {
-            'srv_id__sr_id__in': {
+            'sr_id__in': {
                 'name': 'Simulation Run',
                 'type': 'multiselect',
                 'data_source': 'query',
@@ -67,7 +67,7 @@ class ValidationItem(models.Model):
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
             },
-            'srv_id__sub_id__in': {
+            'sub_id__in': {
                 'name': 'Subroutine',
                 'type': 'multiselect',
                 'data_source': 'query',
@@ -76,7 +76,7 @@ class ValidationItem(models.Model):
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
             },
-            'srv_id__vi_id__in': {
+            'vi_id__in': {
                 'name': 'Validation Item',
                 'type': 'multiselect',
                 'data_source': 'query',
@@ -85,7 +85,7 @@ class ValidationItem(models.Model):
                 'data_source_text': 'name',
                 'data_source_value_type': 'list'
             },
-            'srv_id__is_approved': {
+            'is_approved': {
                 'name': 'Approved',
                 'type': 'checkbox',
                 'data_source': None,
@@ -168,6 +168,45 @@ class SimulationRunValidation(models.Model):
     datetime_approved = models.DateTimeField(null=True)
     is_approved = models.SmallIntegerField(default=0)
     is_flagged = models.SmallIntegerField(default=0)
+
+    @staticmethod
+    def get_list_view_filters():
+        return {
+            'sr_id__in': {
+                'name': 'Simulation Run',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'SimulationRun',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'sub_id__in': {
+                'name': 'Subroutine',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'Subroutine',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'vi_id__in': {
+                'name': 'Validation Item',
+                'type': 'multiselect',
+                'data_source': 'query',
+                'data_source_model': 'ValidationItem',
+                'data_source_value': 'id',
+                'data_source_text': 'name',
+                'data_source_value_type': 'list'
+            },
+            'is_approved': {
+                'name': 'Approved',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int'
+            }
+        }
 
 
 class ValidationAssignment(models.Model):
