@@ -86,18 +86,20 @@
 				$modal.append(response);
 				$('#simulation-subroutines-save').on('click', function(){
 					let subroutine_name = $('#select-simulation-subroutines').find('option:selected').text();
+					let step = $('#input-simulation-subroutine-step').val();
 					let subroutine_id = parseInt($('#select-simulation-subroutines').val());
 
 					$("#wf-simulation-subroutines-container").append('<tr data-id="">' +
 							'<th scope="row">'+subroutine_name+'</th>' +
+							'<td>'+step+'</td>' +
 							'</tr>'
 					);
 
 					let row_type = 'wf_simulation_subroutines'
 					if('add' in data[row_type])
-						data[row_type]['add'].push({sub_id_id: subroutine_id })
+						data[row_type]['add'].push({sub_id_id: subroutine_id, step: step })
 					else
-						data[row_type]['add'] = [{sub_id_id: subroutine_id }]
+						data[row_type]['add'] = [{sub_id_id: subroutine_id, step: step }]
 
 					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 					bs_modal.hide();
@@ -150,18 +152,20 @@
 					  <thead>
 						<tr>
 						  <th scope="col">Subroutine</th>
+							<th>Step #</th>
 							<th></th>
 						</tr>
 					  </thead>
 					  <tbody id="wf-simulation-subroutines-container">
 					  {% for wf_simulation_subroutine in wf_simulation_subroutines %}
-						<tr data-id="{{ wf_simulation_subroutine.id }}">
-						  <th style="cursor:pointer;" onclick="window.location='{% url 'subroutine_edit_view' wf_simulation_subroutine.id %}'" scope="row">{{ wf_simulation_subroutine.name }}</th>
+						<tr data-id="{{ wf_simulation_subroutine.sub_id_id }}">
+						  	<th style="cursor:pointer;" onclick="window.location='{% url 'subroutine_edit_view' wf_simulation_subroutine.sub_id_id %}'" scope="row">{{ wf_simulation_subroutine.sub_id.name }}</th>
+							<td>{{ wf_simulation_subroutine.step }}</td>
 							<td>
 								<a style="cursor: pointer" data-row_type="wf_simulation_subroutines" class="delete" title="" data-original-title="Delete">
 									<span style="color: red" class="material-icons">delete</span>
 								</a>
-                        	</td>
+							</td>
 						</tr>
 					  {% endfor %}
 					  </tbody>
