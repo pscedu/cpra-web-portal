@@ -9,6 +9,8 @@
             <option value="{{ subroutine_option.id }}">{{ subroutine_option.name }}</option>
         {% endfor %}
         </select>
+        <label for="input-simulation-subroutine-step">Step #</label>
+        <input name="step" id="input-simulation-subroutine-step" class="modal-form-control form-control" type="number" required min="1">
 {% endblock %}
 {% block modal_footer %}
     <button id="simulation-subroutines-save" type="button" class="btn btn-primary">Save</button>
