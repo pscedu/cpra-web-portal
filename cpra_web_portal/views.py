@@ -174,8 +174,8 @@ class SimulationEditView(View):
         context['wf_simulation_subroutines'] = []
 
         for wf_simulation_subroutine in models.WFSimulationSubroutine.objects.filter(
-                sim_id=simulation.id).select_related('sub_id').all():
-            context['wf_simulation_subroutines'].append(wf_simulation_subroutine.sub_id)
+                sim_id=simulation.id).select_related('sub_id').order_by('step').all():
+            context['wf_simulation_subroutines'].append(wf_simulation_subroutine)
 
         context['wf_assignments'] = models.WFAssignment.objects.filter(sim_id=simulation.id).select_related(
             'user_id').all()
