@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<script>
+	$(document).ready(function(){
+		{% if team.id != None %}
+			const team_id = {{ team.id }}
+		{% else %}
+		 	const team_id = null
+		{% endif %}
+
+		let data = {
+			'user_team': {}
+		}
+		const csrftoken = Cookies.get('csrftoken');
+		$("#btn-team-save").on("click", function(e){
+			data['id'] = team_id
+			// Gather data here to convert to JSON
+			// Iterate over form-control fields and get the data
+			$(".form-control").each(function(index, element){
+				let $element = $(element);
+				data[$element.attr('name')] = $element.val();
+			});
+
+			// perform post request
+			$.post({
+				url: "{% url 'team_new_view' %}",
+				headers: {'X-CSRFToken': csrftoken},
+				data: JSON.stringify(data),
+				success: function(response){
+					window.location.replace(JSON.parse(response)['url'])
+				}
+			})
+		});
+
+		$(document).on('click', '.delete', function(e){
+			let $this = $(this);
+			let $tr_parent = $this.parents('tr');
+			let row_type = $this.data('row_type');
+			let row_id = $tr_parent.data('id');
+			if(row_id!='')
+				if('delete' in data[row_type])
+					data[row_type]['delete'].push(row_id)
+				else
+					data[row_type]['delete'] = [row_id]
+
+			$tr_parent.remove();
+		});
+
+		$('#user-team-modal').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'team_modal_view' 'user_team' %}", function(response){
+				$modal.append(response);
+				$('#user-team-save').on('click', function(){
+					let username = $('#select-user-team-user').find('option:selected').text();
+					let user_id = parseInt($('#select-user-team-user').val());
+
+
+					$("#user-team-container").append('<tr data-id="">' +
+							'<th scope="row">'+username+'</th>' +
+							'</tr>'
+					);
+
+					let row_type = 'user_team'
+					if('add' in data[row_type])
+						data[row_type]['add'].push({user_id_id: user_id})
+					else
+						data[row_type]['add'] = [{user_id_id: user_id}]
+
+					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+					bs_modal.hide();
+					$modal.empty();
+				});
+			})
+		});
+	});
+</script>
+
+
+
+<div class="modal fade" id="user-team-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+
+<div class="container-fluid">
+			<div class="row justify-content-center my-4">
+			<h1>{{ team.name }}</h1>
+			</div>
+			<div class="row">
+				<div class="col-3 ">
+					<div class="row justify-content-center">
+						<h2>Details</h2>
+					</div>
+					<div class="row justify-content-center">
+						<form>
+						  <div class="form-group">
+							<label for="team-name">Name</label>
+							<input name="name" type="text" class="form-control" id="team-name" aria-describedby="emailHelp" value="{{ team.name }}">
+						  </div>
+							<button id="btn-team-save" type="button" class="btn btn-primary">Save Changes</button>
+						</form>
+					</div>
+				</div>
+				<div class="col-9">
+					<div class="row my-2 py-2" style="border-top: 1px solid black;">
+						<div class="col-12">
+							<h4>Users</h4>
+							<table class="table">
+					  <thead>
+						<tr>
+						  <th scope="col">User</th>
+							<th></th>
+						</tr>
+					  </thead>
+					  <tbody id="user-team-container">
+					  	{% for user_team in user_teams %}
+						<tr data-id="{{ user_team.id }}">
+						  <th style="cursor: pointer" onclick="window.location='{% url 'user_edit_view' user_team.user_id_id %}'" scope="row">{{ user_team.user_id.username }}</th>
+							<td>
+								<a style="cursor: pointer" data-row_type="user_team" class="delete" title="" data-original-title="Delete">
+									<span style="color: red" class="material-icons">delete</span>
+								</a>
+                        	</td>
+						</tr>
+					  	{% endfor %}
+					  </tbody>
+					</table>
+							
+						<button data-bs-toggle="modal" data-bs-target="#user-team-modal" class="btn btn-primary add">New</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+{% endblock %}
