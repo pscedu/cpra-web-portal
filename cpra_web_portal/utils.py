@@ -87,7 +87,15 @@ def create_tasks(related_tables):
             filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
             srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
             for srv in srvs:
-                if not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
+                # if the id that was passed is a team id - we need to get the related users and check to see if there are assignments
+                if assignment['team_id_id']:
+                    users = models.UserTeam.objects.filter(team_id_id=assignment['team_id_id']).all()
+                    for user in users:
+                        if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=srv):
+                            va = models.ValidationAssignment(**{'srv_id': srv, 'user_id': user.user_id})
+                            va.save()
+                # if the id that was passed is a user id - we only need to check to see if there are assignments
+                elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
                     # Then we need to create the validation assignment
                     va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
                     va.save()
