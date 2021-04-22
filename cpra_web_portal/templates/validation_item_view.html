@@ -40,6 +40,8 @@
 		const user_name = "{{ user.username }}"
 		const csrftoken = Cookies.get('csrftoken');
 
+		$('select').select2({width: '100%'});
+
 		$('#modal-misc-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
@@ -472,7 +474,7 @@
 		<div class="col-10">
 			<div class="row my-4">
 				<div class="col-3">
-						<label for="metric_select">Metric</label>
+					<label for="metric_select">Metric</label>
 					<select name="metric" id="metric_select" class="form-control">
 						{% for metric in metrics %}
 							<option data-metric_id="{{ metric.id }}"
@@ -489,29 +491,29 @@
 				</div>
 			</div>
 			<div class="row flex-grow-1">
-				<div class="col-1">
-					<div id="static_metric_options" class="row metric_options" style="display: none;">
+				<div class="col-2">
+					<div id="static_metric_options" class="metric_options" style="display: none;">
 						<label for="select_static_metric_region">Region</label>
 						<select name="region" class="form-control" id="select_static_metric_region"></select>
 						<label for="select_static_metric_data_points">Data Points</label>
 						<select name="data_point" class="form-control" id="select_static_metric_data_points"></select>
 					</div>
-					<div id="dynamic_graph_metric_options" class="row metric_options" style="display: none;">
+					<div id="dynamic_graph_metric_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_region">Region</label>
 						<select name="region" class="form-control" id="select_dynamic_graph_metric_region"></select>
 						<label for="select_dynamic_graph_metric_data_points">Data Points</label>
 						<select name="data_point" class="form-control" id="select_dynamic_graph_metric_data_points"></select>
 					</div>
-					<div id="dynamic_graph_metric_daily_options" class="row metric_options" style="display: none;">
+					<div id="dynamic_graph_metric_daily_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_year">Year</label>
 						<select name="year" class="form-control" id="select_dynamic_graph_metric_year"></select>
 					</div>
-					<div id="map_metric_options" class="row metric_options" style="display: none;">
+					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>
 						<select name="year" class="form-control" id="select_map_year"></select>
 					</div>
 				</div>
-				<div class="col-10 offset-1">
+				<div class="col-10">
 <!--							This is where the actual graph/static image will go -->
 					<div id="metric_container" class="row px-2"></div>
 
