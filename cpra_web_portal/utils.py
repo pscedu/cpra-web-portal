@@ -81,24 +81,46 @@ def update_related_tables(related_tables):
 
 def create_tasks(related_tables):
     parent_table = related_tables.get('parent_table')
-    wf_assignment = related_tables.get('WFAssignment')
-    if 'add' in wf_assignment:
-        for assignment in wf_assignment['add']:
-            filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
-            srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
-            for srv in srvs:
-                # if the id that was passed is a team id - we need to get the related users and check to see if there are assignments
-                if assignment['team_id_id']:
-                    users = models.UserTeam.objects.filter(team_id_id=assignment['team_id_id']).all()
-                    for user in users:
-                        if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=srv):
-                            va = models.ValidationAssignment(**{'srv_id': srv, 'user_id': user.user_id})
+    if 'WFAssignment' in related_tables:
+        wf_assignment = related_tables.get('WFAssignment')
+        if 'add' in wf_assignment:
+            for assignment in wf_assignment['add']:
+                filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
+                srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
+                for srv in srvs:
+                    # if the id that was passed is a team id
+                    # we need to get the related users and check to see if there are assignments
+                    if assignment['team_id_id']:
+                        users = models.UserTeam.objects.filter(team_id_id=assignment['team_id_id']).all()
+                        for user in users:
+                            if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=srv):
+                                va = models.ValidationAssignment(**{'srv_id': srv, 'user_id': user.user_id})
+                                va.save()
+                    # if the id that was passed is a user id - we only need to check to see if there are assignments
+                    elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
+                        # Then we need to create the validation assignment
+                        va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
+                        va.save()
+    elif 'UserTeam' in related_tables:
+        user_team = related_tables.get('UserTeam')
+        if 'add' in user_team:
+            for user in user_team['add']:
+                # We need to grab all of the assignments related to the team
+                filter_clause = {parent_table['id_field']: parent_table['id_value']}
+                wf_assignments = models.WFAssignment.objects.filter(**filter_clause).all()
+                for wf_assignment in wf_assignments:
+                    # Check to see which type of assignment this is
+                    related_id = wf_assignment.sim_id if wf_assignment.sim_id else \
+                        (wf_assignment.sub_id if wf_assignment.sub_id else wf_assignment.vi_id)
+                    srv_filter = 'sr_id__sim_id' if wf_assignment.sim_id else \
+                        ('sub_id' if wf_assignment.sub_id else 'vi_id')
+                    # Grab the srvs related to this assignment (aka if the srvs exist)
+                    srvs_to_check = models.SimulationRunValidation.objects.filter(
+                        **{srv_filter: related_id, 'is_approved': 0})
+                    for srv_to_check in srvs_to_check:
+                        if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'], srv_id=srv_to_check):
+                            va = models.ValidationAssignment(**{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
                             va.save()
-                # if the id that was passed is a user id - we only need to check to see if there are assignments
-                elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
-                    # Then we need to create the validation assignment
-                    va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
-                    va.save()
 
 
 def get_metric_files(metric, file_path):

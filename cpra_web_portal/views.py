@@ -336,9 +336,8 @@ class TeamView(View):
         # Update related tables
         related_tables['parent_table'] = {'id_field': 'team_id_id', 'id_value': team.id}
         utils.update_related_tables(related_tables)
-        # TODO: Create all of the tasks for the new users
-        # related_tables['parent_table'] = {'id_field': 'team_id_id', 'id_value': team.id}
-        # utils.create_tasks(related_tables)
+        related_tables['parent_table'] = {'id_field': 'team_id_id', 'id_value': team.id}
+        utils.create_tasks(related_tables)
 
         return HttpResponse(json.dumps({'url': reverse('team_edit_view', args=(team.id,))}))
 
