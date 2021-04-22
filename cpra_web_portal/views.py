@@ -325,10 +325,6 @@ class ValidationItemView(View):
             context['metrics'].append(
                 {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
 
-        # Check to see if there is an assignment for this user
-        edit_permission = False
-        is_approved = False
-
         validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
         context['validation_item_assignment'] = validation_item_assignment
 
@@ -336,17 +332,6 @@ class ValidationItemView(View):
 
         context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
             else (request.user.groups.filter(name="Admin").exists() and srv.is_approved)
-
-        # { %
-        # if validation_item_assignment == None and not user | has_group: "Admin" %}
-        #
-        #
-        # { %
-        # if validation_item_assignment.is_approved or user | has_group: "Admin" and validation_item.is_approved %}
-        #
-        #
-        # { %
-        # if validation_item_assignment != None or user | has_group: "Admin" %}
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -695,6 +680,7 @@ class ValidationItemModal(View):
         context = {}
         if type == 'wf_assignment':
             context['users'] = User.objects.all()
+            context['teams'] = models.Team.objects.all()
             template = loader.get_template('modals/wf_assignment.html')
         elif type == 'validation_item_metrics':
             context['metrics'] = models.Metric.objects.all()
@@ -708,6 +694,7 @@ class SubroutineModal(View):
         context = {}
         if type == 'wf_assignment':
             context['users'] = User.objects.all()
+            context['teams'] = models.Team.objects.all()
             template = loader.get_template('modals/wf_assignment.html')
         elif type == 'wf_subroutine_validation_items':
             context['validation_items'] = models.ValidationItem.objects.all()
