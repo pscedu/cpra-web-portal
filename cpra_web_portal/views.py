@@ -300,6 +300,49 @@ class UserView(View):
         return HttpResponse(json.dumps({'url': reverse('user_edit_view', args=(user.id,))}))
 
 
+class TeamView(View):
+    def get(self, request, id=None):
+        context = {}
+        template = loader.get_template('team_edit_view.html')
+
+        team = models.Team.objects.filter(
+            id=id).first() if id is not None else models.Team()
+
+        context['team'] = team
+
+        context['user_teams'] = models.UserTeam.objects.filter(team_id=team).select_related(
+            'user_id').all()
+
+        return HttpResponse(template.render(context, request))
+
+    def post(self, request):
+        body = json.loads(request.body)
+
+        # Pop the related tables
+        related_tables = {
+            'UserTeam': body.pop('user_team'),
+        }
+
+        if body['id']:
+            team = models.Team.objects.filter(id=body['id']).first()
+            for attr, value in body.items():
+                if attr != 'id':
+                    setattr(team, attr, value)
+        else:
+            team = models.Team(**body)
+
+        team.save()
+
+        # Update related tables
+        related_tables['parent_table'] = {'id_field': 'team_id_id', 'id_value': team.id}
+        utils.update_related_tables(related_tables)
+        # TODO: Create all of the tasks for the new users
+        # related_tables['parent_table'] = {'id_field': 'team_id_id', 'id_value': team.id}
+        # utils.create_tasks(related_tables)
+
+        return HttpResponse(json.dumps({'url': reverse('team_edit_view', args=(team.id,))}))
+
+
 class ValidationItemView(View):
     def get(self, request, id):
         context = {}
@@ -646,6 +689,7 @@ class UsersListView(View):
             user.is_logged_in = str(user.id) in user_id_list
 
         context['users'] = users
+        context['teams'] = models.Team.objects.all()
 
         return HttpResponse(template.render(context, request))
 
@@ -737,5 +781,15 @@ class CommentModal(View):
             context['comment'] = comment
             # Check to see if a review of this output item already exists. If so, grab it.
             template = loader.get_template('modals/review_comment.html')
+
+        return HttpResponse(template.render(context, request))
+
+
+class TeamModal(View):
+    def get(self, request, type):
+        context = {}
+        if type == 'user_team':
+            context['users'] = User.objects.all()
+            template = loader.get_template('modals/user_team.html')
 
         return HttpResponse(template.render(context, request))
