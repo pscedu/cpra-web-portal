@@ -721,6 +721,7 @@ class SimulationModal(View):
         context = {}
         if type == 'wf_assignment':
             context['users'] = User.objects.all()
+            context['teams'] = models.Team.objects.all()
             template = loader.get_template('modals/wf_assignment.html')
         elif type == 'wf_simulation_subroutines':
             context['subroutines'] = models.Subroutine.objects.all()
