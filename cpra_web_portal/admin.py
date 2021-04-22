@@ -14,4 +14,6 @@ admin.site.register(model_or_iterable=models.ValidationAssignmentComment)
 admin.site.register(model_or_iterable=models.ValidationItemMetrics)
 admin.site.register(model_or_iterable=models.Metric)
 admin.site.register(model_or_iterable=models.SimulationRunValidation)
+admin.site.register(model_or_iterable=models.Team)
+admin.site.register(model_or_iterable=models.UserTeam)
 admin.site.site_header = "CPRA Portal"
