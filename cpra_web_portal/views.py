@@ -447,7 +447,6 @@ class ValidationAssignment(View):
                 validation_assignment.datetime_approved = None
 
             validation_assignment.save()
-            utils.update_approval(validation_assignment)
 
         if method == 'remove_approval':
             comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
@@ -463,6 +462,8 @@ class ValidationAssignment(View):
                 srv.is_approved = 0
                 srv.datetime_approved = None
             srv.save()
+
+        utils.update_approval(srv)
 
         return HttpResponse(json.dumps(response))
 
