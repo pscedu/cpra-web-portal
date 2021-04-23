@@ -46,6 +46,7 @@ def filter_queryset(queryset, request):
 
 
 def update_approval(srv):
+    users_to_email = []
     sim_run = srv.sr_id
 
     # If the SRV is not approved then get all of the related validation assignments
@@ -118,12 +119,24 @@ def update_approval(srv):
                                 if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=new_srv):
                                     va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': user.user_id})
                                     va.save()
+                                    if user.user_id not in users_to_email:
+                                        users_to_email.append(user.user_id)
                         # if the id that was passed is a user id - we only need to check to see if there are assignments
                         elif wf_assignment.user_id and not models.ValidationAssignment.objects.filter(
                                 user_id=wf_assignment.user_id, srv_id=new_srv):
                             # Then we need to create the validation assignment
                             va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': wf_assignment.user_id})
                             va.save()
+                            if wf_assignment.user_id not in users_to_email:
+                                users_to_email.append(wf_assignment.user_id)
+
+    for user in users_to_email:
+        user.email_user(
+                'New QA/QC Assignments',
+                "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
+                                           "\n\nPlease review at your earliest convenience"
+                "\n\nHappy QA/QCing!"
+            )
 
 
 def update_related_tables(related_tables):
