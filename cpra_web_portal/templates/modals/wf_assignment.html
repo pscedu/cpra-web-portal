@@ -3,12 +3,34 @@
 <h4> New Assignment </h4>
 {% endblock %}
 {% block modal_body %}
-        <label for="select-wf-assignment-user">User</label>
-        <select name="user_id_id" id="select-wf-assignment-user" class="modal-form-control form-control">
-        {% for user_option in users %}
-            <option value="{{ user_option.id }}">{{ user_option.username }}</option>
-        {% endfor %}
-        </select>
+
+
+<script>
+    $(document).ready(function(){
+        $('select').select2({width: '100%', dropdownParent: $('#wf-assignment-modal'), placeholder: "None", allowClear: true});
+    });
+</script>
+    <div class="container">
+        <div class="col-11">
+
+            <label for="select-wf-assignment-user">User</label>
+            <select name="user_id_id" id="select-wf-assignment-user" class="modal-form-control form-control">
+                <option></option>
+            {% for user_option in users %}
+                <option value="{{ user_option.id }}">{{ user_option.username }}</option>
+            {% endfor %}
+            </select>
+
+
+            <label for="select-wf-assignment-team">Team</label>
+            <select name="team_id_id" id="select-wf-assignment-team" class="modal-form-control form-control">
+                <option></option>
+            {% for team_option in teams %}
+                <option value="{{ team_option.id }}">{{ team_option.name }}</option>
+            {% endfor %}
+            </select>
+        </div>
+    </div>
 {% endblock %}
 {% block modal_footer %}
     <button id="wf-assignment-save" type="button" class="btn btn-primary">Save</button>

@@ -56,18 +56,21 @@
 				$modal.append(response);
 				$('#wf-assignment-save').on('click', function(){
 					let username = $('#select-wf-assignment-user').find('option:selected').text();
+					let team_name = $('#select-wf-assignment-team').find('option:selected').text();
 					let user_id = parseInt($('#select-wf-assignment-user').val());
+					let team_id = parseInt($('#select-wf-assignment-team').val());
 
 					$("#wf-assignment-container").append('<tr data-id="">' +
 							'<th scope="row">'+username+'</th>' +
+							'<td>'+team_name+'</td>' +
 							'</tr>'
 					);
 
 					let row_type = 'wf_assignments'
 					if('add' in data[row_type])
-						data[row_type]['add'].push({user_id_id: user_id })
+						data[row_type]['add'].push({user_id_id: user_id, team_id_id: team_id })
 					else
-						data[row_type]['add'] = [{user_id_id: user_id }]
+						data[row_type]['add'] = [{user_id_id: user_id, team_id_id: team_id }]
 
 					let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 					bs_modal.hide();
@@ -174,6 +177,7 @@
 					  <thead>
 						<tr>
 						  <th scope="col">User</th>
+						  <th scope="col">Team</th>
 							<th></th>
 						</tr>
 					  </thead>
@@ -181,6 +185,7 @@
 					  	{% for wf_assignment in wf_assignments %}
 						<tr data-id="{{ wf_assignment.id }}">
 						  <th scope="row">{{ wf_assignment.user_id.username }}</th>
+						  <td scope="row">{{ wf_assignment.team_id.name }}</td>
 							<td>
 								<a style="cursor: pointer" data-row_type="wf_assignments" class="delete" title="" data-original-title="Delete">
 									<span style="color: red" class="material-icons">delete</span>

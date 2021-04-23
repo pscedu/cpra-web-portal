@@ -12,12 +12,12 @@
 				{% for validation_assignment in validation_assignments %}
 					<a href="{% url 'validation_item_view' validation_assignment.id %}" class="list-group-item">
 					<h5 class="mb-1">
-						{{ validation_assignment.srv_id.sr_id.sim_id.name }}
-						{{ validation_assignment.srv_id.sr_id.name }}
-						{{ validation_assignment.srv_id.sub_id.name }}
-						{{ validation_assignment.srv_id.vi_id.name }}
+						{{ validation_assignment.sr_id.sim_id.name }}
+						{{ validation_assignment.sr_id.name }}
+						{{ validation_assignment.sub_id.name }}
+						{{ validation_assignment.vi_id.name }}
 					</h5>
-					<p class="mb-1">{{ validation_assignment.srv_id.datetime_created }}</p>
+					<p class="mb-1">{{ validation_assignment.datetime_created }}</p>
 					</a>
 				{% endfor %}
 			</div>

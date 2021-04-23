@@ -52,5 +52,8 @@ urlpatterns = [
     path('subroutine/modal/<str:type>', views.SubroutineModal.as_view(), name='subroutine_modal_view'),
     path('simulation/modal/<str:type>', views.SimulationModal.as_view(), name='simulation_modal_view'),
     path('comment/modal/<str:type>', views.CommentModal.as_view(), name='comment_modal_view'),
-    path('comment/', views.get_comments, name='get_comments')
+    path('comment/', views.get_comments, name='get_comments'),
+    path('team_view/', views.TeamView.as_view(), name='team_new_view'),
+    path('team_view/<int:id>/', views.TeamView.as_view(), name='team_edit_view'),
+    path('team/modal/<str:type>', views.TeamModal.as_view(), name='team_modal_view')
 ]
