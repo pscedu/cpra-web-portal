@@ -1,5 +1,5 @@
 import os
-import csv
+import datetime
 import pandas as pa
 
 from django.forms.models import model_to_dict
@@ -45,22 +45,85 @@ def filter_queryset(queryset, request):
     return queryset.filter(**filter_dict)
 
 
-def update_approval(validation_assignment):
-    # Get all of the related validation assignments
-    srv = models.SimulationRunValidation.objects.get(id=validation_assignment.srv_id_id)
-    sim_run = models.SimulationRun.objects.get(id=srv.sr_id_id)
+def update_approval(srv):
+    sim_run = srv.sr_id
 
-    # Get
-    sum_count_related_vas = models.ValidationAssignment.objects.filter(srv_id=validation_assignment.srv_id).aggregate(
-        num_related=Count('id'), num_approved=Sum('is_approved'))
+    # If the SRV is not approved then get all of the related validation assignments
+    if not srv.is_approved:
+        sum_count_related_vas = models.ValidationAssignment.objects.filter(srv_id=srv).aggregate(
+            num_related=Count('id'), num_approved=Sum('is_approved'))
 
-    srv.is_approved = sum_count_related_vas['num_related'] == sum_count_related_vas['num_approved']
-    srv.save()
+        srv.is_approved = sum_count_related_vas['num_related'] == sum_count_related_vas['num_approved']
+        srv.save()
 
-    sum_count_related_srvs = models.SimulationRunValidation.objects.filter(sr_id=srv.sr_id).aggregate(
-        num_related=Count('id'), num_approved=Sum('is_approved'))
-    sim_run.is_approved = sum_count_related_srvs['num_related'] == sum_count_related_srvs['num_approved']
-    sim_run.save()
+    # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
+    if srv.is_approved and not sim_run.is_approved:
+        sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run, sub_id=srv.sub_id).aggregate(
+            num_related=Count('id'), num_approved=Sum('is_approved'))
+
+        # If they are all approved, do more checking/generation
+        if sum_count_related_subs['num_related'] == sum_count_related_subs['num_approved']:
+            last_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id).order_by('step').last()
+            # Check to see if this subroutine is the last step for the SimRun
+            if srv.sub_id == last_wf_sim_sub.sub_id:
+                # If it is the last step, then update the sim run to be approved and return
+                sim_run.is_approved = 1
+                sim_run.save()
+                return
+            else:
+                # If it is not the last step, get the next subroutine
+                wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, sub_id=srv.sub_id).first()
+                next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, step__gt=wf_sim_sub.step).order_by('step').select_related('sub_id').first()
+                next_subroutine = next_wf_sim_sub.sub_id
+
+                # Get the validation items associated with the next subroutine
+                wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related('vi_id').all()
+
+                # Check to see if there are actually validation items associated with the next subroutine.
+                while not wf_sub_vis:
+                    # Check to see if next_subroutine is the last subroutine
+                    if next_subroutine == last_wf_sim_sub.sub_id:
+                        sim_run.is_approved = 1
+                        sim_run.save()
+                        return
+                    else:
+                        # If it is not the last subroutine, get the next one and check its vis
+                        next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id,
+                                                                                       step__gt=next_wf_sim_sub.step).order_by(
+                            'step').select_related('sub_id').first()
+                        next_subroutine = next_wf_sim_sub.sub_id
+                        wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(
+                            sub_id=next_subroutine).select_related('vi_id').all()
+
+                # Get all of the wf_assignments for the sim_run and for the next subroutine
+                wf_simulation_assignments = models.WFAssignment.objects.filter(sim_id=sim_run.sim_id).all()
+                wf_subroutine_assignments = models.WFAssignment.objects.filter(sub_id=next_subroutine).all()
+                for wf_sub_vi in wf_sub_vis:
+                    validation_item = wf_sub_vi.vi_id
+                    wf_validation_item_assignments = models.WFAssignment.objects.filter(vi_id=validation_item)
+                    # Check to see if an SRV exists already
+                    new_srv = models.SimulationRunValidation.objects.filter(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item}).first()
+                    if not new_srv:
+                        # If no SRV exists, generate a new SRV
+                        new_srv = models.SimulationRunValidation(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item, 'datetime_created': datetime.datetime.now()})
+                        new_srv.save()
+
+                    # here we have all of the users/teams at the sim, sub, and vi level
+                    for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
+                                                                         wf_validation_item_assignments):
+                        # check whether this is a team or user assignment
+                        if wf_assignment.team_id:
+                            users = models.UserTeam.objects.filter(team_id=wf_assignment.team_id).all()
+                            for user in users:
+                                if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=new_srv):
+                                    va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': user.user_id})
+                                    va.save()
+                        # if the id that was passed is a user id - we only need to check to see if there are assignments
+                        elif wf_assignment.user_id and not models.ValidationAssignment.objects.filter(
+                                user_id=wf_assignment.user_id, srv_id=new_srv):
+                            # Then we need to create the validation assignment
+                            va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': wf_assignment.user_id})
+                            va.save()
 
 
 def update_related_tables(related_tables):
