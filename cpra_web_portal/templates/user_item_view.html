@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+{% load util_filters %}
 <script>
 	$(document).ready(function(){
 		const csrftoken = Cookies.get('csrftoken');
@@ -56,8 +57,14 @@
 							<label for="user_group">Group</label>
 							  
 							<select name="group" class="form-control" id="user_group">
-								<option value="Admin">Admin</option>
-								<option value="User">User</option>
+								<option value="Admin"
+                        			{% if user_model|has_group:"Admin" %}
+								selected
+								{% endif %} >Admin</option>
+								<option value="User"
+                        			{% if user_model|has_group:"User" %}
+								selected
+								{% endif %} >User</option>
 							</select>
 						  </div>
 						  <button id="btn-user-save" type="button" class="btn btn-primary">Save Changes</button>
