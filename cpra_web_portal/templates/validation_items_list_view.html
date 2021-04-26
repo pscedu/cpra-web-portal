@@ -17,7 +17,8 @@
 						{{ validation_assignment.sub_id.name }}
 						{{ validation_assignment.vi_id.name }}
 					</h5>
-					<p class="mb-1">{{ validation_assignment.datetime_created }}</p>
+					<p class="mb-1">{{ validation_assignment.datetime_created }} - Approval Count {{ validation_assignment.num_approvals.num_approved }}/{{ validation_assignment.num_approvals.num_related }}</p>
+					<p class="mb-1"></p>
 					</a>
 				{% endfor %}
 			</div>
