@@ -12,6 +12,7 @@ from django.utils import timezone, dateformat
 from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
+from django.db.models import Sum, Count
 import pandas as pa
 
 from . import models, utils
@@ -373,7 +374,10 @@ class ValidationItemView(View):
         context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
 
         context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
-            else (request.user.groups.filter(name="Admin").exists() and srv.is_approved)
+            else (
+                request.user.groups.filter(name="Admin").exists() and
+                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_approval=1, user_id=request.user).first()
+            )
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -705,11 +709,16 @@ class ValidationItemsListView(View):
         if len(request.GET) > 0:
             utils.set_filter_values(filters, request)
 
-        validation_assignments = utils.filter_queryset(validation_assignments, filters)
+        validation_assignments = utils.filter_queryset(validation_assignments, filters).select_related('sr_id').select_related(
+                'sub_id').select_related('vi_id').all()
+
+        for validation_assignment in validation_assignments:
+            num_approvals = models.ValidationAssignment.objects.filter(srv_id=validation_assignment).aggregate(
+                num_related=Count('id'), num_approved=Sum('is_approved'))
+            validation_assignment.num_approvals = num_approvals
 
         context = {
-            'validation_assignments': validation_assignments.select_related('sr_id').select_related(
-                'sub_id').select_related('vi_id').all(),
+            'validation_assignments': validation_assignments,
             'filters': filters
         }
 
