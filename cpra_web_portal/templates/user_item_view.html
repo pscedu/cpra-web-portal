@@ -58,11 +58,11 @@
 							  
 							<select name="group" class="form-control" id="user_group">
 								<option value="Admin"
-                        			{% if user_model|has_group:"Admin" %}
+                        			{% if user_model|has_group:"Admin" and user_model.id %}
 								selected
 								{% endif %} >Admin</option>
 								<option value="User"
-                        			{% if user_model|has_group:"User" %}
+                        			{% if user_model|has_group:"User" and user_model.id %}
 								selected
 								{% endif %} >User</option>
 							</select>
