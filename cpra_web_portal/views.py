@@ -781,9 +781,9 @@ class CommentModal(View):
             validation_assignment_id = request.GET.get('validation_assignment_id')
             metric_id = request.GET.get('metric_id')
             metric_options = json.loads(request.GET.get('metric_options', '{}'))
-            validation_assignment = models.ValidationAssignment.objects.filter(id=validation_assignment_id).first()
+            srv = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
             comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
-                                                                        srv_id=validation_assignment.srv_id,
+                                                                        srv_id=srv,
                                                                         metric_options=metric_options,
                                                                         is_review=1,
                                                                         user_id=request.user).first()
