@@ -230,7 +230,7 @@ def get_metric_files(metric, file_path):
 
 
 def get_dynamic_graph_metric_files(metric, file_path):
-    files = {'Coastwide': {}}
+    files = {'Hydro Compartments': {}}
 
     dynamic_graph_data_model = metric.graph_config['misc']['data_model']
     first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0]
@@ -255,7 +255,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
             num_cols = len(df.columns)
 
     for x in range(1, num_cols+1):
-        files['Coastwide'][str(x)] = str(x)
+        files['Hydro Compartments'][str(x)] = str(x)
 
     metric.graph_config['misc']['num_rows'] = num_rows
     return files
