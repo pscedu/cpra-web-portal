@@ -145,11 +145,11 @@
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'approval' %}", function(response){
+			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#approval-comment-save').on('click', function(){
 					let comment = $('#textarea-comment').val();
-
+					let is_override = $('#checkbox-override').is(':checked');
 					let body = {
 						comments: comment,
 					    is_approval: 1,
@@ -161,6 +161,7 @@
 							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
 							type: 'PUT',
 							headers: {'X-CSRFToken': csrftoken},
+							data: JSON.stringify({is_override: is_override}),
 							success: function(data){
 								$('#btn-approve').hide();
 								$("#btn-remove-approval").show();
@@ -184,7 +185,6 @@
 							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
 							bs_modal.hide();
 							$modal.empty();
-
 						}
 					});
 				});
