@@ -440,6 +440,9 @@ class ValidationAssignment(View):
         srv = models.SimulationRunValidation.objects.get(pk=id)
         validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=user).first()
 
+        body = json.loads(request.body) if request.body else {}
+        is_override = body.get('is_override', False)
+
         if validation_assignment:
             if method == 'approve':
                 validation_assignment.is_approved = 1
@@ -457,7 +460,7 @@ class ValidationAssignment(View):
             comment.delete()
 
         if user.groups.filter(name="Admin").exists():
-            if method == 'approve':
+            if method == 'approve' and is_override:
                 srv.is_approved = 1
                 srv.datetime_approved = datetime.datetime.now()
                 df = dateformat.DateFormat(srv.datetime_approved)
@@ -773,15 +776,23 @@ class SimulationModal(View):
 class CommentModal(View):
     def get(self, request, type):
         context = {}
+        srv_id = request.GET.get('validation_assignment_id')
         if type == 'misc':
             template = loader.get_template('modals/misc_comment.html')
         elif type == 'approval':
             template = loader.get_template('modals/approval_comment.html')
+            # Check for whether he has an assignment
+            print(srv_id)
+            validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv_id,
+                                                                               user_id=request.user).first()
+            print(validation_assignment)
+            context['is_not_assigned'] = validation_assignment is None
+            print(context['is_not_assigned'])
+
         elif type == 'review':
-            validation_assignment_id = request.GET.get('validation_assignment_id')
             metric_id = request.GET.get('metric_id')
             metric_options = json.loads(request.GET.get('metric_options', '{}'))
-            srv = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
+            srv = models.SimulationRunValidation.objects.filter(id=srv_id).first()
             comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
                                                                         srv_id=srv,
                                                                         metric_options=metric_options,
