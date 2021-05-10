@@ -49,8 +49,8 @@
 			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
-					let comment = $('#textarea-comment').val();
-					let is_output_item_assigned = $('#checkbox-is-output-item').is(':checked');
+					let comment = $modal('#textarea-comment').val();
+					let is_output_item_assigned = $modal('#checkbox-is-output-item').is(':checked');
 					let body = {
 						comments: comment,
 						validation_assignment_id: {{ validation_item.id }}
@@ -82,7 +82,6 @@
 			});
 		});
 
-
 		$('#modal-review-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
@@ -98,9 +97,9 @@
 			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#review-comment-save').on('click', function(){
-					let radio_id = $('.form-check-input:radio:checked').attr('id');
-					let comment = $('#textarea-comment').val();
-					let is_flag = radio_id === 'not-intuitive' ? $('#checkbox-flag').is(':checked') : 0;
+					let radio_id = $modal.find('.form-check-input:radio:checked').attr('id');
+					let comment = $modal.find('#textarea-comment').val();
+					let is_flag = radio_id === 'not-intuitive' ? $modal.find('#checkbox-flag').is(':checked') : 0;
 
 					let body = {
 						comments: comment,
@@ -148,8 +147,8 @@
 			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#approval-comment-save').on('click', function(){
-					let comment = $('#textarea-comment').val();
-					let is_override = $('#checkbox-override').is(':checked');
+					let comment = $modal('#textarea-comment').val();
+					let is_override = $modal('#checkbox-override').is(':checked');
 					let body = {
 						comments: comment,
 					    is_approval: 1,
