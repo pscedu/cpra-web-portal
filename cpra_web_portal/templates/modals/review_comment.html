@@ -32,8 +32,9 @@
 
             <!--        Comment text area -->
 <div id="container-textarea-comment" class="form-floating"
-     {% if comment.review_option == 'intuitive-no-comment' %} style="display: none;" {% endif %}>
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;">{{ comment.comments }}</textarea>
+     {% if not comment.review_option or comment.review_option == 'intuitive-no-comment' %} style="display: none;" {% endif %}
+>
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;">{% if not comment.review_option %}Run looks intuitive, no comment.{% else %}{{ comment.comments }}{% endif %}</textarea>
         <label for="textarea-comment">Comment</label>
 </div>
 
@@ -42,18 +43,19 @@
     $(document).ready(function(){
         $('.form-check-input:radio').on('change', function(){
             let radio_id = $(this).attr('id');
+            let $modal_content = $(this).closest('.modal-content');
             if(radio_id==='not-intuitive'){
-                $('#container-textarea-comment').show();
-                $('#container-checkbox-flag').show();
+                $modal_content.find('#container-textarea-comment').show();
+                $modal_content.find('#container-checkbox-flag').show();
             }
             else{
-                $('#container-checkbox-flag').hide();
-                $('#checkbox-flag').prop('checked', false);
+                $modal_content.find('#container-checkbox-flag').hide();
+                $modal_content.find('#checkbox-flag').prop('checked', false);
                 if(radio_id === 'intuitive-comment')
-                    $('#container-textarea-comment').show();
+                    $modal_content.find('#container-textarea-comment').show();
                 else if(radio_id === 'intuitive-no-comment'){
-                    $('#container-textarea-comment').hide();
-                    $('#textarea-comment').val('Run looks intuitive, no comment.');
+                    $modal_content.find('#container-textarea-comment').hide();
+                    $modal_content.find('#textarea-comment').val('Run looks intuitive, no comment.');
                 }
             }
         });
