@@ -49,8 +49,8 @@
 			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
-					let comment = $modal('#textarea-comment').val();
-					let is_output_item_assigned = $modal('#checkbox-is-output-item').is(':checked');
+					let comment = $modal.find('#textarea-comment').val();
+					let is_output_item_assigned = $modal.find('#checkbox-is-output-item').is(':checked');
 					let body = {
 						comments: comment,
 						validation_assignment_id: {{ validation_item.id }}
@@ -147,8 +147,8 @@
 			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#approval-comment-save').on('click', function(){
-					let comment = $modal('#textarea-comment').val();
-					let is_override = $modal('#checkbox-override').is(':checked');
+					let comment = $modal.find('#textarea-comment').val();
+					let is_override = $modal.find('#checkbox-override').is(':checked');
 					let body = {
 						comments: comment,
 					    is_approval: 1,
