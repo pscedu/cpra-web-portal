@@ -10,7 +10,7 @@
 			<h1>Validation Items</h1>
 			<div class="list-group">
 				{% for validation_assignment in validation_assignments %}
-					<a href="{% url 'validation_item_view' validation_assignment.id %}" class="list-group-item">
+					<a href="{% url 'validation_item_overview' validation_assignment.id %}" class="list-group-item">
 					<h5 class="mb-1">
 						{{ validation_assignment.sr_id.sim_id.name }}
 						{{ validation_assignment.sr_id.name }}

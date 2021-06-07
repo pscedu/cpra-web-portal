@@ -19,7 +19,7 @@
 				<div class="col-12">
 					<div class="list-group">
 						{% for open_task in open_tasks %}
-							<a href="{% url 'validation_item_view' open_task.srv_id_id %}" class="list-group-item">
+							<a href="{% url 'validation_item_overview' open_task.srv_id_id %}" class="list-group-item">
 							<h5 class="mb-1">
 								{{ open_task.srv_id.sr_id.sim_id.name }}
 								{{ open_task.srv_id.sr_id.name }}
@@ -42,7 +42,7 @@
 				<div class="col-12">
 					<div class="list-group">
 						{% for flagged_task in flagged_tasks %}
-							<a href="{% url 'validation_item_view' flagged_task.srv_id_id %}" class="list-group-item">
+							<a href="{% url 'validation_item_overview' flagged_task.srv_id_id %}" class="list-group-item">
 							<h5 class="mb-1">
 								{{ flagged_task.srv_id.sr_id.sim_id.name }}
 								{{ flagged_task.srv_id.sr_id.name }}

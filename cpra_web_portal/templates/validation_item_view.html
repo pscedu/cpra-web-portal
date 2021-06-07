@@ -402,7 +402,6 @@
 		}
 
 		function clear_comments(){
-			$("#container-vi-comments").empty();
 			$("#container-oi-comments").empty();
 		}
 
@@ -423,9 +422,8 @@
 			else if(comment_dict['is_approval'])
 				$comment_container.addClass('list-group-item-success');
 
-			let comment_container = comment_dict['metric_id'] != undefined ? $("#container-oi-comments") : $("#container-vi-comments");
-
-			comment_container.append($comment_container);
+			if(comment_dict['metric_id'] != undefined)
+				$("#container-oi-comments").append($comment_container);
 		}
 
 		// Start Listener Region
@@ -473,13 +471,13 @@
 		<div class="col-10">
 			<div class="row my-4">
 				<div class="col-3">
-					<label for="metric_select">Metric</label>
-					<select name="metric" id="metric_select" class="form-control">
-						{% for metric in metrics %}
-							<option data-metric_id="{{ metric.id }}"
-							>{{ metric.name }}</option>
-						{% endfor %}
-					</select>
+			<h5>
+				{{ validation_item.sr_id.sim_id.name }}
+				{{ validation_item.sr_id.name }}
+				{{ validation_item.sub_id.name }}
+				{{ validation_item.vi_id.name }}
+			</h5>
+					<a href="{% url 'validation_item_overview' validation_item.id %}">Overview</a>
 				</div>
 				<div class="col-6">
 					<h1 id="metric_name" style="text-align: center;"></h1>
@@ -491,6 +489,13 @@
 			</div>
 			<div class="row flex-grow-1">
 				<div class="col-2">
+					<label for="metric_select">Metric</label>
+					<select name="metric" id="metric_select" class="form-control">
+						{% for metric in metrics %}
+							<option data-metric_id="{{ metric.id }}"
+							>{{ metric.name }}</option>
+						{% endfor %}
+					</select>
 					<div id="static_metric_options" class="metric_options" style="display: none;">
 						<label for="select_static_metric_region">Region</label>
 						<select name="region" class="form-control" id="select_static_metric_region"></select>
@@ -520,42 +525,12 @@
 			</div>
 		</div>
 		<div class="col-2 bg-light" style="border: 1px solid #C5C5C5">
-			<h3>
-				{{ validation_item.sr_id.sim_id.name }}
-				{{ validation_item.sr_id.name }}
-			</h3>
-			<h5>
-				{{ validation_item.sub_id.name }}
-				{{ validation_item.vi_id.name }}
-			</h5>
-			<p>{{ validation_item.vi_id.description }}</p>
-					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
-					<button id="btn-approve" data-bs-toggle="modal" data-bs-target="#modal-approval-comment" class="btn btn-success">Approve</button>
-			<div class="row my-2 py-2" style="border-top: 1px solid black;">
+			<div class="row my-2 py-2">
 				<div class="col-12">
-					<h4>Validation Item Comments</h4>
-					<div id="container-vi-comments" class="list-group">
-					</div>
-					<h4 class="my-2 pt-2">Output Item Comments</h4>
+					<h4>Comments</h4>
 					<div id="container-oi-comments" class="list-group">
 					</div>
 					<button id="btn-new-comment" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-misc-comment">New</button>
-
-				</div>
-			</div>
-			<div class="row my-2 py-2" style=" border-top: 1px solid black;">
-				<div class="col-12">
-					<h4>Approvals</h4>
-					<div id="container-approvals" class="list-group">
-						{% for approval in approvals %}
-						<div class="list-group-item-action">
-							<strong>{{ approval.user.username }}</strong>
-							<p>{{ approval.datetime_approved }}</p>
-						</div>
-						{% endfor %}
-					</div>
-						<div class="btn-group">
-						</div>
 				</div>
 			</div>
 		</div>

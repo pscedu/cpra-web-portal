@@ -162,6 +162,85 @@ def get_map_metric(request):
         return HttpResponse(status=500)
 
 
+def widget_review_status(request):
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric_id = request.GET.get('metric_id')
+
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
+
+    metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment)
+
+    response = {
+        'Reviewed': 0,
+        'Flagged': 0,
+        'Intuitive': 0,
+        'Not Intuitive': 0,
+        'Misc': 0
+    }
+    # Prep the comments for response
+    for comment in metric_comments:
+        response['Reviewed'] += 1
+        if comment.is_flag:
+            response['Flagged'] += 1
+        elif comment.review_option == 'not-intuitive':
+            response['Not Intuitive'] += 1
+        elif comment.review_option is None:
+            response['Misc'] += 1
+        else:
+            response['Intuitive'] += 1
+
+    return HttpResponse(json.dumps(response))
+
+
+from ajax_datatable.views import AjaxDatatableView
+
+
+class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
+
+    model = models.ValidationAssignmentComment
+    title = 'Comments'
+    initial_order = [["datetime_modified", "asc"], ]
+    length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
+    search_values_separator = '+'
+    show_column_filters = True
+
+    column_defs = [
+        {'name': 'id', 'visible': False, },
+        {'name': 'user', 'title': 'User', 'foreign_field': 'user_id__username'},
+        {'name': 'is_flag', 'title': 'Flag', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_approval', 'title': 'Approval', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_review', 'title': 'Review', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'metric', 'title': 'Metric', 'foreign_field': 'metric_id__name'},
+        {'name': 'metric_options', 'title': 'Datapoint Details'},
+        {'name': 'datetime_modified', 'title': 'Last Modified', 'visible': True},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        if not getattr(request, 'REQUEST', None):
+            request.REQUEST = request.GET if request.method=='GET' else request.POST
+
+        queryset = self.model.objects.all()
+
+        if 'validation_item_id' in request.REQUEST:
+            validation_item_id = int(request.REQUEST.get('validation_item_id'))
+            queryset = queryset.filter(srv_id__id=validation_item_id)
+
+        return queryset
+
+    def customize_row(self, row, obj):
+        row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
+        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
+        row['is_approval'] = 'Yes' if obj.is_approval else 'No'
+        row['is_review'] = 'Yes' if obj.is_review else 'No'
+
+    def render_row_details(self, pk, request=None):
+        model = self.model.objects.get(pk=pk)
+
+        return loader.render_to_string('ajax_datatables/validation_assignment_comment_render_row_details.html', {
+            'model': model,
+            'request': request
+        })
+
 # Individual Item Views
 class SimulationEditView(View):
     def get(self, request, id=None):
@@ -343,6 +422,41 @@ class TeamView(View):
         return HttpResponse(json.dumps({'url': reverse('team_edit_view', args=(team.id,))}))
 
 
+class ValidationItemOverview(View):
+    def get(self, request, id):
+        context = {}
+
+        srv = models.SimulationRunValidation.objects.filter(id=id).select_related('sr_id')\
+            .select_related('sub_id').select_related('vi_id').first()
+
+        context['validation_item'] = srv
+
+        context['approvals'] = models.ValidationAssignment.objects.filter(srv_id=srv).all()
+        context['metrics'] = []
+
+        # Get related metrics
+        for validation_item_metric in models.ValidationItemMetrics.objects.filter(
+                vi_id=srv.vi_id).select_related('metric_id'):
+            context['metrics'].append(
+                {'id': validation_item_metric.metric_id.id, 'name': validation_item_metric.metric_id.name})
+
+        validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
+        context['validation_item_assignment'] = validation_item_assignment
+
+        context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
+
+        context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
+            else (
+                request.user.groups.filter(name="Admin").exists() and
+                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_approval=1, user_id=request.user).first()
+            )
+
+        template = loader.get_template('validation_item_overview.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+
 class ValidationItemView(View):
     def get(self, request, id):
         context = {}
@@ -490,7 +604,8 @@ class ValidationAssignmentComment(View):
             'is_review': body.get('is_review', 0),
             'review_option': body.get('review_option', None),
             'metric_id_id': body.get('metric_id', None),
-            'metric_options': body.get('metric_options', None)
+            'metric_options': body.get('metric_options', None),
+            'datetime_modified': datetime.datetime.now()
         }
 
         # For review comments, we should update an existing review comment if it exists.
@@ -511,6 +626,12 @@ class ValidationAssignmentComment(View):
             validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
+        return HttpResponse(status=200)
+
+    def delete(self, request, id):
+        validation_assignment_comment = models.ValidationAssignmentComment.objects.get(pk=id)
+        if validation_assignment_comment and not(validation_assignment_comment.is_flag or validation_assignment_comment.is_approval or validation_assignment_comment.is_review):
+            validation_assignment_comment.delete()
         return HttpResponse(status=200)
 
 
