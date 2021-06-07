@@ -199,7 +199,7 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
 
     model = models.ValidationAssignmentComment
     title = 'Comments'
-    initial_order = [["datetime_modified", "asc"], ]
+    initial_order = [["datetime_modified", "desc"], ]
     length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
     search_values_separator = '+'
     show_column_filters = True
