@@ -1,0 +1,45 @@
+{% load static %}
+<link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+<link rel='stylesheet' href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+<link rel='stylesheet' href="https://cdn.datatables.net/buttons/1.7.0/css/buttons.bootstrap4.min.css">
+
+<script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.bootstrap4.min.js"></script>
+<!--<script src="{% static 'jszip/dist/jszip.min.js' %}"></script>-->
+<!--<script src="{% static 'pdfmake/build/pdfmake.min.js' %}"></script>-->
+<!--<script src="{% static 'pdfmake/build/vfs_fonts.js' %}"></script>-->
+
+<script>
+
+    $(document).ready(function() {
+        AjaxDatatableViewUtils.initialize_table(
+            $('#validation_item_comments_table'),
+            "{% url 'ajax_datatable_validation_item_comments' %}",
+            {
+                // extra_options (example)
+                processing: false,
+                autoWidth: false,
+                full_row_select: true,
+                scrollX: false,
+            }, {
+                // extra_data
+                validation_item_id: {{ validation_item.id }}
+            }
+        );
+    });
+
+</script>
+
+<div class="row">
+    <div class="col-11">
+        <h3>Comments</h3>
+    </div>
+    <div class="col-1">
+    <button id="btn-new-comment" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-misc-comment">New</button>
+    </div>
+</div>
+<table class="table table-hover" id="validation_item_comments_table">
+</table>

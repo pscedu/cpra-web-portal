@@ -271,6 +271,7 @@ class ValidationAssignmentComment(models.Model):
     is_flag = models.SmallIntegerField(default=0)
     is_review = models.SmallIntegerField(default=0)
     review_option = models.CharField(max_length=50, default=None, null=True)
+    datetime_modified = models.DateTimeField(null=True)
 
 
 class ValidationItemMetrics(models.Model):

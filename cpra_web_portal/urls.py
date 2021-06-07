@@ -35,6 +35,7 @@ urlpatterns = [
     path('user_view/', views.UserView.as_view(), name='user_new_view'),
     path('user_view/<int:id>/', views.UserView.as_view(), name='user_edit_view'),
     path('users_list_view/', views.UsersListView.as_view(), name='users_list_view'),
+    path('validation_item_overview/<int:id>/', views.ValidationItemOverview.as_view(), name='validation_item_overview'),
     path('validation_item_view/<int:id>/', views.ValidationItemView.as_view(), name='validation_item_view'),
     path('validation_items_list_view/', views.ValidationItemsListView.as_view(), name='validation_items_list_view'),
     path('metric/', views.get_metric, name='get_metric'),
@@ -46,6 +47,8 @@ urlpatterns = [
          name='validation_assignment_methods'),
     path('validation_item_comment/', views.ValidationAssignmentComment.as_view(),
          name='validation_assignment_comment'),
+    path('validation_item_comment/<int:id>', views.ValidationAssignmentComment.as_view(),
+         name='validation_assignment_comment'),
     path('metric_view/', views.Metric.as_view(), name='metric_new_view'),
     path('metric_view/<int:id>/', views.Metric.as_view(), name='metric_edit_view'),
     path('validation_item/modal/<str:type>', views.ValidationItemModal.as_view(), name='validation_item_modal_view'),
@@ -55,5 +58,7 @@ urlpatterns = [
     path('comment/', views.get_comments, name='get_comments'),
     path('team_view/', views.TeamView.as_view(), name='team_new_view'),
     path('team_view/<int:id>/', views.TeamView.as_view(), name='team_edit_view'),
-    path('team/modal/<str:type>', views.TeamModal.as_view(), name='team_modal_view')
+    path('team/modal/<str:type>', views.TeamModal.as_view(), name='team_modal_view'),
+    path('widget/review_status', views.widget_review_status, name='widget_review_status'),
+    path('datatables/validation_item_comments_table', views.ValidationItemCommentAjaxDatatableView.as_view(), name='ajax_datatable_validation_item_comments')
 ]
