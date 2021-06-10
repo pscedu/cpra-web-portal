@@ -13,6 +13,7 @@ from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
 from django.db.models import Sum, Count
+from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
 
 from . import models, utils
@@ -62,7 +63,7 @@ def get_comments(request):
         comment_dict['user_name'] = user_name
         response.append(comment_dict)
 
-    return HttpResponse(json.dumps(response))
+    return HttpResponse(json.dumps(response,cls=DjangoJSONEncoder))
 
 
 def get_static_metric(request):
