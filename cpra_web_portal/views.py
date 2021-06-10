@@ -900,15 +900,12 @@ class CommentModal(View):
         srv_id = request.GET.get('validation_assignment_id')
         if type == 'misc':
             template = loader.get_template('modals/misc_comment.html')
-        elif type == 'approval':
-            template = loader.get_template('modals/approval_comment.html')
+        elif type == 'submission':
+            template = loader.get_template('modals/submit_comment.html')
             # Check for whether he has an assignment
-            print(srv_id)
             validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv_id,
                                                                                user_id=request.user).first()
-            print(validation_assignment)
             context['is_not_assigned'] = validation_assignment is None
-            print(context['is_not_assigned'])
 
         elif type == 'review':
             metric_id = request.GET.get('metric_id')

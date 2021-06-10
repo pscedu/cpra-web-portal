@@ -5,33 +5,28 @@
 <script>
 	$(document).ready(function(){
 		{% if edit_permission %}
-			$("#btn-remove-approval").on("click", function(){
+			$("#btn-remove-submission").on("click", function(){
 				let $this = $(this);
 				$.ajax({
 					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
 					type: 'PUT',
 					headers: {'X-CSRFToken': csrftoken},
 					success: function(){
-						$("#container-approvals").find('.list-group-item-action').each(function(i, e){
-							if($(e).find('strong').text() == user_name)
-								e.remove();
-						})
 						$this.hide();
-						$("#btn-approve").show();
+						$("#btn-submit").show();
 						refresh_datatables()
 					}
 				});
 			});
 
 			{% if is_approved %}
-				$("#btn-approve").hide();
+				$("#btn-submit").hide();
 			{% else %}
-				$("#btn-remove-approval").hide();
+				$("#btn-remove-submission").hide();
 			{% endif %}
 		{% else %}
-			$('#btn-approve').hide();
-			$('#btn-remove-approval').hide();
-			$('#btn-review').hide();
+			$('#btn-submit').hide();
+			$('#btn-remove-submission').hide();
 		{% endif %}
 
 		const user_name = "{{ user.username }}"
@@ -68,11 +63,11 @@
 			});
 		});
 
-		$('#modal-approval-comment').on('show.bs.modal', function(e){
+		$('#modal-submit-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
+			$.get("{% url 'comment_modal_view' 'submission' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#approval-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
@@ -90,14 +85,8 @@
 							headers: {'X-CSRFToken': csrftoken},
 							data: JSON.stringify({is_override: is_override}),
 							success: function(data){
-								$('#btn-approve').hide();
-								$("#btn-remove-approval").show();
-								data = JSON.parse(data);
-								let $approve_container = $('#approval-container-template').clone();
-								$approve_container.removeAttr('id');
-								$approve_container.find('#user-approval-template').text(user_name).removeAttr('id');
-								$approve_container.find('#datetime-approval-template').text(data['datetime_approved']).removeAttr('id');
-								$("#container-approvals").append($approve_container);
+								$('#btn-submit').hide();
+								$("#btn-remove-submission").show();
 							}
 						});
 					{% endif %}
@@ -139,8 +128,8 @@
 			<p>{{ validation_item.vi_id.description }}</p>
 				</div>
 				<div class="col-2">
-					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
-					<button id="btn-approve" data-bs-toggle="modal" data-bs-target="#modal-approval-comment" class="btn btn-success">Approve</button>
+					<button id="btn-remove-submission" class="btn btn-danger">Remove Submission</button>
+					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Submit</button>
 				</div>
 				<div class="col-1">
 					<a href="{% url 'validation_item_view' validation_item.id %}">Data Viewer</a>
@@ -159,7 +148,7 @@
 			  <thead>
 				<tr>
 					<th scope="col">Username</th>
-					<th scope="col">Approved?</th>
+					<th scope="col">Submitted?</th>
 					<th scope="col">Status</th>
 				</tr>
 			  </thead>
@@ -183,21 +172,10 @@
 	</div>
 </div>
 
-<div id="container-templates" style="display: none;">
-	<div id="comment-container-template" class="list-group-item-action">
-		<strong id="user-comment-template"> </strong>
-		<p id="comments-comment-template"> </p>
-	</div>
-	<div id="approval-container-template" class="list-group-item-action">
-		<strong id="user-approval-template"></strong>
-		<p id="datetime-approval-template"></p>
-	</div>
-</div>
-
 <div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
-<div class="modal fade" id="modal-approval-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="modal-submit-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
 {% endblock %}
