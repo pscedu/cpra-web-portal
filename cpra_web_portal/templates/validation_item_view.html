@@ -50,20 +50,17 @@
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
-					let is_output_item_assigned = $modal.find('#checkbox-is-output-item').is(':checked');
+
 					let body = {
 						comments: comment,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
-					if(is_output_item_assigned){
-						body['metric_options'] = {}
-						$('.metric_options:visible').find('.form-control').each(function(index, element){
-							body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
-						})
-						body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
-					}
-
+					body['metric_options'] = {}
+					$('.metric_options:visible').find('.form-control').each(function(index, element){
+						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
+					})
+					body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
 
 					$.post({
 						url: "{% url 'validation_assignment_comment' %}",
