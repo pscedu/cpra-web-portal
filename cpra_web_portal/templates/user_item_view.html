@@ -89,7 +89,7 @@
 					  </thead>
 					  <tbody>
 					    {% for recent_approved_task in recent_approved_tasks %}
-						<tr style="cursor: pointer" onclick="window.location='{% url 'validation_item_overview' recent_approved_task.id %}'">
+						<tr style="cursor: pointer" onclick="window.location='{% url 'validation_item_overview' recent_approved_task.srv_id_id %}'">
 						  <th scope="row">{{ recent_approved_task.srv_id.sr_id.name }}</th>
 						  <td>{{ recent_approved_task.srv_id.sub_id.name }}</td>
 						  <td>{{ recent_approved_task.srv_id.vi_id.name }}</td>
