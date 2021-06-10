@@ -448,10 +448,10 @@ class ValidationItemOverview(View):
 
         context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
 
-        context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
+        context['is_submitted'] = validation_item_assignment.is_submitted if validation_item_assignment \
             else (
                 request.user.groups.filter(name="Admin").exists() and
-                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_approval=1, user_id=request.user).first()
+                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_submission=1, user_id=request.user).first()
             )
 
         template = loader.get_template('validation_item_overview.html')
