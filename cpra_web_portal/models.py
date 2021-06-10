@@ -225,6 +225,7 @@ class SimulationRunValidation(models.Model):
 class ValidationAssignment(models.Model):
     srv_id = models.ForeignKey(SimulationRunValidation, on_delete=models.CASCADE)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_submitted = models.SmallIntegerField(default=0)
     is_approved = models.SmallIntegerField(default=0)
     datetime_approved = models.DateTimeField(null=True)
 
@@ -267,6 +268,7 @@ class ValidationAssignmentComment(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
     metric_options = models.JSONField(null=True, default=None)
+    is_submission = models.SmallIntegerField(default=0)
     is_approval = models.SmallIntegerField(default=0)
     is_flag = models.SmallIntegerField(default=0)
     is_review = models.SmallIntegerField(default=0)

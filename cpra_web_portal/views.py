@@ -208,8 +208,9 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
     column_defs = [
         {'name': 'id', 'visible': False, },
         {'name': 'user', 'title': 'User', 'foreign_field': 'user_id__username'},
+        {'name': 'is_submission', 'title': 'Submission', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_approval', 'title': 'Approved', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'is_flag', 'title': 'Flag', 'choices': ((1, 'Yes'), (0, 'No'))},
-        {'name': 'is_approval', 'title': 'Approval', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'is_review', 'title': 'Review', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'metric', 'title': 'Metric', 'foreign_field': 'metric_id__name'},
         {'name': 'metric_options', 'title': 'Datapoint Details'},
@@ -230,8 +231,9 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
-        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
+        row['is_submission'] = 'Yes' if obj.is_flag else 'No'
         row['is_approval'] = 'Yes' if obj.is_approval else 'No'
+        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
         row['is_review'] = 'Yes' if obj.is_review else 'No'
 
     def render_row_details(self, pk, request=None):
@@ -432,7 +434,7 @@ class ValidationItemOverview(View):
 
         context['validation_item'] = srv
 
-        context['approvals'] = models.ValidationAssignment.objects.filter(srv_id=srv).all()
+        context['assignments'] = models.ValidationAssignment.objects.filter(srv_id=srv).all()
         context['metrics'] = []
 
         # Get related metrics

@@ -153,11 +153,21 @@
 				</tr>
 			  </thead>
 			  <tbody>
-			  	{% for approval in approvals %}
+			  	{% for assignment in assignments %}
 				<tr>
-					<th scope="row">{{ approval.user_id.username }}</th>
-					<td>{% if approval.is_approved %}X{% endif %}</td>
-					<td>Status</td>
+					<th scope="row">{{ assignment.user_id.username }}</th>
+					<td>{% if assignment.is_submitted %}X{% endif %}</td>
+					<td>
+						{% if not assignment.is_submitted %}
+						Pending Submission
+						{% else %}
+						{% if assignment.is_approved %}
+						Approved
+						{% else %}
+						Pending Admin Review
+						{% endif %}
+						{% endif %}
+					</td>
 				</tr>
 				{% endfor %}
 			  </tbody>
