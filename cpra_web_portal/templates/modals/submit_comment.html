@@ -6,7 +6,11 @@
 <script>
     $(document).ready(function(){
        $('#checkbox-override').on('change', function(){
-           let $this = $(this);
+           update_radio();
+       });
+
+       function update_radio(){
+           let $this = $('#checkbox-override');
            let $checkbox_approve = $('#checkbox-approve');
            let $container_checkbox_failure = $('#container-checkbox-failure');
            let $container_checkbox_admin_review = $('#container-checkbox-admin-review');
@@ -19,7 +23,9 @@
                $container_checkbox_failure.hide();
            }
            $checkbox_approve.prop('checked', true);
-       })
+       }
+
+       update_radio();
     });
 </script>
 
@@ -63,6 +69,6 @@
 
 {% endblock %}
 {% block modal_footer %}
-    <button id="approval-comment-save" type="button" class="btn btn-primary">Save</button>
+    <button id="submission-comment-save" type="button" class="btn btn-primary">Save</button>
     <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
 {% endblock %}

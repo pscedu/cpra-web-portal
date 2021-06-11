@@ -231,7 +231,7 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
-        row['is_submission'] = 'Yes' if obj.is_flag else 'No'
+        row['is_submission'] = 'Yes' if obj.is_submission else 'No'
         row['is_approval'] = 'Yes' if obj.is_approval else 'No'
         row['is_flag'] = 'Yes' if obj.is_flag else 'No'
         row['is_review'] = 'Yes' if obj.is_review else 'No'
@@ -345,6 +345,7 @@ class UserView(View):
 
         context['user_model'] = User.objects.filter(id=id).first() if id is not None else User()
 
+        # TODO: Update this functionality
         context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
             '-datetime_approved') \
                                                .select_related('user_id').select_related(
@@ -549,28 +550,29 @@ class ValidationAssignment(View):
         is_override = body.get('is_override', False)
 
         if validation_assignment:
-            if method == 'approve':
-                validation_assignment.is_approved = 1
-                validation_assignment.datetime_approved = datetime.datetime.now()
-                df = dateformat.DateFormat(validation_assignment.datetime_approved)
-                response['datetime_approved'] = df.format('N j, Y, P')
-            elif method == 'remove_approval':
+            if method == 'submit':
+                validation_assignment.is_submitted = 1
+                validation_assignment.is_approved = body['is_approved']
+                validation_assignment.datetime_approved = datetime.datetime.now() if body['is_approved'] else None
+            elif method == 'remove_submission':
+                validation_assignment.is_submitted = 0
                 validation_assignment.is_approved = 0
                 validation_assignment.datetime_approved = None
 
             validation_assignment.save()
 
-        if method == 'remove_approval':
-            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
+        if method == 'remove_submission':
+            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_submission=1)
             comment.delete()
 
         if user.groups.filter(name="Admin").exists():
-            if method == 'approve' and is_override:
-                srv.is_approved = 1
-                srv.datetime_approved = datetime.datetime.now()
-                df = dateformat.DateFormat(srv.datetime_approved)
-                response['datetime_approved'] = df.format('N j, Y, P')
-            elif method == 'remove_approval':
+            if method == 'submit' and is_override:
+                # Setting the approval flag to -1 should be fine.
+                # This will stop any additional subroutines to be generated.
+                srv.is_approved = 1 if body['is_approved'] else -1
+                srv.datetime_approved = None
+            elif method == 'remove_submission':
+                # TODO: We should probably remove the approval from the sim run as well.
                 srv.is_approved = 0
                 srv.datetime_approved = None
             srv.save()

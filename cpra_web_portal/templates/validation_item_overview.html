@@ -8,7 +8,7 @@
 			$("#btn-remove-submission").on("click", function(){
 				let $this = $(this);
 				$.ajax({
-					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
+					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_submission' %}" ,
 					type: 'PUT',
 					headers: {'X-CSRFToken': csrftoken},
 					success: function(){
@@ -69,21 +69,23 @@
 			$modal.empty();
 			$.get("{% url 'comment_modal_view' 'submission' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
-				$('#approval-comment-save').on('click', function(){
+				$('#submission-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
 					let is_override = $modal.find('#checkbox-override').is(':checked');
+					let is_approved = $modal.find('#checkbox-approve').is(':checked');
 					let body = {
 						comments: comment,
-					    is_approval: 1,
+					    is_submission: 1,
+						is_approval: is_approved,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
 					{% if edit_permission %}
 						$.ajax({
-							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
+							url: "{% url 'validation_assignment_methods' validation_item.id 'submit' %}" ,
 							type: 'PUT',
 							headers: {'X-CSRFToken': csrftoken},
-							data: JSON.stringify({is_override: is_override}),
+							data: JSON.stringify({is_override: is_override, is_approved: is_approved}),
 							success: function(data){
 								$('#btn-submit').hide();
 								$("#btn-remove-submission").show();
