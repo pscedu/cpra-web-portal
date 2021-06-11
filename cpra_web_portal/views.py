@@ -766,7 +766,8 @@ class Tasks(View):
     def get(self, request):
         context = {
             'open_tasks': [],
-            'flagged_tasks': []
+            'flagged_tasks': [],
+            'pending_admin_review_tasks': []
         }
 
         template = loader.get_template('tasks.html')
@@ -789,9 +790,22 @@ class Tasks(View):
             if flag_comments:
                 context['flagged_tasks'].append(task)
             # If the user has not approved this task, then we need to add it to that list as well
-            # TODO: Re-think this
-            if not task.is_approved and not task.srv_id.is_approved:
+            if not task.is_submitted and not task.srv_id.is_approved:
                 context['open_tasks'].append(task)
+
+        # Grab the pending admin review tasks
+        if request.user.groups.filter(name="Admin").exists():
+            # Grab unapproved SRVs
+            unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved__lte=0).all()
+            for unapproved_srv in unapproved_srvs:
+                # We need to grab all of the validation assignments that have been submitted,
+                # and check whether they all have is_approved set
+                submitted_tasks = models.ValidationAssignment.objects.all().filter(srv_id=unapproved_srv,
+                                                                                   is_submitted=1).aggregate(
+                    num_related=Count('id'), num_approved=Sum('is_approved'))
+                if submitted_tasks['num_approved'] is not None \
+                        and submitted_tasks['num_related'] != submitted_tasks['num_approved']:
+                    context['pending_admin_review_tasks'].append(unapproved_srv)
 
         return HttpResponse(template.render(context, request))
 
