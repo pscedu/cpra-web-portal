@@ -55,6 +55,14 @@ class Subroutine(models.Model):
                 'data_source': None,
                 'default': 0,
                 'data_source_value_type': 'int'
+            },
+            'is_flagged': {
+                'name': 'Critical Error',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int',
+                'permission_group': 'Admin'
             }
         }
 
@@ -145,6 +153,7 @@ class SimulationRun(models.Model):
     sim_id = models.ForeignKey(Simulation, on_delete=models.CASCADE)
     datetime_created = models.DateTimeField()
     datetime_approved = models.DateTimeField(null=True)
+    is_flagged = models.SmallIntegerField(default=0)
     is_approved = models.SmallIntegerField(default=0)
     results_file_path = models.CharField(max_length=64, default="")
 
@@ -169,6 +178,14 @@ class SimulationRun(models.Model):
                 'data_source': None,
                 'default': 0,
                 'data_source_value_type': 'int'
+            },
+            'is_flagged': {
+                'name': 'Critical Error',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int',
+                'permission_group': 'Admin'
             }
         }
 
@@ -236,6 +253,7 @@ class ValidationAssignment(models.Model):
     is_submitted = models.SmallIntegerField(default=0)
     is_approved = models.SmallIntegerField(default=0)
     datetime_approved = models.DateTimeField(null=True)
+    datetime_submitted = models.DateTimeField(null=True)
 
     @staticmethod
     def get_list_view_filters():

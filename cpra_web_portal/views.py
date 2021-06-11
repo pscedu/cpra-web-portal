@@ -345,9 +345,8 @@ class UserView(View):
 
         context['user_model'] = User.objects.filter(id=id).first() if id is not None else User()
 
-        # TODO: Update this functionality
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
-            '-datetime_approved') \
+        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
+            '-datetime_submitted') \
                                                .select_related('user_id').select_related(
             'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
@@ -552,12 +551,14 @@ class ValidationAssignment(View):
         if validation_assignment:
             if method == 'submit':
                 validation_assignment.is_submitted = 1
+                validation_assignment.datetime_submitted = datetime.datetime.now()
                 validation_assignment.is_approved = body['is_approved']
                 validation_assignment.datetime_approved = datetime.datetime.now() if body['is_approved'] else None
             elif method == 'remove_submission':
                 validation_assignment.is_submitted = 0
                 validation_assignment.is_approved = 0
                 validation_assignment.datetime_approved = None
+                validation_assignment.datetime_submitted = None
 
             validation_assignment.save()
 
@@ -567,13 +568,14 @@ class ValidationAssignment(View):
 
         if user.groups.filter(name="Admin").exists():
             if method == 'submit' and is_override:
-                # Setting the approval flag to -1 should be fine.
-                # This will stop any additional subroutines to be generated.
-                srv.is_approved = 1 if body['is_approved'] else -1
-                srv.datetime_approved = None
+                srv.is_approved = body['is_approved']
+                srv.is_flagged = not body['is_approved']
+                srv.datetime_approved = datetime.datetime.now() if body['is_approved'] else None
             elif method == 'remove_submission':
-                # TODO: We should probably remove the approval from the sim run as well.
                 srv.is_approved = 0
+                # We need to remove the approval here, since it will not go through in the update_approval routine
+                srv.sr_id.is_approved = 0
+                srv.is_flagged = 0
                 srv.datetime_approved = None
             srv.save()
 
@@ -669,8 +671,7 @@ class AdminConsole(View):
         # Query all logged in users based on id list
         context['users'] = User.objects.filter(id__in=user_id_list).all()
 
-        #TODO: Fix this since they are submitting now
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_approved') \
+        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_submitted') \
                                                .select_related('user_id').select_related(
             'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
@@ -787,17 +788,18 @@ class Tasks(View):
         for task in tasks:
             # Should check to see whether there are any comment flags for the SRV
             flag_comments = models.ValidationAssignmentComment.objects.filter(srv_id=task.srv_id, is_flag=1).all()
-            if flag_comments:
-                context['flagged_tasks'].append(task)
-            # If the user has not approved this task, then we need to add it to that list as well
-            if not task.is_submitted and not task.srv_id.is_approved:
-                context['open_tasks'].append(task)
+            if not task.is_submitted:
+                if flag_comments:
+                    context['flagged_tasks'].append(task)
+                if not task.srv_id.is_approved:
+                    context['open_tasks'].append(task)
 
         # Grab the pending admin review tasks
         if request.user.groups.filter(name="Admin").exists():
             # Grab unapproved SRVs
-            unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved__lte=0).all()
+            unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved=0, is_flagged=0).all()
             for unapproved_srv in unapproved_srvs:
+                print(unapproved_srv)
                 # We need to grab all of the validation assignments that have been submitted,
                 # and check whether they all have is_approved set
                 submitted_tasks = models.ValidationAssignment.objects.all().filter(srv_id=unapproved_srv,
