@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load util_filters %}
 {% block content %}
 <div class="container">
 	<div class="row">
@@ -7,9 +8,30 @@
 			{% include 'components/filter_sidebar.html'  %}
 		</div>
 		<div class="col-8 offset-2">
-
-
-
+			{% if user|has_group:"Admin" %}
+				<div class="row my-2">
+					<div class="col-12">
+						<h1>Pending Admin Review</h1>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-12">
+					<div class="list-group">
+						{% for pending_admin_review_task in pending_admin_review_tasks %}
+							<a href="{% url 'validation_item_overview' pending_admin_review_task.id %}" class="list-group-item">
+							<h5 class="mb-1">
+								{{ pending_admin_review_task.sr_id.sim_id.name }}
+								{{ pending_admin_review_task.sr_id.name }}
+								{{ pending_admin_review_task.sub_id.name }}
+								{{ pending_admin_review_task.vi_id.name }}
+							</h5>
+							<p class="mb-1">{{ pending_admin_review_task.datetime_created }}</p>
+							</a>
+						{% endfor %}
+					</div>
+				</div>
+				</div>
+			{% endif %}
 			<div class="row my-2">
 				<div class="col-12">
 					<h1>Open Tasks</h1>

@@ -13,6 +13,7 @@ from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
 from django.db.models import Sum, Count
+from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
 
 from . import models, utils
@@ -62,7 +63,7 @@ def get_comments(request):
         comment_dict['user_name'] = user_name
         response.append(comment_dict)
 
-    return HttpResponse(json.dumps(response))
+    return HttpResponse(json.dumps(response,cls=DjangoJSONEncoder))
 
 
 def get_static_metric(request):
@@ -199,7 +200,7 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
 
     model = models.ValidationAssignmentComment
     title = 'Comments'
-    initial_order = [["datetime_modified", "asc"], ]
+    initial_order = [["datetime_modified", "desc"], ]
     length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
     search_values_separator = '+'
     show_column_filters = True
@@ -207,8 +208,9 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
     column_defs = [
         {'name': 'id', 'visible': False, },
         {'name': 'user', 'title': 'User', 'foreign_field': 'user_id__username'},
+        {'name': 'is_submission', 'title': 'Submission', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_approval', 'title': 'Approved', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'is_flag', 'title': 'Flag', 'choices': ((1, 'Yes'), (0, 'No'))},
-        {'name': 'is_approval', 'title': 'Approval', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'is_review', 'title': 'Review', 'choices': ((1, 'Yes'), (0, 'No'))},
         {'name': 'metric', 'title': 'Metric', 'foreign_field': 'metric_id__name'},
         {'name': 'metric_options', 'title': 'Datapoint Details'},
@@ -229,8 +231,9 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
-        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
+        row['is_submission'] = 'Yes' if obj.is_submission else 'No'
         row['is_approval'] = 'Yes' if obj.is_approval else 'No'
+        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
         row['is_review'] = 'Yes' if obj.is_review else 'No'
 
     def render_row_details(self, pk, request=None):
@@ -342,8 +345,8 @@ class UserView(View):
 
         context['user_model'] = User.objects.filter(id=id).first() if id is not None else User()
 
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
-            '-datetime_approved') \
+        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.filter(user_id=id).order_by(
+            '-datetime_submitted') \
                                                .select_related('user_id').select_related(
             'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
@@ -431,7 +434,7 @@ class ValidationItemOverview(View):
 
         context['validation_item'] = srv
 
-        context['approvals'] = models.ValidationAssignment.objects.filter(srv_id=srv).all()
+        context['assignments'] = models.ValidationAssignment.objects.filter(srv_id=srv).all()
         context['metrics'] = []
 
         # Get related metrics
@@ -445,10 +448,10 @@ class ValidationItemOverview(View):
 
         context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
 
-        context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
+        context['is_submitted'] = validation_item_assignment.is_submitted if validation_item_assignment \
             else (
                 request.user.groups.filter(name="Admin").exists() and
-                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_approval=1, user_id=request.user).first()
+                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_submission=1, user_id=request.user).first()
             )
 
         template = loader.get_template('validation_item_overview.html')
@@ -467,14 +470,10 @@ class ValidationItemView(View):
         context['validation_item'] = srv
 
         context['comments'] = []
-        context['approvals'] = []
         context['metrics'] = []
 
         for comment in models.ValidationAssignmentComment.objects.filter(srv_id=srv):
             context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
-
-        for approval in models.ValidationAssignment.objects.filter(srv_id=srv, is_approved=1):
-            context['approvals'].append({'user': approval.user_id, 'datetime_approved': approval.datetime_approved})
 
         # Get related metrics
         for validation_item_metric in models.ValidationItemMetrics.objects.filter(
@@ -484,14 +483,6 @@ class ValidationItemView(View):
 
         validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
         context['validation_item_assignment'] = validation_item_assignment
-
-        context['edit_permission'] = validation_item_assignment or request.user.groups.filter(name="Admin").exists()
-
-        context['is_approved'] = validation_item_assignment.is_approved if validation_item_assignment \
-            else (
-                request.user.groups.filter(name="Admin").exists() and
-                models.ValidationAssignmentComment.objects.filter(srv_id=srv, is_approval=1, user_id=request.user).first()
-            )
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -558,29 +549,33 @@ class ValidationAssignment(View):
         is_override = body.get('is_override', False)
 
         if validation_assignment:
-            if method == 'approve':
-                validation_assignment.is_approved = 1
-                validation_assignment.datetime_approved = datetime.datetime.now()
-                df = dateformat.DateFormat(validation_assignment.datetime_approved)
-                response['datetime_approved'] = df.format('N j, Y, P')
-            elif method == 'remove_approval':
+            if method == 'submit':
+                validation_assignment.is_submitted = 1
+                validation_assignment.datetime_submitted = datetime.datetime.now()
+                validation_assignment.is_approved = body['is_approved']
+                validation_assignment.datetime_approved = datetime.datetime.now() if body['is_approved'] else None
+            elif method == 'remove_submission':
+                validation_assignment.is_submitted = 0
                 validation_assignment.is_approved = 0
                 validation_assignment.datetime_approved = None
+                validation_assignment.datetime_submitted = None
 
             validation_assignment.save()
 
-        if method == 'remove_approval':
-            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_approval=1)
+        if method == 'remove_submission':
+            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_submission=1)
             comment.delete()
 
         if user.groups.filter(name="Admin").exists():
-            if method == 'approve' and is_override:
-                srv.is_approved = 1
-                srv.datetime_approved = datetime.datetime.now()
-                df = dateformat.DateFormat(srv.datetime_approved)
-                response['datetime_approved'] = df.format('N j, Y, P')
-            elif method == 'remove_approval':
+            if method == 'submit' and is_override:
+                srv.is_approved = body['is_approved']
+                srv.is_flagged = not body['is_approved']
+                srv.datetime_approved = datetime.datetime.now() if body['is_approved'] else None
+            elif method == 'remove_submission':
                 srv.is_approved = 0
+                # We need to remove the approval here, since it will not go through in the update_approval routine
+                srv.sr_id.is_approved = 0
+                srv.is_flagged = 0
                 srv.datetime_approved = None
             srv.save()
 
@@ -600,6 +595,7 @@ class ValidationAssignmentComment(View):
             'user_id': request.user,
             'comments': body['comments'],
             'is_flag': body.get('is_flag', 0),
+            'is_submission': body.get('is_submission', 0),
             'is_approval': body.get('is_approval', 0),
             'is_review': body.get('is_review', 0),
             'review_option': body.get('review_option', None),
@@ -630,7 +626,9 @@ class ValidationAssignmentComment(View):
 
     def delete(self, request, id):
         validation_assignment_comment = models.ValidationAssignmentComment.objects.get(pk=id)
-        if validation_assignment_comment and not(validation_assignment_comment.is_flag or validation_assignment_comment.is_approval or validation_assignment_comment.is_review):
+        if validation_assignment_comment and not(validation_assignment_comment.is_flag
+                                                 or validation_assignment_comment.is_submission
+                                                 or validation_assignment_comment.is_review):
             validation_assignment_comment.delete()
         return HttpResponse(status=200)
 
@@ -673,7 +671,7 @@ class AdminConsole(View):
         # Query all logged in users based on id list
         context['users'] = User.objects.filter(id__in=user_id_list).all()
 
-        context['recent_approved_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_approved') \
+        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_submitted') \
                                                .select_related('user_id').select_related(
             'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
@@ -769,7 +767,8 @@ class Tasks(View):
     def get(self, request):
         context = {
             'open_tasks': [],
-            'flagged_tasks': []
+            'flagged_tasks': [],
+            'pending_admin_review_tasks': []
         }
 
         template = loader.get_template('tasks.html')
@@ -789,11 +788,26 @@ class Tasks(View):
         for task in tasks:
             # Should check to see whether there are any comment flags for the SRV
             flag_comments = models.ValidationAssignmentComment.objects.filter(srv_id=task.srv_id, is_flag=1).all()
-            if flag_comments:
-                context['flagged_tasks'].append(task)
-            # If the user has not approved this task, then we need to add it to that list as well
-            if not task.is_approved and not task.srv_id.is_approved:
-                context['open_tasks'].append(task)
+            if not task.is_submitted:
+                if flag_comments:
+                    context['flagged_tasks'].append(task)
+                if not task.srv_id.is_approved:
+                    context['open_tasks'].append(task)
+
+        # Grab the pending admin review tasks
+        if request.user.groups.filter(name="Admin").exists():
+            # Grab unapproved SRVs
+            unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved=0, is_flagged=0).all()
+            for unapproved_srv in unapproved_srvs:
+                print(unapproved_srv)
+                # We need to grab all of the validation assignments that have been submitted,
+                # and check whether they all have is_approved set
+                submitted_tasks = models.ValidationAssignment.objects.all().filter(srv_id=unapproved_srv,
+                                                                                   is_submitted=1).aggregate(
+                    num_related=Count('id'), num_approved=Sum('is_approved'))
+                if submitted_tasks['num_approved'] is not None \
+                        and submitted_tasks['num_related'] != submitted_tasks['num_approved']:
+                    context['pending_admin_review_tasks'].append(unapproved_srv)
 
         return HttpResponse(template.render(context, request))
 
@@ -837,9 +851,9 @@ class ValidationItemsListView(View):
                 'sub_id').select_related('vi_id').all()
 
         for validation_assignment in validation_assignments:
-            num_approvals = models.ValidationAssignment.objects.filter(srv_id=validation_assignment).aggregate(
-                num_related=Count('id'), num_approved=Sum('is_approved'))
-            validation_assignment.num_approvals = num_approvals
+            stats = models.ValidationAssignment.objects.filter(srv_id=validation_assignment).aggregate(
+                num_related=Count('id'), num_approved=Sum('is_approved'), num_submitted=Sum('is_submitted'))
+            validation_assignment.stats = stats
 
         context = {
             'validation_assignments': validation_assignments,
@@ -900,15 +914,12 @@ class CommentModal(View):
         srv_id = request.GET.get('validation_assignment_id')
         if type == 'misc':
             template = loader.get_template('modals/misc_comment.html')
-        elif type == 'approval':
-            template = loader.get_template('modals/approval_comment.html')
+        elif type == 'submission':
+            template = loader.get_template('modals/submit_comment.html')
             # Check for whether he has an assignment
-            print(srv_id)
             validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv_id,
                                                                                user_id=request.user).first()
-            print(validation_assignment)
             context['is_not_assigned'] = validation_assignment is None
-            print(context['is_not_assigned'])
 
         elif type == 'review':
             metric_id = request.GET.get('metric_id')

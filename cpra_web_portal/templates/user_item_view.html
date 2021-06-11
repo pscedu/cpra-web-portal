@@ -77,23 +77,31 @@
 					</div>
 					<div class="row my-2 py-2" style="border-top: 1px solid black;">
 						<div class="col-12">
-							<h4>Approvals</h4>
+							<h4>Submissions</h4>
 							<table class="table table-hover">
 					  <thead>
 						<tr>
 						  <th scope="col">Simulation Run</th>
 						  <th scope="col">Subroutine</th>
 						  <th scope="col">Validation Item</th>
-						  <th scope="col">Time Approved</th>
+						  <th scope="col">Time Submitted</th>
+						  <th scope="col">Type</th>
 						</tr>
 					  </thead>
 					  <tbody>
-					    {% for recent_approved_task in recent_approved_tasks %}
-						<tr style="cursor: pointer" onclick="window.location='{% url 'validation_item_overview' recent_approved_task.id %}'">
-						  <th scope="row">{{ recent_approved_task.srv_id.sr_id.name }}</th>
-						  <td>{{ recent_approved_task.srv_id.sub_id.name }}</td>
-						  <td>{{ recent_approved_task.srv_id.vi_id.name }}</td>
-						  <td>{{ recent_approved_task.srv_id.datetime_approved }}</td>
+					    {% for recent_submitted_task in recent_submitted_tasks %}
+						<tr style="cursor: pointer" onclick="window.location='{% url 'validation_item_overview' recent_submitted_task.srv_id_id %}'">
+						  <th scope="row">{{ recent_submitted_task.srv_id.sr_id.name }}</th>
+						  <td>{{ recent_submitted_task.srv_id.sub_id.name }}</td>
+						  <td>{{ recent_submitted_task.srv_id.vi_id.name }}</td>
+						  <td>{{ recent_submitted_task.srv_id.datetime_submitted }}</td>
+						  <td>
+							  {% if recent_submitted_task.is_approved %}
+						Approved
+						{% else %}
+						Pending Admin Review
+						{% endif %}
+						  </td>
 						</tr>
 					  	{% endfor %}
 					  </tbody>

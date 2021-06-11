@@ -57,8 +57,11 @@ def update_approval(srv):
         srv.is_approved = sum_count_related_vas['num_related'] == sum_count_related_vas['num_approved']
         srv.save()
 
+    # Sim Run Flag update
+    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(is_flagged=1).all().exists()
+    sim_run.save()
     # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
-    if srv.is_approved and not sim_run.is_approved:
+    if srv.is_approved and not sim_run.is_approved and not sim_run.is_flagged:
         sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run, sub_id=srv.sub_id).aggregate(
             num_related=Count('id'), num_approved=Sum('is_approved'))
 

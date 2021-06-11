@@ -5,33 +5,28 @@
 <script>
 	$(document).ready(function(){
 		{% if edit_permission %}
-			$("#btn-remove-approval").on("click", function(){
+			$("#btn-remove-submission").on("click", function(){
 				let $this = $(this);
 				$.ajax({
-					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
+					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_submission' %}" ,
 					type: 'PUT',
 					headers: {'X-CSRFToken': csrftoken},
 					success: function(){
-						$("#container-approvals").find('.list-group-item-action').each(function(i, e){
-							if($(e).find('strong').text() == user_name)
-								e.remove();
-						})
 						$this.hide();
-						$("#btn-approve").show();
+						$("#btn-submit").show();
 						refresh_datatables()
 					}
 				});
 			});
 
-			{% if is_approved %}
-				$("#btn-approve").hide();
+			{% if is_submitted %}
+				$("#btn-submit").hide();
 			{% else %}
-				$("#btn-remove-approval").hide();
+				$("#btn-remove-submission").hide();
 			{% endif %}
 		{% else %}
-			$('#btn-approve').hide();
-			$('#btn-remove-approval').hide();
-			$('#btn-review').hide();
+			$('#btn-submit').hide();
+			$('#btn-remove-submission').hide();
 		{% endif %}
 
 		const user_name = "{{ user.username }}"
@@ -47,20 +42,10 @@
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
-					let is_output_item_assigned = $modal.find('#checkbox-is-output-item').is(':checked');
 					let body = {
 						comments: comment,
 						validation_assignment_id: {{ validation_item.id }}
 					}
-
-					if(is_output_item_assigned){
-						body['metric_options'] = {}
-						$('.metric_options:visible').find('.form-control').each(function(index, element){
-							body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
-						})
-						body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
-					}
-
 
 					$.post({
 						url: "{% url 'validation_assignment_comment' %}",
@@ -78,36 +63,32 @@
 			});
 		});
 
-		$('#modal-approval-comment').on('show.bs.modal', function(e){
+		$('#modal-submit-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
+			$.get("{% url 'comment_modal_view' 'submission' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
-				$('#approval-comment-save').on('click', function(){
+				$('#submission-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
 					let is_override = $modal.find('#checkbox-override').is(':checked');
+					let is_approved = $modal.find('#checkbox-approve').is(':checked');
 					let body = {
 						comments: comment,
-					    is_approval: 1,
+					    is_submission: 1,
+						is_approval: is_approved,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
 					{% if edit_permission %}
 						$.ajax({
-							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
+							url: "{% url 'validation_assignment_methods' validation_item.id 'submit' %}" ,
 							type: 'PUT',
 							headers: {'X-CSRFToken': csrftoken},
-							data: JSON.stringify({is_override: is_override}),
+							data: JSON.stringify({is_override: is_override, is_approved: is_approved}),
 							success: function(data){
-								$('#btn-approve').hide();
-								$("#btn-remove-approval").show();
-								data = JSON.parse(data);
-								let $approve_container = $('#approval-container-template').clone();
-								$approve_container.removeAttr('id');
-								$approve_container.find('#user-approval-template').text(user_name).removeAttr('id');
-								$approve_container.find('#datetime-approval-template').text(data['datetime_approved']).removeAttr('id');
-								$("#container-approvals").append($approve_container);
+								$('#btn-submit').hide();
+								$("#btn-remove-submission").show();
 							}
 						});
 					{% endif %}
@@ -149,8 +130,8 @@
 			<p>{{ validation_item.vi_id.description }}</p>
 				</div>
 				<div class="col-2">
-					<button id="btn-remove-approval" class="btn btn-danger">Remove Approval</button>
-					<button id="btn-approve" data-bs-toggle="modal" data-bs-target="#modal-approval-comment" class="btn btn-success">Approve</button>
+					<button id="btn-remove-submission" class="btn btn-danger">Remove Submission</button>
+					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Submit</button>
 				</div>
 				<div class="col-1">
 					<a href="{% url 'validation_item_view' validation_item.id %}">Data Viewer</a>
@@ -169,16 +150,26 @@
 			  <thead>
 				<tr>
 					<th scope="col">Username</th>
-					<th scope="col">Approved?</th>
+					<th scope="col">Submitted?</th>
 					<th scope="col">Status</th>
 				</tr>
 			  </thead>
 			  <tbody>
-			  	{% for approval in approvals %}
+			  	{% for assignment in assignments %}
 				<tr>
-					<th scope="row">{{ approval.user_id.username }}</th>
-					<td>{% if approval.is_approved %}X{% endif %}</td>
-					<td>Status</td>
+					<th scope="row">{{ assignment.user_id.username }}</th>
+					<td>{% if assignment.is_submitted %}X{% endif %}</td>
+					<td>
+						{% if not assignment.is_submitted %}
+						Pending Submission
+						{% else %}
+						{% if assignment.is_approved %}
+						Approved
+						{% else %}
+						Pending Admin Review
+						{% endif %}
+						{% endif %}
+					</td>
 				</tr>
 				{% endfor %}
 			  </tbody>
@@ -193,21 +184,10 @@
 	</div>
 </div>
 
-<div id="container-templates" style="display: none;">
-	<div id="comment-container-template" class="list-group-item-action">
-		<strong id="user-comment-template"> </strong>
-		<p id="comments-comment-template"> </p>
-	</div>
-	<div id="approval-container-template" class="list-group-item-action">
-		<strong id="user-approval-template"></strong>
-		<p id="datetime-approval-template"></p>
-	</div>
-</div>
-
 <div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
-<div class="modal fade" id="modal-approval-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="modal-submit-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
 {% endblock %}
