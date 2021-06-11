@@ -704,6 +704,13 @@ class Home(View):
 
     post = get
 
+class Resources(View):
+    def get(self, request):
+        context = {}
+        template = loader.get_template('resources.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
 
 # List Views of items
 class SimulationRunsListView(View):

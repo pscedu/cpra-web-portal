@@ -31,6 +31,7 @@ urlpatterns = [
     path('dictionaries_list_view/', views.DictionariesListView.as_view(), name='dictionaries_list_view'),
     path('simulation_runs_list_view/', views.SimulationRunsListView.as_view(), name='simulation_runs_list_view'),
     path('subroutines_list_view/', views.SubroutinesListView.as_view(), name='subroutines_list_view'),
+    path('resources/', views.Resources.as_view(), name='resources'),
     path('tasks/', views.Tasks.as_view(), name='tasks'),
     path('user_view/', views.UserView.as_view(), name='user_new_view'),
     path('user_view/<int:id>/', views.UserView.as_view(), name='user_edit_view'),
