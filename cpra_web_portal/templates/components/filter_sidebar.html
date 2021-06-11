@@ -1,31 +1,35 @@
+{% load util_filters %}
 <div class="row my-2">
     <h4>Filters</h4>
 </div>
 {% for filter_id, filter in filters.items %}
 <div class="row my-2">
-    {% if filter.type in 'multiselect,select' %}
-    <label for="{{ filter_id }}">{{ filter.name }}</label>
-    <select id="{{ filter_id }}" class="form-control filter-item"
-    {% if filter.type == "multiselect" %}
-    multiple
-    {% endif %}
-    >
-        {% for option in filter.options %}
-        <option value="{{ option.value }}"
-                {% if option.value == filter.value or option.value in filter.value %}
-                selected
-                {% endif %}
-        >{{ option.text }}</option>
-        {% endfor %}
-    </select>
-    {% else %}
-    {% if filter.type == 'checkbox' %}
-<div class="form-check my-2">
-  <input class="form-check-input filter-item" type="checkbox" value="{{ filter.value }}" id="{{ filter_id }}"
-  {% if filter.value == 1 %} checked {% endif %}>
-  <label class="form-check-label" for="{{ filter_id }}">{{ filter.name }}</label>
-</div>
-      {% endif %}
+<!--    If the filter does not have a permission set, or if it does have a permission set and the user has that group -->
+    {% if not filter.permission_group or filter.permission_group and user|has_group:filter.permission_group %}
+        {% if filter.type in 'multiselect,select' %}
+            <label for="{{ filter_id }}">{{ filter.name }}</label>
+            <select id="{{ filter_id }}" class="form-control filter-item"
+            {% if filter.type == "multiselect" %}
+            multiple
+            {% endif %}
+            >
+                {% for option in filter.options %}
+                <option value="{{ option.value }}"
+                        {% if option.value == filter.value or option.value in filter.value %}
+                        selected
+                        {% endif %}
+                >{{ option.text }}</option>
+                {% endfor %}
+            </select>
+        {% else %}
+        {% if filter.type == 'checkbox' %}
+            <div class="form-check my-2">
+              <input class="form-check-input filter-item" type="checkbox" value="{{ filter.value }}" id="{{ filter_id }}"
+                {% if filter.value == 1 %} checked {% endif %}>
+              <label class="form-check-label" for="{{ filter_id }}">{{ filter.name }}</label>
+            </div>
+          {% endif %}
+        {% endif %}
     {% endif %}
 </div>
 {% endfor %}
