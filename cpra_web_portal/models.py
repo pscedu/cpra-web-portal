@@ -218,6 +218,14 @@ class SimulationRunValidation(models.Model):
                 'data_source': None,
                 'default': 0,
                 'data_source_value_type': 'int'
+            },
+            'is_flagged': {
+                'name': 'Critical Error',
+                'type': 'checkbox',
+                'data_source': None,
+                'default': 0,
+                'data_source_value_type': 'int',
+                'permission_group': 'Admin'
             }
         }
 
