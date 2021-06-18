@@ -1,14 +1,18 @@
+import base64
+import codecs
 import json
 import os
 import datetime
 import csv
+import urllib.parse
 
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.template import loader
-from django.utils import timezone, dateformat
+from django.utils import timezone
 from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
@@ -705,12 +709,27 @@ class Home(View):
     post = get
 
 class Resources(View):
-    def get(self, request):
-        context = {}
+    def get(self, request, path=None):
+        filepath = settings.RESOURCES_FILE_PATH
+        if path:
+            decoded_path = path.replace('%2f', '/')
+            return FileResponse(open(os.path.join(filepath, decoded_path), 'rb'), as_attachment=True)
+
+        # get all of the files
+        context = {'resources': {}}
+        for root, dirs, files in os.walk(filepath):
+            dir_name = root.replace(filepath, '')[1:] if filepath != root else 'Main Directory'
+            pruned_root = root.replace(filepath, '')[1:] + '/' if filepath != root else ''
+            if files:
+                context['resources'][dir_name] = {}
+                for file in files:
+                    context['resources'][dir_name][(pruned_root + file).replace('/','%2f')] = file
+
         template = loader.get_template('resources.html')
         return HttpResponse(template.render(context, request))
 
     post = get
+
 
 # List Views of items
 class SimulationRunsListView(View):
@@ -806,7 +825,6 @@ class Tasks(View):
             # Grab unapproved SRVs
             unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved=0, is_flagged=0).all()
             for unapproved_srv in unapproved_srvs:
-                print(unapproved_srv)
                 # We need to grab all of the validation assignments that have been submitted,
                 # and check whether they all have is_approved set
                 submitted_tasks = models.ValidationAssignment.objects.all().filter(srv_id=unapproved_srv,
