@@ -2,13 +2,22 @@
 {% load static %}
 {% block content %}
 <!--TODO: Update with resources that the team wants to include-->
-<div class="container-fluid d-flex align-content-center" style="background-image: url('static/images/map.png'); height: 86vh; background-position: center; background-repeat: no-repeat; background-size: cover;">
-	<div class="row my-2">
-		<div class="col-4 ml-4 align-self-center" style="background-color:#5F86C4; opacity: .9; height:50vh;">
-				<h1 style="color:#FFFFFF; font-size: 64px">Coastal Protection and Restoration Authority Portal</h1>
-		</div>
-	</div>
-	<div class="row">
+<div class="container">
+	<div class="row row-cols-4 mt-4">
+		{% for directory, directory_dict in resources.items %}
+			<div class="col">
+				<div class="card">
+			  <div class="card-body">
+				<h5 class="card-title">{{ directory }}</h5>
+				  <ul>
+					  {% for file_path, file in directory_dict.items %}
+					  	<li><a href="{% url 'resource_download' file_path %}">{{ file }}</a></li>
+					  {% endfor %}
+				  </ul>
+				  </div>
+			</div>
+			</div>
+		{% endfor %}
 	</div>
 </div>
 
