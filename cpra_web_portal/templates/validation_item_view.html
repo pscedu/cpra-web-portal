@@ -17,6 +17,7 @@
 
 		$('select').select2({width: '100%'});
 
+		let $export_button = $('#btn-export');
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
@@ -103,6 +104,8 @@
 			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 			img.style.width = "85%"
 			$metric_container.append(img);
+
+			update_export_button(img.src, file_name);
 		}
 
 		function populate_dynamic_graph_metrics(metric, files){
@@ -209,6 +212,7 @@
 			  panzoom.zoomWithWheel(event)
 			})
 
+			update_export_button(img.src, file_name)
 		}
 
 		function load_comments(){
@@ -245,11 +249,15 @@
 			if(comment_dict['is_review'])
 				$comment_container.addClass(comment_dict['is_flag'] ? 'list-group-item-danger' : 'list-group-item-info').addClass('review-comment');
 			else if(comment_dict['user_name'] === user_name) {
-				$comment_container.addClass('can-delete')
 				$comment_container.attr('data-bs-toggle', 'modal').attr('data-bs-target', '#modal-misc-comment').attr('data-bs-comment_id', comment_dict['id']);
 			}
 
 			$("#container-oi-comments").append($comment_container);
+		}
+
+		function update_export_button(url, file_name){
+			$export_button.data('download', url)
+			$export_button.data('file_name', file_name)
 		}
 
 		// Start Listener Region
@@ -400,6 +408,16 @@
 			load_comments();
 		});
 
+		$export_button.on('click', function(){
+			console.log($(this).data('download'))
+			let link = document.createElement('a')
+			link.href = $(this).data('download');
+			link.download = $(this).data('file_name');
+			document.body.appendChild(link);
+			link.click()
+			document.body.removeChild(link);
+		})
+
 		// End Listener Region
 	});
 </script>
@@ -422,7 +440,7 @@
 				</div>
 				<div class="col-3">
 					<button id="btn-review" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-review-comment">Review</button>
-					<button class="btn btn-primary disabled">Export</button>
+					<button id="btn-export" class="btn btn-primary">Export</button>
 				</div>
 			</div>
 			<div class="row flex-grow-1">
