@@ -55,19 +55,17 @@ def get_comments(request):
 
     validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
 
-    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment, metric_id=None)
-
     metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment, metric_options=metric_options)
 
     response = []
     # Prep the comments for response
-    for comment in metric_comments.union(srv_comments):
+    for comment in metric_comments:
         user_name = comment.user_id.username
         comment_dict = model_to_dict(comment)
         comment_dict['user_name'] = user_name
         response.append(comment_dict)
 
-    return HttpResponse(json.dumps(response,cls=DjangoJSONEncoder))
+    return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder))
 
 
 def get_static_metric(request):
@@ -473,11 +471,7 @@ class ValidationItemView(View):
 
         context['validation_item'] = srv
 
-        context['comments'] = []
         context['metrics'] = []
-
-        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=srv):
-            context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
 
         # Get related metrics
         for validation_item_metric in models.ValidationItemMetrics.objects.filter(
@@ -487,6 +481,8 @@ class ValidationItemView(View):
 
         validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
         context['validation_item_assignment'] = validation_item_assignment
+
+        context['edit_permission'] = validation_item_assignment is not None
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -610,23 +606,20 @@ class ValidationAssignmentComment(View):
 
         # For review comments, we should update an existing review comment if it exists.
         if validation_assignment_comment_data['is_review']:
-            validation_assignment_review_comment = models.ValidationAssignmentComment.objects.filter(
+            validation_assignment_comment = models.ValidationAssignmentComment.objects.filter(
                 srv_id=validation_assignment_comment_data['srv_id'],
                 metric_id_id=validation_assignment_comment_data['metric_id_id'],
                 metric_options=validation_assignment_comment_data['metric_options'],
                 user_id=validation_assignment_comment_data['user_id'],
-                is_review=1)
-            if not validation_assignment_review_comment:
-                validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-                validation_assignment_comment.save()
-            else:
-                validation_assignment_review_comment.update(**validation_assignment_comment_data)
-        else:
-            validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-            validation_assignment_comment.save()
+                is_review=1).first()
+            if validation_assignment_comment:
+                validation_assignment_comment_data['id'] = validation_assignment_comment.id
+
+        validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+        validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
-        return HttpResponse(status=200)
+        return HttpResponse(json.dumps(model_to_dict(validation_assignment_comment), cls=DjangoJSONEncoder))
 
     def delete(self, request, id):
         validation_assignment_comment = models.ValidationAssignmentComment.objects.get(pk=id)
@@ -934,14 +927,15 @@ class SimulationModal(View):
 
 
 class CommentModal(View):
-    def get(self, request, type):
+    def get(self, request, type, id=None):
         context = {}
         srv_id = request.GET.get('validation_assignment_id')
         if type == 'misc':
+            context['comment'] = models.ValidationAssignmentComment.objects.get(pk=id) if id else None
             template = loader.get_template('modals/misc_comment.html')
         elif type == 'submission':
             template = loader.get_template('modals/submit_comment.html')
-            # Check for whether he has an assignment
+            # Check for whether it has an assignment
             validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv_id,
                                                                                user_id=request.user).first()
             context['is_not_assigned'] = validation_assignment is None
@@ -949,6 +943,7 @@ class CommentModal(View):
         elif type == 'review':
             metric_id = request.GET.get('metric_id')
             metric_options = json.loads(request.GET.get('metric_options', '{}'))
+            # Check to see if a review of this output item already exists. If so, grab it.
             srv = models.SimulationRunValidation.objects.filter(id=srv_id).first()
             comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
                                                                         srv_id=srv,
@@ -956,7 +951,6 @@ class CommentModal(View):
                                                                         is_review=1,
                                                                         user_id=request.user).first()
             context['comment'] = comment
-            # Check to see if a review of this output item already exists. If so, grab it.
             template = loader.get_template('modals/review_comment.html')
 
         return HttpResponse(template.render(context, request))
