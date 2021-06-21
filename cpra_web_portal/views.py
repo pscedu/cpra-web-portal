@@ -1,10 +1,7 @@
-import base64
-import codecs
 import json
 import os
 import datetime
 import csv
-import urllib.parse
 
 from django.conf import settings
 from django.contrib.auth.models import User, Group
@@ -117,19 +114,21 @@ def get_dynamic_graph_metric(request):
         for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
             with open(os.path.join(file_path, file), 'r') as f:
                 if metric_data_model == 'hydro_compartments':
+                    # This iterates over yearly files, and grabs the column that is being viewed
                     csv_reader = list(csv.DictReader(f))
                     json_from_csv.append(csv_reader[int(file_name)-1])
                 elif metric_data_model == 'daily_hydro_compartments':
-                    # for this one, we need to iterate over each of these lines and get the column
+                    # This iterates over the columns in a file, and grabs the column that is being viewed
                     result = None
-                    if not cache.keys(file+'_'+file_name):
+                    if not cache.keys(f'{file}_{int(file_name)-1}'):
                         csv_reader = pa.read_csv(f, header=None)
                         for col in csv_reader.columns:
-                            cache.set(file+'_'+str(col), csv_reader[col])
+                            # Set the columns in Redis so that subsequent loads are faster
+                            cache.set(f'{file}_{col}', csv_reader[col])
                             if col == int(file_name)-1:
                                 result = csv_reader[col]
 
-                    result = cache.get(file+'_'+str(int(file_name)-1)) if result is None else result
+                    result = cache.get(f'{file}_{int(file_name)-1}') if result is None else result
 
                     # We only want to get a set of years (if the year is not -1)
                     year = int(request.GET.get('year'))
@@ -245,6 +244,7 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
             'model': model,
             'request': request
         })
+
 
 # Individual Item Views
 class SimulationEditView(View):
