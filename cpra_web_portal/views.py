@@ -65,6 +65,28 @@ def get_comments(request):
     return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder))
 
 
+def export_metric(request):
+    file_name = request.GET.get('file_name')
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
+        'sr_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
+        metric.file_path,
+        file_name
+    )
+
+    try:
+        return FileResponse(open(file_path, 'rb'), as_attachment=True)
+    except:
+        return HttpResponse(status=500)
+
+
 def get_static_metric(request):
     file_name = request.GET.get('file_name')
     metric_id = request.GET.get('metric_id')
