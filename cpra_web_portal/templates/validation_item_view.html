@@ -415,7 +415,12 @@
 					? chart.toBase64Image()
 					: '/export_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 
-			a.download = $metric_name.text() + '_' + file_name;
+			a.download = $metric_name.text();
+
+			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element) {
+				a.download += '_' + $(this).attr('name') + '_' + $(this).find('option:selected').text();
+			});
+
 			a.click();
 		})
 
