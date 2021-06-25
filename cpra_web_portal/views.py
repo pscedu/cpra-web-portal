@@ -72,7 +72,7 @@ def export_metric(request):
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
-    metric_data_model = metric.graph_config['misc']['data_model']
+    metric_data_model = metric.graph_config['misc']['data_model'] if metric.type == 'dynamic_graph' else ''
 
     validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
         'sr_id').first()
