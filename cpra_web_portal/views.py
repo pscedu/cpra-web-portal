@@ -16,6 +16,7 @@ from django.core.cache import cache
 from django.db.models import Sum, Count
 from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
+import zipfile
 
 from . import models, utils
 
@@ -66,10 +67,12 @@ def get_comments(request):
 
 
 def export_metric(request):
+    response = None
     file_name = request.GET.get('file_name')
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
     metric = models.Metric.objects.filter(id=metric_id).first()
+    metric_data_model = metric.graph_config['misc']['data_model']
 
     validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
         'sr_id').first()
@@ -78,11 +81,29 @@ def export_metric(request):
         validation_assignment.sr_id.sim_id.results_dir,
         validation_assignment.sr_id.results_file_path,
         metric.file_path,
-        file_name
+        '' if metric.type == 'dynamic_graph' and metric_data_model != 'extraction_points' else file_name
     )
 
+    if metric.type == 'dynamic_graph' and metric_data_model != 'extraction_points':
+        if metric_data_model == 'hydro_compartments':
+            archive_path = settings.TMP_ARCHIVES_PATH
+            os.makedirs(archive_path, exist_ok=True)
+            archive_file_path = os.path.join(archive_path, f'{metric.name}_hydro_compartments.zip')
+            #  Check to see if the file already exists, minor optimization
+            if not os.path.exists(archive_file_path):
+                response = zipfile.ZipFile(archive_file_path, 'w')
+                for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                    response.write(os.path.join(file_path, file), file)
+                response.close()
+            response = open(archive_file_path, 'rb')
+        elif metric_data_model == 'daily_hydro_compartments':
+            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                response = open(os.path.join(file_path, file), 'rb')
+    else:
+        response = open(file_path, 'rb')
+
     try:
-        return FileResponse(open(file_path, 'rb'), as_attachment=True)
+        return FileResponse(response, as_attachment=True)
     except:
         return HttpResponse(status=500)
 
