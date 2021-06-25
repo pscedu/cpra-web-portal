@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<!--TODO: Update with resources that the team wants to include-->
+<div class="container">
+	<div class="row row-cols-4 mt-4">
+		{% for directory, directory_dict in resources.items %}
+			<div class="col">
+				<div class="card">
+			  <div class="card-body">
+				<h5 class="card-title">{{ directory }}</h5>
+				  <ul>
+					  {% for file_path, file in directory_dict.items %}
+					  	<li><a href="{% url 'resource_download' file_path %}">{{ file }}</a></li>
+					  {% endfor %}
+				  </ul>
+				  </div>
+			</div>
+			</div>
+		{% endfor %}
+	</div>
+</div>
+
+{% endblock %}

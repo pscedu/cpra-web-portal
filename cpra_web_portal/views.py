@@ -3,18 +3,20 @@ import os
 import datetime
 import csv
 
+from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.contrib.sessions.models import Session
 from django.forms.models import model_to_dict
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
 from django.template import loader
-from django.utils import timezone, dateformat
+from django.utils import timezone
 from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
 from django.db.models import Sum, Count
 from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
+import zipfile
 
 from . import models, utils
 
@@ -51,19 +53,59 @@ def get_comments(request):
 
     validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).first()
 
-    srv_comments = models.ValidationAssignmentComment.objects.filter(srv_id=validation_assignment, metric_id=None)
-
     metric_comments = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id, srv_id=validation_assignment, metric_options=metric_options)
 
     response = []
     # Prep the comments for response
-    for comment in metric_comments.union(srv_comments):
+    for comment in metric_comments:
         user_name = comment.user_id.username
         comment_dict = model_to_dict(comment)
         comment_dict['user_name'] = user_name
         response.append(comment_dict)
 
-    return HttpResponse(json.dumps(response,cls=DjangoJSONEncoder))
+    return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder))
+
+
+def export_metric(request):
+    response = None
+    file_name = request.GET.get('file_name')
+    metric_id = request.GET.get('metric_id')
+    validation_assignment_id = request.GET.get('validation_assignment_id')
+    metric = models.Metric.objects.filter(id=metric_id).first()
+    metric_data_model = metric.graph_config['misc']['data_model'] if metric.type == 'dynamic_graph' else ''
+
+    validation_assignment = models.SimulationRunValidation.objects.filter(id=validation_assignment_id).select_related(
+        'sr_id').first()
+
+    file_path = os.path.join(
+        validation_assignment.sr_id.sim_id.results_dir,
+        validation_assignment.sr_id.results_file_path,
+        metric.file_path,
+        '' if metric.type == 'dynamic_graph' and metric_data_model != 'extraction_points' else file_name
+    )
+
+    if metric.type == 'dynamic_graph' and metric_data_model != 'extraction_points':
+        if metric_data_model == 'hydro_compartments':
+            archive_path = settings.TMP_ARCHIVES_PATH
+            os.makedirs(archive_path, exist_ok=True)
+            archive_file_path = os.path.join(archive_path, f'{metric.name}_hydro_compartments.zip')
+            #  Check to see if the file already exists, minor optimization
+            if not os.path.exists(archive_file_path):
+                response = zipfile.ZipFile(archive_file_path, 'w')
+                for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                    response.write(os.path.join(file_path, file), file)
+                response.close()
+            response = open(archive_file_path, 'rb')
+        elif metric_data_model == 'daily_hydro_compartments':
+            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                response = open(os.path.join(file_path, file), 'rb')
+    else:
+        response = open(file_path, 'rb')
+
+    try:
+        return FileResponse(response, as_attachment=True)
+    except:
+        return HttpResponse(status=500)
 
 
 def get_static_metric(request):
@@ -115,19 +157,21 @@ def get_dynamic_graph_metric(request):
         for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
             with open(os.path.join(file_path, file), 'r') as f:
                 if metric_data_model == 'hydro_compartments':
+                    # This iterates over yearly files, and grabs the column that is being viewed
                     csv_reader = list(csv.DictReader(f))
                     json_from_csv.append(csv_reader[int(file_name)-1])
                 elif metric_data_model == 'daily_hydro_compartments':
-                    # for this one, we need to iterate over each of these lines and get the column
+                    # This iterates over the columns in a file, and grabs the column that is being viewed
                     result = None
-                    if not cache.keys(file+'_'+file_name):
+                    if not cache.keys(f'{file}_{int(file_name)-1}'):
                         csv_reader = pa.read_csv(f, header=None)
                         for col in csv_reader.columns:
-                            cache.set(file+'_'+str(col), csv_reader[col])
+                            # Set the columns in Redis so that subsequent loads are faster
+                            cache.set(f'{file}_{col}', csv_reader[col])
                             if col == int(file_name)-1:
                                 result = csv_reader[col]
 
-                    result = cache.get(file+'_'+str(int(file_name)-1)) if result is None else result
+                    result = cache.get(f'{file}_{int(file_name)-1}') if result is None else result
 
                     # We only want to get a set of years (if the year is not -1)
                     year = int(request.GET.get('year'))
@@ -243,6 +287,7 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
             'model': model,
             'request': request
         })
+
 
 # Individual Item Views
 class SimulationEditView(View):
@@ -469,11 +514,7 @@ class ValidationItemView(View):
 
         context['validation_item'] = srv
 
-        context['comments'] = []
         context['metrics'] = []
-
-        for comment in models.ValidationAssignmentComment.objects.filter(srv_id=srv):
-            context['comments'].append({'user': comment.user_id, 'comment': comment.comments})
 
         # Get related metrics
         for validation_item_metric in models.ValidationItemMetrics.objects.filter(
@@ -483,6 +524,8 @@ class ValidationItemView(View):
 
         validation_item_assignment = models.ValidationAssignment.objects.filter(srv_id=srv, user_id=request.user).first()
         context['validation_item_assignment'] = validation_item_assignment
+
+        context['edit_permission'] = validation_item_assignment is not None
 
         template = loader.get_template('validation_item_view.html')
         return HttpResponse(template.render(context, request))
@@ -606,23 +649,20 @@ class ValidationAssignmentComment(View):
 
         # For review comments, we should update an existing review comment if it exists.
         if validation_assignment_comment_data['is_review']:
-            validation_assignment_review_comment = models.ValidationAssignmentComment.objects.filter(
+            validation_assignment_comment = models.ValidationAssignmentComment.objects.filter(
                 srv_id=validation_assignment_comment_data['srv_id'],
                 metric_id_id=validation_assignment_comment_data['metric_id_id'],
                 metric_options=validation_assignment_comment_data['metric_options'],
                 user_id=validation_assignment_comment_data['user_id'],
-                is_review=1)
-            if not validation_assignment_review_comment:
-                validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-                validation_assignment_comment.save()
-            else:
-                validation_assignment_review_comment.update(**validation_assignment_comment_data)
-        else:
-            validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
-            validation_assignment_comment.save()
+                is_review=1).first()
+            if validation_assignment_comment:
+                validation_assignment_comment_data['id'] = validation_assignment_comment.id
+
+        validation_assignment_comment = models.ValidationAssignmentComment(**validation_assignment_comment_data)
+        validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
-        return HttpResponse(status=200)
+        return HttpResponse(json.dumps(model_to_dict(validation_assignment_comment), cls=DjangoJSONEncoder))
 
     def delete(self, request, id):
         validation_assignment_comment = models.ValidationAssignmentComment.objects.get(pk=id)
@@ -700,6 +740,28 @@ class Home(View):
     def get(self, request):
         context = {}
         template = loader.get_template('home.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
+
+class Resources(View):
+    def get(self, request, path=None):
+        filepath = settings.RESOURCES_FILE_PATH
+        if path:
+            decoded_path = path.replace('%2f', '/')
+            return FileResponse(open(os.path.join(filepath, decoded_path), 'rb'), as_attachment=True)
+
+        # get all of the files
+        context = {'resources': {}}
+        for root, dirs, files in os.walk(filepath):
+            dir_name = root.replace(filepath, '')[1:] if filepath != root else 'Main Directory'
+            pruned_root = root.replace(filepath, '')[1:] + '/' if filepath != root else ''
+            if files:
+                context['resources'][dir_name] = {}
+                for file in files:
+                    context['resources'][dir_name][(pruned_root + file).replace('/','%2f')] = file
+
+        template = loader.get_template('resources.html')
         return HttpResponse(template.render(context, request))
 
     post = get
@@ -799,7 +861,6 @@ class Tasks(View):
             # Grab unapproved SRVs
             unapproved_srvs = models.SimulationRunValidation.objects.filter(is_approved=0, is_flagged=0).all()
             for unapproved_srv in unapproved_srvs:
-                print(unapproved_srv)
                 # We need to grab all of the validation assignments that have been submitted,
                 # and check whether they all have is_approved set
                 submitted_tasks = models.ValidationAssignment.objects.all().filter(srv_id=unapproved_srv,
@@ -909,14 +970,15 @@ class SimulationModal(View):
 
 
 class CommentModal(View):
-    def get(self, request, type):
+    def get(self, request, type, id=None):
         context = {}
         srv_id = request.GET.get('validation_assignment_id')
         if type == 'misc':
+            context['comment'] = models.ValidationAssignmentComment.objects.get(pk=id) if id else None
             template = loader.get_template('modals/misc_comment.html')
         elif type == 'submission':
             template = loader.get_template('modals/submit_comment.html')
-            # Check for whether he has an assignment
+            # Check for whether it has an assignment
             validation_assignment = models.ValidationAssignment.objects.filter(srv_id=srv_id,
                                                                                user_id=request.user).first()
             context['is_not_assigned'] = validation_assignment is None
@@ -924,6 +986,7 @@ class CommentModal(View):
         elif type == 'review':
             metric_id = request.GET.get('metric_id')
             metric_options = json.loads(request.GET.get('metric_options', '{}'))
+            # Check to see if a review of this output item already exists. If so, grab it.
             srv = models.SimulationRunValidation.objects.filter(id=srv_id).first()
             comment = models.ValidationAssignmentComment.objects.filter(metric_id=metric_id,
                                                                         srv_id=srv,
@@ -931,7 +994,6 @@ class CommentModal(View):
                                                                         is_review=1,
                                                                         user_id=request.user).first()
             context['comment'] = comment
-            # Check to see if a review of this output item already exists. If so, grab it.
             template = loader.get_template('modals/review_comment.html')
 
         return HttpResponse(template.render(context, request))

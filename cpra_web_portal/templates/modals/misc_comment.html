@@ -5,11 +5,19 @@
 {% block modal_body %}
             <!--        Comment text area -->
 <div class="form-floating">
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"></textarea>
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
+        {% if comment %}
+                  disabled
+        {% endif %}
+        >{{ comment.comments }}</textarea>
         <label for="textarea-comment">Comment</label>
 </div>
 {% endblock %}
 {% block modal_footer %}
+    {% if comment %}
+    <button id="misc-comment-delete" type="button" class="btn btn-danger">Delete</button>
+    {% else %}
     <button id="misc-comment-save" type="button" class="btn btn-primary">Save</button>
+    {% endif %}
     <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
 {% endblock %}

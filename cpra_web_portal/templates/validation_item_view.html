@@ -8,32 +8,7 @@
 <script>
 	$(document).ready(function(){
 		{% if edit_permission %}
-			$("#btn-remove-approval").on("click", function(){
-				let $this = $(this);
-				$.ajax({
-					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_approval' %}" ,
-					type: 'PUT',
-					headers: {'X-CSRFToken': csrftoken},
-					success: function(){
-						$("#container-approvals").find('.list-group-item-action').each(function(i, e){
-							if($(e).find('strong').text() == user_name)
-								e.remove();
-						})
-						$this.hide();
-						$("#btn-approve").show();
-						load_comments();
-					}
-				});
-			});
-
-			{% if is_approved %}
-				$("#btn-approve").hide();
-			{% else %}
-				$("#btn-remove-approval").hide();
-			{% endif %}
 		{% else %}
-			$('#btn-approve').hide();
-			$('#btn-remove-approval').hide();
 			$('#btn-review').hide();
 		{% endif %}
 
@@ -42,153 +17,7 @@
 
 		$('select').select2({width: '100%'});
 
-		$('#modal-misc-comment').on('show.bs.modal', function(e){
-			// this is a new modal so we do a get request to load the HTML
-			let $modal = $(this);
-			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
-				$modal.append(response);
-				$('#misc-comment-save').on('click', function(){
-					let comment = $modal.find('#textarea-comment').val();
-
-					let body = {
-						comments: comment,
-						validation_assignment_id: {{ validation_item.id }}
-					}
-
-					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function(index, element){
-						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
-					})
-					body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
-
-					$.post({
-						url: "{% url 'validation_assignment_comment' %}",
-						headers: {'X-CSRFToken': csrftoken},
-						data: JSON.stringify(body),
-						success: function(){
-							body['user_name'] = user_name
-							add_comment(body)
-							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
-							bs_modal.hide();
-							$modal.empty();
-						}
-					});
-				});
-
-			});
-		});
-
-		$('#modal-review-comment').on('show.bs.modal', function(e){
-			// this is a new modal so we do a get request to load the HTML
-			let $modal = $(this);
-			$modal.empty();
-
-			let metric_id = $('#metric_select').find('option:selected').data('metric_id');
-			let metric_options = {}
-			$('.metric_options:visible').find('.form-control').each(function(index, element){
-				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
-			});
-			metric_options = encodeURI(JSON.stringify(metric_options))
-
-			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
-				$modal.append(response);
-				$('#review-comment-save').on('click', function(){
-					let radio_id = $modal.find('.form-check-input:radio:checked').attr('id');
-					let comment = $modal.find('#textarea-comment').val();
-					let is_flag = radio_id === 'not-intuitive' ? $modal.find('#checkbox-flag').is(':checked') : 0;
-
-					let body = {
-						comments: comment,
-					    is_flag: is_flag,
-						is_review: 1,
-						review_option: radio_id,
-						validation_assignment_id: {{ validation_item.id }}
-					}
-
-					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function (index, element) {
-						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
-					})
-					body['metric_id'] = $('#metric_select').find('option:selected').data('metric_id');
-
-
-					$.post({
-						url: "{% url 'validation_assignment_comment' %}",
-						headers: {'X-CSRFToken': csrftoken},
-						data: JSON.stringify(body),
-						success: function(){
-							body['user_name'] = user_name
-
-							$('.review-comment').each(function(){
-								if($(this).find('strong').text() === user_name){
-									$(this).remove();
-								}
-							})
-
-							add_comment(body)
-							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
-							bs_modal.hide();
-							$modal.empty();
-
-						}
-					});
-				});
-			});
-		});
-
-		$('#modal-approval-comment').on('show.bs.modal', function(e){
-			// this is a new modal so we do a get request to load the HTML
-			let $modal = $(this);
-			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'approval' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
-				$modal.append(response);
-				$('#approval-comment-save').on('click', function(){
-					let comment = $modal.find('#textarea-comment').val();
-					let is_override = $modal.find('#checkbox-override').is(':checked');
-					let body = {
-						comments: comment,
-					    is_approval: 1,
-						validation_assignment_id: {{ validation_item.id }}
-					}
-
-					{% if edit_permission %}
-						$.ajax({
-							url: "{% url 'validation_assignment_methods' validation_item.id 'approve' %}" ,
-							type: 'PUT',
-							headers: {'X-CSRFToken': csrftoken},
-							data: JSON.stringify({is_override: is_override}),
-							success: function(data){
-								$('#btn-approve').hide();
-								$("#btn-remove-approval").show();
-								data = JSON.parse(data);
-								let $approve_container = $('#approval-container-template').clone();
-								$approve_container.removeAttr('id');
-								$approve_container.find('#user-approval-template').text(user_name).removeAttr('id');
-								$approve_container.find('#datetime-approval-template').text(data['datetime_approved']).removeAttr('id');
-								$("#container-approvals").append($approve_container);
-							}
-						});
-					{% endif %}
-
-					$.post({
-						url: "{% url 'validation_assignment_comment' %}",
-						headers: {'X-CSRFToken': csrftoken},
-						data: JSON.stringify(body),
-						success: function(){
-							body['user_name'] = user_name
-							add_comment(body)
-							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
-							bs_modal.hide();
-							$modal.empty();
-						}
-					});
-				});
-
-			});
-		});
-
-
+		let $export_buttons = $('.btn-export');
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
@@ -198,6 +27,8 @@
 		let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
 		let $select_dynamic_graph_metric_year =	$('#select_dynamic_graph_metric_year');
 		let $select_map_year = $('#select_map_year');
+		let metric_type = '';
+		let chart;
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
@@ -223,20 +54,25 @@
 
 				// hide option containers
 				$('.metric_options').hide();
+				$('.export-container').hide();
 
 				// This is where we need to figure out which container we need populate
-				switch (metric_data['type']){
+				metric_type = metric_data['type'];
+				switch (metric_type){
 					case 'static':
-						populate_static_metrics(metric_data, files)
+						populate_static_metrics(metric_data, files);
+						$('#single-export').show();
 						break;
 					case 'dynamic_graph':
-						populate_dynamic_graph_metrics(metric_data, files)
+						populate_dynamic_graph_metrics(metric_data, files);
+						$('#multiple-export').show();
 						break;
 					case 'map':
-						populate_map_metrics(metric_data, files)
+						populate_map_metrics(metric_data, files);
+						$('#single-export').show();
 						break;
 					default:
-						console.log(metric_data['type'])
+						console.log(metric_type)
 						break;
 				}
 
@@ -343,7 +179,7 @@
 					labels.push(year)
 
 				chart_config['data'] = {'labels': labels, 'datasets':[{'label': file_name, 'data': graph_data, 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
-				let chart = new Chart($canvas, chart_config)
+				chart = new Chart($canvas, chart_config)
 			})
 		}
 
@@ -380,13 +216,12 @@
 			  if (!event.shiftKey) return
 			  panzoom.zoomWithWheel(event)
 			})
-
 		}
 
 		function load_comments(){
 			clear_comments();
 
-			let metric_id = $('#metric_select').find('option:selected').data('metric_id');
+			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
 			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
@@ -416,14 +251,126 @@
 
 			if(comment_dict['is_review'])
 				$comment_container.addClass(comment_dict['is_flag'] ? 'list-group-item-danger' : 'list-group-item-info').addClass('review-comment');
-			else if(comment_dict['is_approval'])
-				$comment_container.addClass('list-group-item-success');
+			else if(comment_dict['user_name'] === user_name) {
+				$comment_container.attr('data-bs-toggle', 'modal').attr('data-bs-target', '#modal-misc-comment').attr('data-bs-comment_id', comment_dict['id']);
+			}
 
-			if(comment_dict['metric_id'] != undefined)
-				$("#container-oi-comments").append($comment_container);
+			$("#container-oi-comments").append($comment_container);
 		}
 
 		// Start Listener Region
+
+		$('#modal-misc-comment').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			let clicked_element = $(e.relatedTarget);
+			let comment_id = clicked_element.attr('data-bs-comment_id') !== undefined ? clicked_element.attr('data-bs-comment_id') : '';
+
+			$modal.empty();
+			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id, function(response){
+				$modal.append(response);
+				$('#misc-comment-save').on('click', function(){
+					let comment = $modal.find('#textarea-comment').val();
+
+					let body = {
+						comments: comment,
+						validation_assignment_id: {{ validation_item.id }}
+					}
+
+					body['metric_options'] = {}
+					$('.metric_options:visible').find('.form-control').each(function(index, element){
+						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
+					})
+					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
+
+					$.post({
+						url: "{% url 'validation_assignment_comment' %}",
+						headers: {'X-CSRFToken': csrftoken},
+						data: JSON.stringify(body),
+						success: function(data){
+							data = JSON.parse(data)
+							data['user_name'] = user_name
+							add_comment(data)
+							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+							bs_modal.hide();
+							$modal.empty();
+						}
+					});
+				});
+
+				$('#misc-comment-delete').on('click', function(){
+					$.ajax({
+							url: "{% url 'validation_assignment_comment' %}" + comment_id ,
+							type: 'DELETE',
+							headers: {'X-CSRFToken': Cookies.get('csrftoken')},
+							success: function(){
+								let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+								bs_modal.hide();
+								$modal.empty();
+								clicked_element.empty();
+							}
+					});
+				})
+			});
+		});
+
+		$('#modal-review-comment').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+
+			let metric_id = $metric_select.find('option:selected').data('metric_id');
+			let metric_options = {}
+			$('.metric_options:visible').find('.form-control').each(function(index, element){
+				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
+			});
+			metric_options = encodeURI(JSON.stringify(metric_options))
+
+			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
+				$modal.append(response);
+				$('#review-comment-save').on('click', function(){
+					let radio_id = $modal.find('.form-check-input:radio:checked').attr('id');
+					let comment = $modal.find('#textarea-comment').val();
+					let is_flag = radio_id === 'not-intuitive' ? $modal.find('#checkbox-flag').is(':checked') : 0;
+
+					let body = {
+						comments: comment,
+					    is_flag: is_flag,
+						is_review: 1,
+						review_option: radio_id,
+						validation_assignment_id: {{ validation_item.id }}
+					}
+
+					body['metric_options'] = {}
+					$('.metric_options:visible').find('.form-control').each(function (index, element) {
+						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
+					})
+					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
+
+
+					$.post({
+						url: "{% url 'validation_assignment_comment' %}",
+						headers: {'X-CSRFToken': csrftoken},
+						data: JSON.stringify(body),
+						success: function(){
+							body['user_name'] = user_name
+
+							$('.review-comment').each(function(){
+								if($(this).find('strong').text() === user_name){
+									$(this).remove();
+								}
+							})
+
+							add_comment(body)
+							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+							bs_modal.hide();
+							$modal.empty();
+
+						}
+					});
+				});
+			});
+		});
 
 		$metric_select.on('change', metric_change);
 
@@ -459,6 +406,25 @@
 			load_comments();
 		});
 
+		$export_buttons.on('click', function(){
+			let metric_id = $metric_select.find('option:selected').data('metric_id');
+			let file_name = $('.metric_options:visible').find('.file-name-select').val();
+			let export_type = $(this).data('export_type')
+
+			let a = document.createElement('a');
+			a.download = $metric_name.text();
+
+			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element) {
+				a.download += '_' + $(this).attr('name') + '_' + $(this).find('option:selected').text();
+			});
+
+			a.href = (metric_type==='dynamic_graph' && export_type === 'local')
+					? chart.toBase64Image()
+					: '/export_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
+
+			a.click();
+		})
+
 		// End Listener Region
 	});
 </script>
@@ -477,11 +443,20 @@
 					<a href="{% url 'validation_item_overview' validation_item.id %}">Overview</a>
 				</div>
 				<div class="col-6">
-					<h1 id="metric_name" style="text-align: center;"></h1>
+					<h2 id="metric_name" style="text-align: center;"></h2>
 				</div>
 				<div class="col-3">
 					<button id="btn-review" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-review-comment">Review</button>
-					<button class="btn btn-primary disabled">Export</button>
+					<button id="single-export" class="btn btn-primary export-container btn-export" data-export_type="remote" style="display: none;">Export</button>
+					<div class="dropdown d-inline-block">
+					  <button id="multiple-export" class="btn btn-primary dropdown-toggle export-container" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: none;">
+						Export
+					  </button>
+					  <ul class="dropdown-menu">
+						<li><a class="dropdown-item btn-export" data-export_type="remote">CSV</a></li>
+						<li><a class="dropdown-item btn-export" data-export_type="local">Image</a></li>
+					  </ul>
+					</div>
 				</div>
 			</div>
 			<div class="row flex-grow-1">
@@ -497,13 +472,13 @@
 						<label for="select_static_metric_region">Region</label>
 						<select name="region" class="form-control" id="select_static_metric_region"></select>
 						<label for="select_static_metric_data_points">Data Points</label>
-						<select name="data_point" class="form-control" id="select_static_metric_data_points"></select>
+						<select name="data_point" class="form-control file-name-select" id="select_static_metric_data_points"></select>
 					</div>
 					<div id="dynamic_graph_metric_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_region">Region</label>
 						<select name="region" class="form-control" id="select_dynamic_graph_metric_region"></select>
 						<label for="select_dynamic_graph_metric_data_points">Data Points</label>
-						<select name="data_point" class="form-control" id="select_dynamic_graph_metric_data_points"></select>
+						<select name="data_point" class="form-control file-name-select" id="select_dynamic_graph_metric_data_points"></select>
 					</div>
 					<div id="dynamic_graph_metric_daily_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_year">Year</label>
@@ -511,7 +486,7 @@
 					</div>
 					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>
-						<select name="year" class="form-control" id="select_map_year"></select>
+						<select name="year" class="form-control file-name-select" id="select_map_year"></select>
 					</div>
 				</div>
 				<div class="col-10">
@@ -539,19 +514,12 @@
 		<strong id="user-comment-template"> </strong>
 		<p id="comments-comment-template"> </p>
 	</div>
-	<div id="approval-container-template" class="list-group-item-action">
-		<strong id="user-approval-template"></strong>
-		<p id="datetime-approval-template"></p>
-	</div>
 </div>
 
 <div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
 <div class="modal fade" id="modal-review-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-	<div class="modal-dialog"></div>
-</div>
-<div class="modal fade" id="modal-approval-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
 	<div class="modal-dialog"></div>
 </div>
 {% endblock %}
