@@ -17,7 +17,7 @@
 
 		$('select').select2({width: '100%'});
 
-		let $export_button = $('#btn-export');
+		let $export_buttons = $('.btn-export');
 		let $metric_container = $('#metric_container');
 		let $metric_select = $('#metric_select');
 		let $metric_name = $('#metric_name');
@@ -54,18 +54,22 @@
 
 				// hide option containers
 				$('.metric_options').hide();
+				$('.export-container').hide();
 
 				// This is where we need to figure out which container we need populate
 				metric_type = metric_data['type'];
 				switch (metric_type){
 					case 'static':
-						populate_static_metrics(metric_data, files)
+						populate_static_metrics(metric_data, files);
+						$('#single-export').show();
 						break;
 					case 'dynamic_graph':
-						populate_dynamic_graph_metrics(metric_data, files)
+						populate_dynamic_graph_metrics(metric_data, files);
+						$('#multiple-export').show();
 						break;
 					case 'map':
-						populate_map_metrics(metric_data, files)
+						populate_map_metrics(metric_data, files);
+						$('#single-export').show();
 						break;
 					default:
 						console.log(metric_type)
@@ -402,24 +406,21 @@
 			load_comments();
 		});
 
-		$export_button.on('click', function(){
-			// TODO: Implement CSV exports for dynamic graphs.
+		$export_buttons.on('click', function(){
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let file_name = $('.metric_options:visible').find('.file-name-select').val();
-
-			// if($('dynamic_graph_metric_daily_options').is(':visible'))
-			// 	url += '&year=' + $select_dynamic_graph_metric_year.val();
+			let export_type = $(this).data('export_type')
 
 			let a = document.createElement('a');
-			a.href = metric_type === 'dynamic_graph'
-					? chart.toBase64Image()
-					: '/export_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
-
 			a.download = $metric_name.text();
 
 			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element) {
 				a.download += '_' + $(this).attr('name') + '_' + $(this).find('option:selected').text();
 			});
+
+			a.href = (metric_type==='dynamic_graph' && export_type === 'local')
+					? chart.toBase64Image()
+					: '/export_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 
 			a.click();
 		})
@@ -446,7 +447,16 @@
 				</div>
 				<div class="col-3">
 					<button id="btn-review" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modal-review-comment">Review</button>
-					<button id="btn-export" class="btn btn-primary">Export</button>
+					<button id="single-export" class="btn btn-primary export-container btn-export" data-export_type="remote" style="display: none;">Export</button>
+					<div class="dropdown d-inline-block">
+					  <button id="multiple-export" class="btn btn-primary dropdown-toggle export-container" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: none;">
+						Export
+					  </button>
+					  <ul class="dropdown-menu">
+						<li><a class="dropdown-item btn-export" data-export_type="remote">CSV</a></li>
+						<li><a class="dropdown-item btn-export" data-export_type="local">Image</a></li>
+					  </ul>
+					</div>
 				</div>
 			</div>
 			<div class="row flex-grow-1">
