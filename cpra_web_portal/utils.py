@@ -218,16 +218,28 @@ def get_metric_files(metric, file_path):
     files = {}
     # I also need to get all of the files listed under this metric
 
-    for file in os.listdir(file_path):
-        if os.path.isdir(os.path.join(file_path, file)):
-            continue
+    # file_path needs to be constructed if the metric has dynamic_file_path set
+    if type(metric.graph_config) is dict and metric.graph_config.get('misc', {}).get('dynamic_file_path', {}):
+        for x in metric.graph_config['misc']['dynamic_file_path']:
+            # TODO: Rethink this for when we might be multiple levels deep
+            for obj in sorted(os.scandir(file_path), key=lambda e: e.name):
+                if obj.is_dir() and x['directory_regex'] in obj.name:
+                    files[obj.name] = {}
+                    for file in sorted(os.scandir(obj.path), key=lambda e: e.name):
+                        if metric.file_name_regex in file.name:
+                            file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
+                            files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(obj.name, file.name)
+    else:
+        for file in os.listdir(file_path):
+            if os.path.isdir(os.path.join(file_path, file)):
+                continue
 
-        file_name_list = file.split("_")
-        parent = file_name_list[parent_index]
-        if parent in files:
-            files[parent][file_name_list[child_index]] = file
-        else:
-            files[parent] = {file_name_list[child_index]: file}
+            file_name_list = file.split("_")
+            parent = file_name_list[parent_index]
+            if parent in files:
+                files[parent][file_name_list[child_index]] = file
+            else:
+                files[parent] = {file_name_list[child_index]: file}
 
     return files
 
