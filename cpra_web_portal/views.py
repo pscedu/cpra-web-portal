@@ -850,11 +850,8 @@ class Tasks(View):
         for task in tasks:
             # Should check to see whether there are any comment flags for the SRV
             flag_comments = models.ValidationAssignmentComment.objects.filter(srv_id=task.srv_id, is_flag=1).all()
-            if not task.is_submitted:
-                if flag_comments:
-                    context['flagged_tasks'].append(task)
-                if not task.srv_id.is_approved:
-                    context['open_tasks'].append(task)
+            if not task.is_submitted and not task.srv_id.is_approved:
+                context['open_tasks'].append(task)
 
         # Grab the pending admin review tasks
         if request.user.groups.filter(name="Admin").exists():
