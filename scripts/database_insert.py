@@ -22,7 +22,6 @@ current_timestamp = datetime.datetime.now()
 
 for sim in sims:
     sim_path = sim.results_dir
-#    directory_path = os.path.join(base_directory, directory)
     new_sim_runs = []
     if sim.name=='ICM':
         # There are two different levels for ICM runs, S** and G***
@@ -45,6 +44,24 @@ for sim in sims:
                             })
                             sim_run.save()
                             new_sim_runs.append(sim_run)
+    elif sim.name=='ADCIRC':
+        # One sim run per Simulations.cpra_2023mp_2020system_vXXa.54_02
+        for sim_run_version in (file for file in sorted(os.listdir(sim_path)) if 'Simulations.cpra_2023mp_' in file):
+            sim_run_name = sim_run_version.split('_')[3]
+            # TODO: Update w/ loading metadata file once Zach has confirmed this is in place
+            print(sim_run_name)
+            try:
+                sim_run = models.SimulationRun.objects.get(name=sim_run_name)
+                print("exists")
+            except:
+                sim_run = models.SimulationRun(**{
+                    'name': sim_run_name,
+                    'sim_id': sim,
+                    'results_file_path': sim_run_version,
+                    'datetime_created': datetime.datetime.now()
+                })
+                sim_run.save()
+                new_sim_runs.append(sim_run)
 
     users_to_email = []
     for new_sim_run in new_sim_runs:
