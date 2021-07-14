@@ -230,7 +230,8 @@ def get_metric_files(metric, file_path):
                             file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
                             files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(obj.name, file.name)
     else:
-        for file in os.listdir(file_path):
+        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
+                if metric.file_name_regex else os.listdir(file_path):
             if os.path.isdir(os.path.join(file_path, file)):
                 continue
 
