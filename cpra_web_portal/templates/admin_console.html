@@ -37,7 +37,7 @@
 	
 	<div class="row my-2">
 		<div class="col-12">
-			<h1> Recently Approved Tasks</h1>
+			<h1> Recently Submitted Tasks</h1>
         </div>
 	</div>
 	<div class="row my-2">
@@ -49,7 +49,7 @@
 				  <th scope="col">Subroutine</th>
 				  <th scope="col">Validation Item</th>
 				  <th scope="col">User</th>
-				  <th scope="col">Time Approved</th>
+				  <th scope="col">Time Submitted</th>
 				</tr>
 			  </thead>
 			  <tbody>
@@ -59,7 +59,7 @@
 				  <td>{{ recent_approved_task.srv_id.sub_id.name }}</td>
 				  <td>{{ recent_approved_task.srv_id.vi_id.name }}</td>
 				  <td>{{ recent_approved_task.user_id.username }}</td>
-				  <td>{{ recent_approved_task.srv_id.datetime_approved }}</td>
+				  <td>{{ recent_approved_task.srv_id.datetime_submitted }}</td>
 				</tr>
 			    {% endfor %}
 			  </tbody>

@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load util_filters %}
+{% block content %}
+<script>
+	$(document).ready(function(){
+		{% if edit_permission %}
+			$("#btn-remove-submission").on("click", function(){
+				let $this = $(this);
+				$.ajax({
+					url: "{% url 'validation_assignment_methods' validation_item.id 'remove_submission' %}" ,
+					type: 'PUT',
+					headers: {'X-CSRFToken': csrftoken},
+					success: function(){
+						$this.hide();
+						$("#btn-submit").show();
+						refresh_datatables()
+					}
+				});
+			});
+
+			{% if is_submitted %}
+				$("#btn-submit").hide();
+			{% else %}
+				$("#btn-remove-submission").hide();
+			{% endif %}
+		{% else %}
+			$('#btn-submit').hide();
+			$('#btn-remove-submission').hide();
+		{% endif %}
+
+		const user_name = "{{ user.username }}"
+		const csrftoken = Cookies.get('csrftoken');
+
+		$('select').select2({width: '100%'});
+
+		$('#modal-misc-comment').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
+				$modal.append(response);
+				$('#misc-comment-save').on('click', function(){
+					let comment = $modal.find('#textarea-comment').val();
+					let body = {
+						comments: comment,
+						validation_assignment_id: {{ validation_item.id }}
+					}
+
+					$.post({
+						url: "{% url 'validation_assignment_comment' %}",
+						headers: {'X-CSRFToken': csrftoken},
+						data: JSON.stringify(body),
+						success: function(){
+							refresh_datatables();
+							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+							bs_modal.hide();
+							$modal.empty();
+						}
+					});
+				});
+
+			});
+		});
+
+		$('#modal-submit-comment').on('show.bs.modal', function(e){
+			// this is a new modal so we do a get request to load the HTML
+			let $modal = $(this);
+			$modal.empty();
+			$.get("{% url 'comment_modal_view' 'submission' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
+				$modal.append(response);
+				$('#submission-comment-save').on('click', function(){
+					let comment = $modal.find('#textarea-comment').val();
+					let is_override = $modal.find('#checkbox-override').is(':checked');
+					let is_approved = $modal.find('#checkbox-approve').is(':checked');
+					let body = {
+						comments: comment,
+					    is_submission: 1,
+						is_approval: is_approved,
+						validation_assignment_id: {{ validation_item.id }}
+					}
+
+					{% if edit_permission %}
+						$.ajax({
+							url: "{% url 'validation_assignment_methods' validation_item.id 'submit' %}" ,
+							type: 'PUT',
+							headers: {'X-CSRFToken': csrftoken},
+							data: JSON.stringify({is_override: is_override, is_approved: is_approved}),
+							success: function(data){
+								$('#btn-submit').hide();
+								$("#btn-remove-submission").show();
+							}
+						});
+					{% endif %}
+
+					$.post({
+						url: "{% url 'validation_assignment_comment' %}",
+						headers: {'X-CSRFToken': csrftoken},
+						data: JSON.stringify(body),
+						success: function(){
+							refresh_datatables();
+							let bs_modal = bootstrap.Modal.getInstance($modal[0]);
+							bs_modal.hide();
+							$modal.empty();
+						}
+					});
+				});
+
+			});
+		});
+
+		function refresh_datatables(){
+			$.fn.dataTable.tables({
+				api: true
+			}).draw();
+		}
+
+	});
+</script>
+
+<div class="container-fluid">
+	<div class="row my-4">
+				<div class="col-9">
+			<h1>
+				{{ validation_item.sr_id.sim_id.name }}
+				{{ validation_item.sr_id.name }}
+				{{ validation_item.sub_id.name }}
+				{{ validation_item.vi_id.name }}
+			</h1>
+			<p>{{ validation_item.vi_id.description }}</p>
+				</div>
+				<div class="col-2">
+					<button id="btn-remove-submission" class="btn btn-danger">Remove Submission</button>
+					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Submit</button>
+				</div>
+				<div class="col-1">
+					<a href="{% url 'validation_item_view' validation_item.id %}">Data Viewer</a>
+				</div>
+		</div>
+	<div class="row">
+		<div class="col-4">
+			<!-- Review Status widget -->
+			<div class="container">
+				{% include 'components/validation_item_review_status_widget.html'  %}
+			</div>
+			<!-- Submission widget -->
+			<div class="container">
+			<h3>Submission Status</h3>
+			<table class="table table-hover">
+			  <thead>
+				<tr>
+					<th scope="col">Username</th>
+					<th scope="col">Submitted?</th>
+					<th scope="col">Status</th>
+				</tr>
+			  </thead>
+			  <tbody>
+			  	{% for assignment in assignments %}
+				<tr>
+					<th scope="row">{{ assignment.user_id.username }}</th>
+					<td>{% if assignment.is_submitted %}X{% endif %}</td>
+					<td>
+						{% if not assignment.is_submitted %}
+						Pending Submission
+						{% else %}
+						{% if assignment.is_approved %}
+						Approved
+						{% else %}
+						Pending Admin Review
+						{% endif %}
+						{% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			  </tbody>
+			</table>
+			</div>
+		</div>
+		<div class="col-8">
+			<div class="container">
+				{% include 'components/validation_item_comments_table.html' %}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="modal-misc-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+<div class="modal fade" id="modal-submit-comment" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog"></div>
+</div>
+{% endblock %}

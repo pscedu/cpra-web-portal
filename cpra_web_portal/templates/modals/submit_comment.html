@@ -1,0 +1,74 @@
+{% extends 'modals/modal_base.html' %}
+{% block modal_title %}
+<h4> New Submission </h4>
+{% endblock %}
+{% block modal_body %}
+<script>
+    $(document).ready(function(){
+       $('#checkbox-override').on('change', function(){
+           update_radio();
+       });
+
+       function update_radio(){
+           let $this = $('#checkbox-override');
+           let $checkbox_approve = $('#checkbox-approve');
+           let $container_checkbox_failure = $('#container-checkbox-failure');
+           let $container_checkbox_admin_review = $('#container-checkbox-admin-review');
+           if($this.is(':checked')){
+               $container_checkbox_admin_review.hide();
+               $container_checkbox_failure.show();
+           }
+           else{
+               $container_checkbox_admin_review.show();
+               $container_checkbox_failure.hide();
+           }
+           $checkbox_approve.prop('checked', true);
+       }
+
+       update_radio();
+    });
+</script>
+
+{% load util_filters %}
+{% if user|has_group:"Admin" %}
+<div id="container-checkbox-override" class="form-check">
+  <input class="form-check-input" type="checkbox" value="" id="checkbox-override"
+  {% if is_not_assigned %}
+         checked disabled
+  {% endif %}
+  >
+  <label class="form-check-label" for="checkbox-override"> Admin Override?
+  </label>
+</div>
+{% endif %}
+            <!--        Comment text area -->
+<h5 class="mt-4">Submission Type</h5>
+<div id="container-checkbox-approve" class="form-check">
+  <input class="form-check-input" type="radio" name="submission-type-radio" id="checkbox-approve" checked>
+  <label class="form-check-label" for="checkbox-approve">
+    Approve
+  </label>
+</div>
+<div id="container-checkbox-admin-review" class="form-check">
+  <input class="form-check-input" type="radio" name="submission-type-radio" id="checkbox-admin-review">
+  <label class="form-check-label" for="checkbox-admin-review">
+    Needs Admin Review
+  </label>
+</div>
+<div id="container-checkbox-failure" class="form-check" style="display: none;">
+  <input class="form-check-input" type="radio" name="submission-type-radio" id="checkbox-failure">
+  <label class="form-check-label" for="checkbox-failure">
+    Critical Failure
+  </label>
+</div>
+
+<div class="form-floating mt-4">
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"></textarea>
+        <label for="textarea-comment">Comment</label>
+</div>
+
+{% endblock %}
+{% block modal_footer %}
+    <button id="submission-comment-save" type="button" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
+{% endblock %}

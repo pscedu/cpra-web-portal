@@ -1,0 +1,78 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.3.2/dist/chart.min.js"></script>
+<script>
+	$(document).ready(function() {
+      function review_status_update() {
+        let $review_status_canvas_container = $('#review_status_canvas_container');
+        $review_status_canvas_container.empty();
+
+        let $canvas = $('<canvas id="canvas-metric"></canvas>')
+        $review_status_canvas_container.append($canvas)
+
+        let metric_id = $('#metric_select').find('option:selected').data('metric_id');
+        let chart_data = {
+          labels: [],
+          datasets: [
+            {
+              label: "Review Status",
+              data: [],
+              backgroundColor: [
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(151, 255, 86, 0.5)',
+                'rgba(255, 159, 64, 0.5)',
+                'rgba(201, 203, 207, 0.2)'
+              ],
+              borderColor: [
+                'rgb(75, 192, 192)',
+                'rgb(255, 99, 132)',
+                'rgb(151, 255, 86)',
+                'rgb(255, 159, 64)',
+                'rgb(201, 203, 207)'
+              ],
+              borderWidth: 1
+            }
+          ]
+        };
+        $.get("{% url 'widget_review_status' %}?metric_id=" + metric_id + "&validation_assignment_id=" + {{ validation_item.id }}, function (data) {
+            data = JSON.parse(data);
+            for (let i in data) {
+              let data_point = data[i];
+              chart_data.labels.push(i);
+              chart_data.datasets[0].data.push(data_point)
+            }
+
+            let chart = new Chart($canvas, {
+              type: 'bar',
+              data: chart_data,
+              options: {
+                indexAxis: 'y',
+                scales: {
+                  x: {
+                    beginAtZero: true
+                  }
+                }
+              },
+            })
+          });
+      }
+
+      // Start Listener Region
+      $('#metric_select').on('change', review_status_update)
+
+      // End Listener Region
+
+      // Start Initialization Region
+      review_status_update();
+      // End Initialization Region
+    });
+</script>
+
+<h3>Review Status</h3>
+<label for="metric_select">Metric</label>
+<select name="metric" id="metric_select" class="form-control">
+    {% for metric in metrics %}
+        <option data-metric_id="{{ metric.id }}"
+        >{{ metric.name }}</option>
+    {% endfor %}
+</select>
+<div id="review_status_canvas_container" class="container"></div>

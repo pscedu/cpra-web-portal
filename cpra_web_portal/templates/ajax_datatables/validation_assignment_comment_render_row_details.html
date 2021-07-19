@@ -1,0 +1,22 @@
+<script>
+    $(document).ready(function(){
+        $('.comment_delete_button').on('click', function(){
+            $.ajax({
+					url: "{% url 'validation_assignment_comment' model.id %}" ,
+					type: 'DELETE',
+					headers: {'X-CSRFToken': Cookies.get('csrftoken')},
+					success: function(){
+					    $.fn.dataTable.tables({
+                            api: true
+                        }).draw();
+					}
+            });
+        })
+    })
+</script>
+
+<p>{{ model.comments }}</p>
+<!-- If the comment is miscellaneous and a non-metric comment AND made by the current user, allow for deletion -->
+{% if model.user_id == request.user and not model.is_approval and not model.is_submission and not model.metric_id %}
+    <button class="btn btn-danger btn-sm comment_delete_button">Delete</button>
+{% endif %}

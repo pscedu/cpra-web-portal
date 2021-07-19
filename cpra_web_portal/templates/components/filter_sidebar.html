@@ -1,29 +1,39 @@
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+{% load util_filters %}
 <div class="row my-2">
     <h4>Filters</h4>
 </div>
 {% for filter_id, filter in filters.items %}
 <div class="row my-2">
-    <label for="{{ filter_id }}">{{ filter.name }}</label>
-    <select id="{{ filter_id }}" class="form-control"
-    {% if filter.type == "multiselect" %}
-    multiple
+<!--    If the filter does not have a permission set, or if it does have a permission set and the user has that group -->
+    {% if not filter.permission_group or filter.permission_group and user|has_group:filter.permission_group %}
+        {% if filter.type in 'multiselect,select' %}
+            <label for="{{ filter_id }}">{{ filter.name }}</label>
+            <select id="{{ filter_id }}" class="form-control filter-item"
+            {% if filter.type == "multiselect" %}
+            multiple
+            {% endif %}
+            >
+                {% for option in filter.options %}
+                <option value="{{ option.value }}"
+                        {% if option.value == filter.value or option.value in filter.value %}
+                        selected
+                        {% endif %}
+                >{{ option.text }}</option>
+                {% endfor %}
+            </select>
+        {% else %}
+        {% if filter.type == 'checkbox' %}
+            <div class="form-check my-2">
+              <input class="form-check-input filter-item" type="checkbox" value="{{ filter.value }}" id="{{ filter_id }}"
+                {% if filter.value == 1 %} checked {% endif %}>
+              <label class="form-check-label" for="{{ filter_id }}">{{ filter.name }}</label>
+            </div>
+          {% endif %}
+        {% endif %}
     {% endif %}
-    >
-        {% for option in filter.options %}
-        <option value="{{ option.value }}"
-                {% if option.value == filter.value or option.value in filter.value %}
-                selected
-                {% endif %}
-        >{{ option.text }}</option>
-        {% endfor %}
-    </select>
 </div>
 {% endfor %}
 <div class="row my-2">
-<!--    TODO: Add script that reloads to this location but with the filters appended in URL -->
     <button id="btn_filter" class="btn btn-primary" onclick="filter()">Search</button>
 </div>
 
@@ -33,7 +43,7 @@
     })
     function filter(){
         let filters = {};
-        Array.from(document.getElementsByClassName('form-control')).forEach(function(el){
+        Array.from(document.getElementsByClassName('filter-item')).forEach(function(el){
             let val;
             if(el.nodeName==="SELECT"){
                 val = []
@@ -41,11 +51,15 @@
                     val.push(parseInt(e.id))
                 })
             }
+            else if(el.type === 'checkbox'){
+                val = el.checked ? '1' : '0'
+            }
             else{
                 val = el.value
             }
 
-            if(el.value)
+            console.log(val)
+            if(val !== undefined && val.length >0)
                 filters[el.getAttribute('id')] = val
         })
 

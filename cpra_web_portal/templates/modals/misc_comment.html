@@ -3,18 +3,21 @@
 <h4> New Comment </h4>
 {% endblock %}
 {% block modal_body %}
-<!--        Checkbox of whether to assign to output -->
-        <div class="form-check">
-        <label for="checkbox-is-output-item" class="form-check-label">Assign to Output?</label>
-        <input name="is-output-item" id="checkbox-is-output-item" class="modal-form-control form-check-input" type="checkbox">
-        </div>
             <!--        Comment text area -->
 <div class="form-floating">
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"></textarea>
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
+        {% if comment %}
+                  disabled
+        {% endif %}
+        >{{ comment.comments }}</textarea>
         <label for="textarea-comment">Comment</label>
 </div>
 {% endblock %}
 {% block modal_footer %}
+    {% if comment %}
+    <button id="misc-comment-delete" type="button" class="btn btn-danger">Delete</button>
+    {% else %}
     <button id="misc-comment-save" type="button" class="btn btn-primary">Save</button>
+    {% endif %}
     <button type="button" class="btn btn-default" data-bs-dismiss="modal">Close</button>
 {% endblock %}
