@@ -28,10 +28,18 @@
 		let $select_dynamic_graph_metric_year =	$('#select_dynamic_graph_metric_year');
 		let $select_map_year = $('#select_map_year');
 		let metric_type = '';
-		let chart;
+		let chart, passed_metric_id, passed_metric_options;
+		let initial_load = true;
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
+
+		{% if metric_id and metric_options %}
+				passed_metric_id = {{ metric_id }};
+				passed_metric_options = {{ metric_options|safe }};
+				$metric_select.val($metric_select.find('[data-metric_id=' + passed_metric_id + ']').val()).trigger('change');
+
+		{% endif %}
 
 		metric_change();
 
@@ -75,7 +83,7 @@
 						console.log(metric_type)
 						break;
 				}
-
+				initial_load = false;
 				load_comments();
 			});
 		}
@@ -123,7 +131,8 @@
 			$select_dynamic_graph_metric_regions.empty();
 
 			for(let region in files){
-				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
+				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
 			}
 
 			if(metric['graph_config']['misc']['data_model']==='daily_hydro_compartments'){
@@ -133,7 +142,8 @@
 				let max_year = Math.trunc(num_days/365);
 
 				for(let x = 1; x<=max_year; x++){
-					$select_dynamic_graph_metric_year.append(new Option(x, x))
+					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
+					$select_dynamic_graph_metric_year.append(new Option(x, x, selected, selected))
 				}
 				$('#dynamic_graph_metric_daily_options').show();
 			}
@@ -148,7 +158,8 @@
 			data_points = JSON.parse(data_points);
 			$select_dynamic_graph_metric_data_points.empty();
 			for(let data_point in data_points){
-				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point]))
+				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point'])
+				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
 			}
 		}
 
@@ -223,7 +234,7 @@
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
-			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element){
+			$('.metric_options:visible').find('.form-control').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
 			});
 			metric_options = encodeURI(JSON.stringify(metric_options))
