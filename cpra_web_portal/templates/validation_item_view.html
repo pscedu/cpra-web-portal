@@ -200,8 +200,10 @@
 			$select_map_year.empty();
 
 			for(let parent_key in files)
-				for(let year in files[parent_key])
-					$select_map_year.append(new Option(year, files[parent_key][year]));
+				for(let year in files[parent_key]){
+					let selected = (initial_load && passed_metric_options!==undefined && year == passed_metric_options['year']);
+					$select_map_year.append(new Option(year, files[parent_key][year], selected, selected));
+				}
 
 			populate_map_metric_container();
 
