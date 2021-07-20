@@ -94,7 +94,8 @@
 			$select_static_metric_regions.empty();
 
 			for(let region in files){
-				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
+				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
 			}
 
 			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
@@ -107,7 +108,8 @@
 			data_points = JSON.parse(data_points);
 			$select_static_metric_data_points.empty();
 			for(let data_point in data_points){
-				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point]))
+				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point']);
+				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
 			}
 		}
 
