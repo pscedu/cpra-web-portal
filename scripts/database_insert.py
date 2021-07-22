@@ -28,7 +28,7 @@ for sim in sims:
         for s_level in os.listdir(sim_path):
             if "S" in s_level and len(s_level) == 3:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
-                    if "G" in g_level and len(g_level) == 4:
+                    if "G" in g_level and len(g_level) == 4 and g_level != 'G500':
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)
