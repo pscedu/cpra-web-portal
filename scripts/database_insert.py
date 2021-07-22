@@ -105,11 +105,10 @@ for sim in sims:
                     if wf_assignment.user_id not in users_to_email:
                         users_to_email.append(wf_assignment.user_id)
 
-    for user in users_to_email:
-        user.email_user(
-                'New QA/QC Assignments',
-                "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
-                                           "\n\nPlease review at your earliest convenience"
-                "\n\nHappy QA/QCing!"
-            )
-
+    # for user in users_to_email:
+    #     user.email_user(
+    #             'New QA/QC Assignments',
+    #             "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
+    #                                        "\n\nPlease review at your earliest convenience"
+    #             "\n\nHappy QA/QCing!"
+    #         )
