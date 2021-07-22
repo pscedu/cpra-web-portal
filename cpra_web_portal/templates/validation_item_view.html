@@ -61,7 +61,7 @@
 				$metric_container.empty();
 
 				// hide option containers
-				$('.navigation_active').removeClass('navigation_active');
+				$('.navigation_active').removeClass('navigation_active').prev().css('font-weight','normal');
 				$('.metric_options').hide();
 				$('.export-container').hide();
 
@@ -92,7 +92,7 @@
 		function populate_static_metrics(metric, files){
 			let $static_metric_options = $('#static_metric_options');
 
-			$select_static_metric_regions.empty().addClass('navigation_active');
+			$select_static_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
 			for(let region in files){
 				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
@@ -131,7 +131,7 @@
 			let $dynamic_graph_metric_options = $('#dynamic_graph_metric_options');
 			$dynamic_graph_metric_options.data('graph_config', metric['graph_config']);
 
-			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active');
+			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
 			for(let region in files){
 				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
@@ -200,7 +200,7 @@
 		function populate_map_metrics(metric, files){
 			let $map_metric_options = $('#map_metric_options');
 
-			$select_map_year.empty().addClass('navigation_active');
+			$select_map_year.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
 			for(let parent_key in files)
 				for(let year in files[parent_key]){
@@ -466,6 +466,9 @@
 
 			$active_select.removeClass('navigation_active');
 			$new_active_select.addClass('navigation_active');
+
+			$active_select.prev().css('font-weight', 'normal')
+			$new_active_select.prev().css('font-weight', 'bold')
 		}
 
 		function navigate_option(direction){
