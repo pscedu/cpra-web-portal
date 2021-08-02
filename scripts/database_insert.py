@@ -28,7 +28,7 @@ for sim in sims:
         for s_level in os.listdir(sim_path):
             if "S" in s_level and len(s_level) == 3:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
-                    if "G" in g_level and len(g_level) == 4:
+                    if "G" in g_level and len(g_level) == 4 and g_level != 'G500':
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)
@@ -105,11 +105,10 @@ for sim in sims:
                     if wf_assignment.user_id not in users_to_email:
                         users_to_email.append(wf_assignment.user_id)
 
-    for user in users_to_email:
-        user.email_user(
-                'New QA/QC Assignments',
-                "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
-                                           "\n\nPlease review at your earliest convenience"
-                "\n\nHappy QA/QCing!"
-            )
-
+    # for user in users_to_email:
+    #     user.email_user(
+    #             'New QA/QC Assignments',
+    #             "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
+    #                                        "\n\nPlease review at your earliest convenience"
+    #             "\n\nHappy QA/QCing!"
+    #         )
