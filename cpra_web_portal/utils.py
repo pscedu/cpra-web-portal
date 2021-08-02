@@ -62,12 +62,14 @@ def update_approval(srv):
     sim_run.save()
     # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
     if srv.is_approved and not sim_run.is_approved and not sim_run.is_flagged:
-        sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run, sub_id=srv.sub_id).aggregate(
+        sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run,
+                                                                               sub_id=srv.sub_id).aggregate(
             num_related=Count('id'), num_approved=Sum('is_approved'))
 
         # If they are all approved, do more checking/generation
         if sum_count_related_subs['num_related'] == sum_count_related_subs['num_approved']:
-            last_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id).order_by('step').last()
+            last_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id).order_by(
+                'step').last()
             # Check to see if this subroutine is the last step for the SimRun
             if srv.sub_id == last_wf_sim_sub.sub_id:
                 # If it is the last step, then update the sim run to be approved and return
@@ -76,12 +78,16 @@ def update_approval(srv):
                 return
             else:
                 # If it is not the last step, get the next subroutine
-                wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, sub_id=srv.sub_id).first()
-                next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, step__gt=wf_sim_sub.step).order_by('step').select_related('sub_id').first()
+                wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id,
+                                                                          sub_id=srv.sub_id).first()
+                next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id,
+                                                                               step__gt=wf_sim_sub.step).order_by(
+                    'step').select_related('sub_id').first()
                 next_subroutine = next_wf_sim_sub.sub_id
 
                 # Get the validation items associated with the next subroutine
-                wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related('vi_id').all()
+                wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related(
+                    'vi_id').all()
 
                 # Check to see if there are actually validation items associated with the next subroutine.
                 while not wf_sub_vis:
@@ -106,10 +112,13 @@ def update_approval(srv):
                     validation_item = wf_sub_vi.vi_id
                     wf_validation_item_assignments = models.WFAssignment.objects.filter(vi_id=validation_item)
                     # Check to see if an SRV exists already
-                    new_srv = models.SimulationRunValidation.objects.filter(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item}).first()
+                    new_srv = models.SimulationRunValidation.objects.filter(
+                        **{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item}).first()
                     if not new_srv:
                         # If no SRV exists, generate a new SRV
-                        new_srv = models.SimulationRunValidation(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item, 'datetime_created': datetime.datetime.now()})
+                        new_srv = models.SimulationRunValidation(
+                            **{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item,
+                               'datetime_created': datetime.datetime.now()})
                         new_srv.save()
 
                     # here we have all of the users/teams at the sim, sub, and vi level
@@ -135,11 +144,11 @@ def update_approval(srv):
 
     for user in users_to_email:
         user.email_user(
-                'New QA/QC Assignments',
-                "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
-                                           "\n\nPlease review at your earliest convenience"
-                "\n\nHappy QA/QCing!"
-            )
+            'New QA/QC Assignments',
+            "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
+                                       "\n\nPlease review at your earliest convenience"
+                                       "\n\nHappy QA/QCing!"
+        )
 
 
 def update_related_tables(related_tables):
@@ -176,7 +185,8 @@ def create_tasks(related_tables):
                                 va = models.ValidationAssignment(**{'srv_id': srv, 'user_id': user.user_id})
                                 va.save()
                     # if the id that was passed is a user id - we only need to check to see if there are assignments
-                    elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
+                    elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(
+                            user_id_id=assignment['user_id_id'], srv_id=srv):
                         # Then we need to create the validation assignment
                         va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
                         va.save()
@@ -197,8 +207,10 @@ def create_tasks(related_tables):
                     srvs_to_check = models.SimulationRunValidation.objects.filter(
                         **{srv_filter: related_id, 'is_approved': 0})
                     for srv_to_check in srvs_to_check:
-                        if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'], srv_id=srv_to_check):
-                            va = models.ValidationAssignment(**{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
+                        if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'],
+                                                                          srv_id=srv_to_check):
+                            va = models.ValidationAssignment(
+                                **{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
                             va.save()
 
 
@@ -228,7 +240,8 @@ def get_metric_files(metric, file_path):
                     for file in sorted(os.scandir(obj.path), key=lambda e: e.name):
                         if metric.file_name_regex in file.name:
                             file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
-                            files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(obj.name, file.name)
+                            files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(
+                                obj.name, file.name)
     else:
         for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
                 if metric.file_name_regex else os.listdir(file_path):
@@ -262,16 +275,28 @@ def get_dynamic_graph_metric_files(metric, file_path):
                     cache.set(first_file + '_' + str(col), csv_reader[col])
                     num_cols += 1
             else:
-                csv_reader = cache.get(first_file+'_0')
-                num_cols = len(cache.keys(first_file+'_*'))
+                csv_reader = cache.get(first_file + '_0')
+                num_cols = len(cache.keys(first_file + '_*'))
             num_rows = len(csv_reader)
         else:
             df = pa.read_csv(f)
             num_rows = len(df)
             num_cols = len(df.columns)
 
-    for x in range(1, num_cols+1):
+    for x in range(1, num_cols + 1):
         files['Hydro Compartments'][str(x)] = str(x)
 
     metric.graph_config['misc']['num_rows'] = num_rows
     return files
+
+
+def get_comparison_cols(metric, file_path):
+    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0] if metric.file_name_regex else [os.listdir(file_path)][0]
+
+    first_file_path = os.path.join(file_path, first_file)
+
+    with open(first_file_path, 'r') as f:
+        csv_reader = pa.read_csv(f)
+        cols = list(csv_reader.columns)
+
+    return cols
