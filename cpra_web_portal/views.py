@@ -43,7 +43,10 @@ def get_metric(request):
         'files': files
     }
 
-    return HttpResponse(json.dumps(response))
+    if metric.graph_config.get('misc', {}).get('comparison_type', False):
+        response['columns'] = utils.get_comparison_cols(metric, file_path)
+
+    return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder))
 
 
 def get_comments(request):
