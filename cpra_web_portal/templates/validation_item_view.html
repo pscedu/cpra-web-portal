@@ -2,6 +2,8 @@
 {% load static %}
 {% load util_filters %}
 {% block content %}
+<!--TODO: Need to modify the selects so that they display correctly. -->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.panzoom/4.0.0/panzoom.min.js" integrity="sha512-9P4403el58YclVUmhMst5Bzpcy+i0V0F0wiMlrkTDgmVqYXhF+tccpnhGIHKzKPXKaTF0Q4J9UEhu2i6PckJWg==" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.css" integrity="sha512-C7hOmCgGzihKXzyPU/z4nv97W0d9bv4ALuuEbSf6hm93myico9qa0hv4dODThvCsqQUmKmLcJmlpRmCaApr83g==" crossorigin="anonymous" />
@@ -26,6 +28,8 @@
 		let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
 		let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
 		let $select_dynamic_graph_metric_year =	$('#select_dynamic_graph_metric_year');
+		let $select_dynamic_graph_metric_first_comparison =	$('#select_dynamic_graph_metric_first_comparison');
+		let $select_dynamic_graph_metric_second_comparison =	$('#select_dynamic_graph_metric_second_comparison');
 		let $select_map_year = $('#select_map_year');
 		let metric_type = '';
 		let chart;
@@ -60,15 +64,15 @@
 				metric_type = metric_data['type'];
 				switch (metric_type){
 					case 'static':
-						populate_static_metrics(metric_data, files);
+						populate_static_metrics(data);
 						$('#single-export').show();
 						break;
 					case 'dynamic_graph':
-						populate_dynamic_graph_metrics(metric_data, files);
+						populate_dynamic_graph_metrics(data);
 						$('#multiple-export').show();
 						break;
 					case 'map':
-						populate_map_metrics(metric_data, files);
+						populate_map_metrics(data);
 						$('#single-export').show();
 						break;
 					default:
@@ -80,7 +84,8 @@
 			});
 		}
 
-		function populate_static_metrics(metric, files){
+		function populate_static_metrics(data){
+			let files = data['files']
 			let $static_metric_options = $('#static_metric_options');
 
 			$select_static_metric_regions.empty();
@@ -113,7 +118,11 @@
 			$metric_container.append(img);
 		}
 
-		function populate_dynamic_graph_metrics(metric, files){
+		function populate_dynamic_graph_metrics(data){
+			let metric = data['metric']
+			let files = data['files']
+			let columns = data['columns']
+
 			let $canvas = $('<canvas id="canvas-metric"></canvas>')
 			$metric_container.append($canvas)
 
@@ -138,6 +147,16 @@
 				$('#dynamic_graph_metric_daily_options').show();
 			}
 
+			if(metric['graph_config']['misc']['comparison_type'] !== undefined){
+				for(let x in columns){
+					let column = columns[x]
+					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column))
+					if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
+						$select_dynamic_graph_metric_second_comparison.append(new Option(column, column))
+				}
+				$('#dynamic_graph_metric_comparison_options').show();
+			}
+
 			populate_dynamic_graph_metric_data_points($select_dynamic_graph_metric_regions.find('option:selected').val());
 			populate_dynamic_graph_metric_container(metric['graph_config']);
 
@@ -158,19 +177,50 @@
 			$canvas.empty();
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
 			const file_name = $select_dynamic_graph_metric_data_points.val();
-			const column_name = chart_config['misc']['column_name'];
+			const comparison_type = chart_config['misc']['comparison_type'];
+			const columns = comparison_type !== undefined ?
+					$('#dynamic_graph_metric_comparison_options > .form-control:visible').map(function(){return $(this).val()}).get() :
+					[chart_config['misc']['column_name']];
 			const year = $select_dynamic_graph_metric_year.val();
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
 				let max_tick = response.length;
-				let graph_data = []
-				response.forEach(function(e, i){
-					graph_data.push({
-						x: i,
-						y: parseFloat(e[column_name])
+				let graph_data = {}
+
+				if(comparison_type==='fwa_fwoa'){
+					for(let x in columns){
+						let col = columns[x];
+						graph_data['fwa ' + col] = [];
+						graph_data['fwoa ' + col] = [];
+					}
+					for(let type in response){
+						response[type].forEach(function(e, i){
+						for(let x in columns){
+							let col = columns[x];
+							graph_data[type + ' ' +col].push({
+								x: i,
+								y: parseFloat(e[col])
+							})
+						}
 					})
-				})
+					}
+				}
+				else{
+					for(let x in columns){
+						let col = columns[x];
+						graph_data[col] = []
+					}
+					response.forEach(function(e, i){
+						for(let x in columns){
+							let col = columns[x];
+							graph_data[col].push({
+								x: i,
+								y: parseFloat(e[col])
+							})
+						}
+					})
+				}
 
 				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
 
@@ -178,12 +228,26 @@
 				for(let year = 0; year <= max_tick; year++)
 					labels.push(year)
 
-				chart_config['data'] = {'labels': labels, 'datasets':[{'label': file_name, 'data': graph_data, 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
+				chart_config['data'] = {'labels': labels, 'datasets': []}
+				for(let col in graph_data) {
+					let color = '#' + Math.floor(Math.random()*16777215).toString(16);
+					chart_config['data']['datasets'].push(
+							{
+								'label': col,
+								'data': graph_data[col],
+								'fill': false,
+								'backgroundColor': color,
+								'borderColor': color,
+								'lineTension': 0
+							}
+					)
+				}
 				chart = new Chart($canvas, chart_config)
 			})
 		}
 
-		function populate_map_metrics(metric, files){
+		function populate_map_metrics(data){
+			let files = data['files']
 			let $map_metric_options = $('#map_metric_options');
 
 			$select_map_year.empty();
@@ -399,7 +463,17 @@
 		$select_dynamic_graph_metric_year.on('change', function(){
 			populate_dynamic_graph_metric_container();
 			load_comments();
-		})
+		});
+
+		$select_dynamic_graph_metric_first_comparison.on('change', function(){
+			populate_dynamic_graph_metric_container();
+			load_comments();
+		});
+
+		$select_dynamic_graph_metric_second_comparison.on('change', function(){
+			populate_dynamic_graph_metric_container();
+			load_comments();
+		});
 
 		$select_map_year.on('change', function(){
 			populate_map_metric_container();
@@ -483,6 +557,12 @@
 					<div id="dynamic_graph_metric_daily_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_year">Year</label>
 						<select name="year" class="form-control" id="select_dynamic_graph_metric_year"></select>
+					</div>
+					<div id="dynamic_graph_metric_comparison_options" class="metric_options" style="display: none;">
+						<label for="select_dynamic_graph_metric_first_comparison">Field 1</label>
+						<select name="first_field" class="form-control" id="select_dynamic_graph_metric_first_comparison"></select>
+						<label for="select_dynamic_graph_metric_second_comparison">Field 2</label>
+						<select name="second_field" class="form-control" id="select_dynamic_graph_metric_second_comparison"></select>
 					</div>
 					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>
