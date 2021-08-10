@@ -161,6 +161,11 @@
 			}
 
 			if(metric['graph_config']['misc']['comparison_type'] !== undefined){
+				if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
+					$('#second_comparison_container').show();
+				else
+					$('#second_comparison_container').hide();
+
 				for(let x in columns){
 					let column = columns[x]
 					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column))
@@ -193,7 +198,7 @@
 			const file_name = $select_dynamic_graph_metric_data_points.val();
 			const comparison_type = chart_config['misc']['comparison_type'];
 			const columns = comparison_type !== undefined ?
-					$('#dynamic_graph_metric_comparison_options > .form-control:visible').map(function(){return $(this).val()}).get() :
+					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
 					[chart_config['misc']['column_name']];
 			const year = $select_dynamic_graph_metric_year.val();
 
@@ -520,7 +525,7 @@
 
 		function navigate_select(direction){
 			// Get the selects
-			let $navigation_selects = $('.metric_options:visible > select');
+			let $navigation_selects = $('.metric_options:visible').find('select:visible');
 			let active_index;
 
 			$navigation_selects.each(function (i){
@@ -656,8 +661,10 @@
 					<div id="dynamic_graph_metric_comparison_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_first_comparison">Field 1</label>
 						<select name="first_field" class="form-control" id="select_dynamic_graph_metric_first_comparison"></select>
-						<label for="select_dynamic_graph_metric_second_comparison">Field 2</label>
-						<select name="second_field" class="form-control" id="select_dynamic_graph_metric_second_comparison"></select>
+						<div id="second_comparison_container">
+							<label for="select_dynamic_graph_metric_second_comparison">Field 2</label>
+							<select name="second_field" class="form-control" id="select_dynamic_graph_metric_second_comparison"></select>
+						</div>
 					</div>
 					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>
