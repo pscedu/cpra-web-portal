@@ -527,6 +527,11 @@ class ValidationItemView(View):
     def get(self, request, id):
         context = {}
 
+        if len(request.GET) > 0:
+            context['metric_id'] = request.GET.get('metric_id')
+            context['metric_options'] = request.GET.get('metric_options')
+
+
         srv = models.SimulationRunValidation.objects.filter(id=id).select_related('sr_id')\
             .select_related('sub_id').select_related('vi_id').first()
 
