@@ -237,6 +237,9 @@
 				}
 
 				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
+				chart_config['options']['animation'] = {'duration': 0}
+				chart_config['options']['hover'] = {'animationDuration': 0}
+				chart_config['options']['responsiveAnimationDuration'] = 0
 
 				let labels = []
 				for(let year = 0; year <= max_tick; year++)
