@@ -168,9 +168,12 @@
 
 				for(let x in columns){
 					let column = columns[x]
-					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column))
-					if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
-						$select_dynamic_graph_metric_second_comparison.append(new Option(column, column))
+					let selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['first_field']);
+					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column, selected, selected));
+					if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics'){
+						selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['second_field']);
+						$select_dynamic_graph_metric_second_comparison.append(new Option(column, column, selected, selected))
+					}
 				}
 				$('#dynamic_graph_metric_comparison_options').show();
 			}
@@ -311,7 +314,7 @@
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
-			$('.metric_options:visible').find('.form-control').each(function(index, element){
+			$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
 			});
 			metric_options = encodeURI(JSON.stringify(metric_options))
@@ -366,7 +369,7 @@
 					}
 
 					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function(index, element){
+					$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
 					})
 					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
@@ -409,7 +412,7 @@
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
-			$('.metric_options:visible').find('.form-control').each(function(index, element){
+			$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
 			});
 			metric_options = encodeURI(JSON.stringify(metric_options))
@@ -430,7 +433,7 @@
 					}
 
 					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function (index, element) {
+					$('.metric_options:visible').find('.form-control:visible').each(function (index, element) {
 						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
 					})
 					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
