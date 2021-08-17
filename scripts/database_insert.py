@@ -12,10 +12,6 @@ django.setup()
 from cpra_web_portal import models
 
 
-directories_to_check = [
-    'ICM'
-]
-
 sims = models.Simulation.objects.all()
 
 current_timestamp = datetime.datetime.now()
