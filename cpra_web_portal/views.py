@@ -155,7 +155,7 @@ def get_dynamic_graph_metric(request):
     if metric_data_model == 'extraction_points':
         with open(file_path, "r") as f:
             dict_reader = csv.DictReader(f)
-            if metric.graph_config['misc']['comparison_type'] == 'fwa_fwoa':
+            if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
                 json_from_csv = {'fwa': list(dict_reader)}
                 # In this case, we need to load data from another file as well
                 fwoa_file_path = os.path.join(
