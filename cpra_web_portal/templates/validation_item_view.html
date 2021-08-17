@@ -85,7 +85,6 @@
 						$('#single-export').show();
 						break;
 					default:
-						console.log(metric_type)
 						break;
 				}
 				initial_load = false;
@@ -210,12 +209,53 @@
 				let max_tick = response.length;
 				let graph_data = {}
 
-				if(comparison_type==='fwa_fwoa'){
-					for(let x in columns){
-						let col = columns[x];
+				chart_config['options']['scales']['yAxes'] = []
+
+				for(let x in columns) {
+					let col = columns[x];
+					if(comparison_type==='fwa_fwoa'){
 						graph_data['fwa ' + col] = [];
 						graph_data['fwoa ' + col] = [];
+						chart_config['options']['scales']['yAxes'].push({
+							'id': 'fwa ' + col,
+							'axis': 'y',
+							'display': true,
+							'type': 'linear',
+							'position': 'right',
+							'scaleLabel': {
+								'display': true,
+								'labelString': 'FWA ' +col
+							}
+						})
+						chart_config['options']['scales']['yAxes'].push({
+							'id': 'fwoa ' +col,
+							'axis': 'y',
+							'display': true,
+							'type': 'linear',
+							'position': 'left',
+							'scaleLabel': {
+								'display': true,
+								'labelString': 'FWOA ' +col
+							}
+						})
 					}
+					else {
+						graph_data[col] = [];
+						chart_config['options']['scales']['yAxes'].push({
+							'id': col,
+							'axis': 'y',
+							'display': true,
+							'type': 'linear',
+							'position': x==='1' ? 'right' : 'left',
+							'scaleLabel': {
+								'display': true,
+								'labelString': col
+							}
+						})
+					}
+				}
+
+				if(comparison_type==='fwa_fwoa')
 					for(let type in response){
 						response[type].forEach(function(e, i){
 						for(let x in columns){
@@ -227,12 +267,7 @@
 						}
 					})
 					}
-				}
-				else{
-					for(let x in columns){
-						let col = columns[x];
-						graph_data[col] = []
-					}
+				else
 					response.forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
@@ -242,7 +277,7 @@
 							})
 						}
 					})
-				}
+
 
 				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
 				chart_config['options']['animation'] = {'duration': 0}
@@ -257,16 +292,19 @@
 				for(let col in graph_data) {
 					let color = '#' + Math.floor(Math.random()*16777215).toString(16);
 					chart_config['data']['datasets'].push(
-							{
-								'label': col,
-								'data': graph_data[col],
-								'fill': false,
-								'backgroundColor': color,
-								'borderColor': color,
-								'lineTension': 0
-							}
+						{
+							'label': col,
+							'data': graph_data[col],
+							'fill': false,
+							'backgroundColor': color,
+							'borderColor': color,
+							'lineTension': 0,
+							'yAxisID': col
+						}
 					)
+
 				}
+
 				chart = new Chart($canvas, chart_config)
 			})
 		}
