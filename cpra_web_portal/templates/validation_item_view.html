@@ -216,42 +216,21 @@
 					if(comparison_type==='fwa_fwoa'){
 						graph_data['fwa ' + col] = [];
 						graph_data['fwoa ' + col] = [];
-						chart_config['options']['scales']['yAxes'].push({
-							'id': 'fwa ' + col,
-							'axis': 'y',
-							'display': true,
-							'type': 'linear',
-							'position': 'right',
-							'scaleLabel': {
-								'display': true,
-								'labelString': 'FWA ' +col
-							}
-						})
-						chart_config['options']['scales']['yAxes'].push({
-							'id': 'fwoa ' +col,
-							'axis': 'y',
-							'display': true,
-							'type': 'linear',
-							'position': 'left',
-							'scaleLabel': {
-								'display': true,
-								'labelString': 'FWOA ' +col
-							}
-						})
 					}
 					else {
 						graph_data[col] = [];
-						chart_config['options']['scales']['yAxes'].push({
-							'id': col,
-							'axis': 'y',
-							'display': true,
-							'type': 'linear',
-							'position': x==='1' ? 'right' : 'left',
-							'scaleLabel': {
+						if (comparison_type==='datapoint_metrics')
+							chart_config['options']['scales']['yAxes'].push({
+								'id': col,
+								'axis': 'y',
 								'display': true,
-								'labelString': col
-							}
-						})
+								'type': 'linear',
+								'position': x==='1' ? 'right' : 'left',
+								'scaleLabel': {
+									'display': true,
+									'labelString': col
+								}
+							})
 					}
 				}
 
@@ -291,17 +270,19 @@
 				chart_config['data'] = {'labels': labels, 'datasets': []}
 				for(let col in graph_data) {
 					let color = '#' + Math.floor(Math.random()*16777215).toString(16);
-					chart_config['data']['datasets'].push(
-						{
-							'label': col,
-							'data': graph_data[col],
-							'fill': false,
-							'backgroundColor': color,
-							'borderColor': color,
-							'lineTension': 0,
-							'yAxisID': col
-						}
-					)
+					let dataset = {
+						'label': col,
+						'data': graph_data[col],
+						'fill': false,
+						'backgroundColor': color,
+						'borderColor': color,
+						'lineTension': 0
+					}
+
+					if(comparison_type==='datapoint_metrics')
+						dataset['yAxisID'] = col
+
+					chart_config['data']['datasets'].push(dataset)
 
 				}
 
