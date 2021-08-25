@@ -4,6 +4,12 @@
     "default": {
       "ENGINE": "django.db.backends.sqlite3",
       "NAME": "db.sqlite3"
+    },
+    "mp23_pdd": {
+      "ENGINE": "django.db.backends.postgresql",
+      "NAME": "",
+      "USER": "",
+      "PASSWORD": ""
     }
   },
   "ALLOWED_HOSTS": [],
