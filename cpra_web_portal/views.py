@@ -14,6 +14,7 @@ from django.views import View
 from django.urls import reverse
 from django.core.cache import cache
 from django.db.models import Sum, Count
+from django.db import connections
 from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
 import zipfile
@@ -518,6 +519,60 @@ class ValidationItemOverview(View):
             )
 
         template = loader.get_template('validation_item_overview.html')
+        if srv.sr_id.sim_id.name == 'ICM':
+            with connections['mp23'].cursor() as cursor:
+                model_group = srv.sr_id.name[-3:]
+                cursor.execute('SELECT md."ModelGroup", '
+                               'md."ModelImplementation", '
+                               'pm."DisplayID", '
+                               'pm."LegacyProjectNumber", '
+                               'pm."TypeCode", '
+                               'pm."ProjectName", '
+                               'pm."Description", '
+                               'ed."Ecoregion", '
+                               'epa."ExtractionPoint", '
+                               'epa."Distance_m" '
+                               'FROM pdd."ModelDefinition" as md '
+                               'JOIN pct."ProjectMetadata" as pm ON md."ProjectID" = pm."ProjectID" '
+                               'JOIN icm."ecoregion_definition" as ed ON md."ProjectID" = ed."ProjectID" '
+                               'JOIN pdd."ExtractionPointDefinition" as epd ON ed."Ecoregion" = epd."Ecoregion" '
+                               'JOIN pdd."ExtractionPointAssignment" as epa '
+                               '    ON epd."ExtractionPoint" = epa."ExtractionPoint"  '
+                               '    AND pm."ProjectID" = epa."ProjectID" '
+                               'WHERE md."ModelGroup" = %s', [model_group])
+                project_information = {}
+                rows = cursor.fetchall()
+
+                for row in rows:
+                    if row[3] in project_information:
+                        project_information[row[3]]['ExtractionPoints'].append(
+                            {
+                                'Ecoregion': row[7],
+                                'ExtractionPoint': row[8],
+                                'Distance_m': row[9]
+                            }
+                        )
+                    else:
+                        project_information[row[3]] = {
+                            'ModelGroup': row[0],
+                            'ModelImplementation': row[1],
+                            'DisplayID': row[2],
+                            'LegacyProjectNumber': row[3],
+                            'TypeCode': row[4],
+                            'ProjectName': row[5],
+                            'Description': row[6],
+                            'ExtractionPoints': [
+                                {
+                                    'Ecoregion': row[7],
+                                    'ExtractionPoint': row[8],
+                                    'Distance_m': row[9]
+                                }
+                            ]
+                        }
+
+                context['project_information'] = project_information
+
+
         return HttpResponse(template.render(context, request))
 
     post = get
