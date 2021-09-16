@@ -5,9 +5,10 @@
       "ENGINE": "django.db.backends.sqlite3",
       "NAME": "db.sqlite3"
     },
-    "mp23_pdd": {
+    "mp23": {
       "ENGINE": "django.db.backends.postgresql",
       "NAME": "",
+      "HOST": "",
       "USER": "",
       "PASSWORD": ""
     }
