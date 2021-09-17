@@ -124,7 +124,8 @@
 			let file_name = $select_static_metric_data_points.val();
 			let img = new Image();
 			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
-			img.style.width = "85%"
+			img.style.height = "70vh";
+			img.style.width = "auto";
 			$metric_container.append(img);
 		}
 
