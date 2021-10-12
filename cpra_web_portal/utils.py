@@ -222,9 +222,8 @@ def get_metric_files(metric, file_path):
         parent_index = 0
         child_index = 9
     else:
-        parent_index = 12
+        parent_index = 11
         child_index = 11
-
     # files will be structured as follows
     # files = {'region': {'point': 'filename'}}
     files = {}
@@ -249,11 +248,12 @@ def get_metric_files(metric, file_path):
                 continue
 
             file_name_list = file.split("_")
-            parent = file_name_list[parent_index]
+            parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:3]
+            child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:7]
             if parent in files:
-                files[parent][file_name_list[child_index]] = file
+                files[parent][child] = file
             else:
-                files[parent] = {file_name_list[child_index]: file}
+                files[parent] = {child: file}
 
     return files
 
