@@ -155,7 +155,7 @@
 
 				for(let x = 1; x<=max_year; x++){
 					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
-					$select_dynamic_graph_metric_year.append(new Option(x, x, selected, selected))
+					$select_dynamic_graph_metric_year.append(new Option(x-2, x, selected, selected))
 				}
 				$('#dynamic_graph_metric_daily_options').show();
 			}
@@ -251,8 +251,9 @@
 					response.forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
+							console.log(i-2)
 							graph_data[col].push({
-								x: i,
+								x: i-2,
 								y: parseFloat(e[col])
 							})
 						}
@@ -260,12 +261,14 @@
 
 
 				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = -2;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = false;
 				chart_config['options']['animation'] = {'duration': 0}
 				chart_config['options']['hover'] = {'animationDuration': 0}
 				chart_config['options']['responsiveAnimationDuration'] = 0
 
 				let labels = []
-				for(let year = 0; year <= max_tick; year++)
+				for(let year = -2; year < max_tick-2; year++)
 					labels.push(year)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
@@ -284,7 +287,7 @@
 						dataset['yAxisID'] = col
 
 					chart_config['data']['datasets'].push(dataset)
-
+					console.log(chart_config)
 				}
 
 				chart = new Chart($canvas, chart_config)
