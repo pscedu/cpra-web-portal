@@ -205,6 +205,8 @@
 					[chart_config['misc']['column_name']];
 			const year = $select_dynamic_graph_metric_year.val();
 
+			const year_modifier = year===null ? -2 : year==-1 ? -730 : 0;
+
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
 				let max_tick = response.length;
@@ -251,25 +253,25 @@
 					response.forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
-							console.log(i-2)
 							graph_data[col].push({
-								x: i-2,
+								x: i+year_modifier,
 								y: parseFloat(e[col])
 							})
 						}
 					})
 
 
-				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
-				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = -2;
-				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = false;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick+year_modifier;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = year_modifier;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = year!== null;
 				chart_config['options']['animation'] = {'duration': 0}
 				chart_config['options']['hover'] = {'animationDuration': 0}
 				chart_config['options']['responsiveAnimationDuration'] = 0
 
 				let labels = []
-				for(let year = -2; year < max_tick-2; year++)
-					labels.push(year)
+
+				for(let year_label = year_modifier; year_label < max_tick + year_modifier; year_label++)
+						labels.push(year_label)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
 				for(let col in graph_data) {
@@ -287,7 +289,6 @@
 						dataset['yAxisID'] = col
 
 					chart_config['data']['datasets'].push(dataset)
-					console.log(chart_config)
 				}
 
 				chart = new Chart($canvas, chart_config)
