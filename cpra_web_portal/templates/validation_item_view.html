@@ -155,7 +155,7 @@
 
 				for(let x = 1; x<=max_year; x++){
 					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
-					$select_dynamic_graph_metric_year.append(new Option(x-2, x, selected, selected))
+					$select_dynamic_graph_metric_year.append(new Option(x-3, x, selected, selected))
 				}
 				$('#dynamic_graph_metric_daily_options').show();
 			}
@@ -203,9 +203,10 @@
 			const columns = comparison_type !== undefined ?
 					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
 					[chart_config['misc']['column_name']];
-			const year = $select_dynamic_graph_metric_year.val();
+			const year = $select_dynamic_graph_metric_year.is(':hidden') ? null : $select_dynamic_graph_metric_year.val();
 
-			const year_modifier = year===null ? -2 : year==-1 ? -730 : 0;
+			const time_step_modifier = year===null ? -1 : year==-1 ? -730 : 0;
+			const min_tick = year===null ? -2 : time_step_modifier;
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
@@ -243,7 +244,7 @@
 						for(let x in columns){
 							let col = columns[x];
 							graph_data[type + ' ' +col].push({
-								x: i,
+								x: i+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
@@ -254,15 +255,15 @@
 						for(let x in columns){
 							let col = columns[x];
 							graph_data[col].push({
-								x: i+year_modifier,
+								x: i+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
 					})
 
 
-				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick+year_modifier;
-				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = year_modifier;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick+time_step_modifier;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = min_tick;
 				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = year!== null;
 				chart_config['options']['animation'] = {'duration': 0}
 				chart_config['options']['hover'] = {'animationDuration': 0}
@@ -270,8 +271,8 @@
 
 				let labels = []
 
-				for(let year_label = year_modifier; year_label < max_tick + year_modifier; year_label++)
-						labels.push(year_label)
+				for(let tick = min_tick; tick < max_tick + time_step_modifier; tick++)
+					labels.push(tick)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
 				for(let col in graph_data) {
