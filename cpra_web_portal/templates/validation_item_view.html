@@ -262,6 +262,8 @@
 					})
 
 
+				chart_config['options']['scales']['xAxes'][0]['type'] = 'linear';
+				chart_config['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
 				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick+time_step_modifier;
 				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = min_tick;
 				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = year!== null;
@@ -271,7 +273,7 @@
 
 				let labels = []
 
-				for(let tick = min_tick; tick < max_tick + time_step_modifier; tick++)
+				for(let tick = time_step_modifier; tick < max_tick + time_step_modifier; tick++)
 					labels.push(tick)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
