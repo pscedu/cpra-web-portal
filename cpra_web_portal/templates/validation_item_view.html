@@ -155,7 +155,7 @@
 
 				for(let x = 1; x<=max_year; x++){
 					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
-					$select_dynamic_graph_metric_year.append(new Option(x, x, selected, selected))
+					$select_dynamic_graph_metric_year.append(new Option(x-3, x, selected, selected))
 				}
 				$('#dynamic_graph_metric_daily_options').show();
 			}
@@ -203,11 +203,14 @@
 			const columns = comparison_type !== undefined ?
 					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
 					[chart_config['misc']['column_name']];
-			const year = $select_dynamic_graph_metric_year.val();
+			const year = $select_dynamic_graph_metric_year.is(':hidden') ? null : $select_dynamic_graph_metric_year.val();
+
+			const time_step_modifier = year===null ? -1 : year==-1 ? -2 : 0;
+			const min_tick = year===null ? -2 : time_step_modifier;
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
-				let max_tick = response.length;
+				let max_tick = year==-1 ? response.length/365 : response.length;
 				let graph_data = {}
 
 				chart_config['options']['scales']['yAxes'] = []
@@ -241,7 +244,7 @@
 						for(let x in columns){
 							let col = columns[x];
 							graph_data[type + ' ' +col].push({
-								x: i,
+								x: i+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
@@ -251,22 +254,31 @@
 					response.forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
+							let time_step = year == -1 ? i/365 : i;
 							graph_data[col].push({
-								x: i,
+								x: time_step+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
 					})
 
 
-				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
+				chart_config['options']['scales']['xAxes'][0]['type'] = 'linear';
+				chart_config['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick+time_step_modifier;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['min'] = min_tick;
+				chart_config['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = year!== null;
+				if(year!==null && year!= -1)
+					chart_config['options']['scales']['xAxes'][0]['scaleLabel']['labelString'] = "Days 0-365"
+
 				chart_config['options']['animation'] = {'duration': 0}
 				chart_config['options']['hover'] = {'animationDuration': 0}
 				chart_config['options']['responsiveAnimationDuration'] = 0
 
 				let labels = []
-				for(let year = 0; year <= max_tick; year++)
-					labels.push(year)
+
+				for(let tick = time_step_modifier; tick < max_tick + time_step_modifier; tick++)
+					labels.push(tick)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
 				for(let col in graph_data) {
@@ -284,7 +296,6 @@
 						dataset['yAxisID'] = col
 
 					chart_config['data']['datasets'].push(dataset)
-
 				}
 
 				chart = new Chart($canvas, chart_config)
@@ -300,7 +311,7 @@
 			for(let parent_key in files)
 				for(let year in files[parent_key]){
 					let selected = (initial_load && passed_metric_options!==undefined && year == passed_metric_options['year']);
-					$select_map_year.append(new Option(year, files[parent_key][year], selected, selected));
+					$select_map_year.append(new Option(year-2, files[parent_key][year], selected, selected));
 				}
 
 			populate_map_metric_container();

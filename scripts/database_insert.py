@@ -42,7 +42,7 @@ for sim in sims:
                             new_sim_runs.append(sim_run)
     elif sim.name=='ADCIRC':
         # One sim run per Simulations.cpra_mp2023_2020system_vXXa.54_02
-        for sim_run_version in (file for file in sorted(os.listdir(sim_path)) if 'Simulations.cpra_mp2023_' in file):
+        for sim_run_version in (file for file in sorted(os.listdir(sim_path)) if 'Simulations.cpra_mp2023-' in file):
             sim_run_name = sim_run_version.split('.')[1]
             # TODO: Update w/ loading metadata file once Zach has confirmed this is in place
             print(sim_run_name)
