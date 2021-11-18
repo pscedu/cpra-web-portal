@@ -22,7 +22,7 @@ for sim in sims:
     if sim.name=='ICM':
         # There are two different levels for ICM runs, S** and G***
         for s_level in os.listdir(sim_path):
-            if "S" in s_level and len(s_level) == 3:
+            if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
                     if "G" in g_level and len(g_level) == 4 and g_level != 'G500':
                         # Check to see if this sim run exists yet
