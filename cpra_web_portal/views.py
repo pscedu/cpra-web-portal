@@ -544,8 +544,8 @@ class ValidationItemOverview(View):
                 rows = cursor.fetchall()
 
                 for row in rows:
-                    if row[3] in project_information:
-                        project_information[row[3]]['ExtractionPoints'].append(
+                    if row[2] in project_information:
+                        project_information[row[2]]['ExtractionPoints'].append(
                             {
                                 'Ecoregion': row[7],
                                 'ExtractionPoint': row[8],
@@ -553,7 +553,7 @@ class ValidationItemOverview(View):
                             }
                         )
                     else:
-                        project_information[row[3]] = {
+                        project_information[row[2]] = {
                             'ModelGroup': row[0],
                             'ModelImplementation': row[1],
                             'DisplayID': row[2],
