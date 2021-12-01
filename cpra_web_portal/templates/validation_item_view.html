@@ -160,7 +160,7 @@
 				$('#dynamic_graph_metric_daily_options').show();
 			}
 
-			if(metric['graph_config']['misc']['comparison_type'] !== undefined){
+			if(metric['graph_config']['misc']['comparison_type'] !== undefined && metric['graph_config']['misc']['data_model']!=='daily_hydro_compartments'){
 				if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
 					$('#second_comparison_container').show();
 				else
@@ -200,7 +200,8 @@
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
 			const file_name = $select_dynamic_graph_metric_data_points.val();
 			const comparison_type = chart_config['misc']['comparison_type'];
-			const columns = comparison_type !== undefined ?
+			const data_model = chart_config['misc']['data_model'];
+			const columns = comparison_type !== undefined && data_model !== 'daily_hydro_compartments' ?
 					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
 					[chart_config['misc']['column_name']];
 			const year = $select_dynamic_graph_metric_year.is(':hidden') ? null : $select_dynamic_graph_metric_year.val();
@@ -210,7 +211,11 @@
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
-				let max_tick = year==-1 ? response.length/365 : comparison_type==='fwa_fwoa' ? response['fwa'].length : response.length;
+				let max_tick = undefined;
+				if(comparison_type==='fwa_fwoa')
+					max_tick = year===-1 ? response['fwa'].length/365 : response['fwa'].length;
+				else
+					max_tick = year===-1 ? response.length/365 : response.length;
 
 				let graph_data = {}
 
@@ -244,8 +249,9 @@
 						response[type].forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
+							let time_step = year == -1 ? i/365 : i;
 							graph_data[type + ' ' +col].push({
-								x: i+time_step_modifier,
+								x: time_step+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
