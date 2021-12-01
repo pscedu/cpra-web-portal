@@ -213,9 +213,9 @@
 				response = JSON.parse(response)
 				let max_tick = undefined;
 				if(comparison_type==='fwa_fwoa')
-					max_tick = year===-1 ? response['fwa'].length/365 : response['fwa'].length;
+					max_tick = year==-1 ? response['fwa'].length/365 : response['fwa'].length;
 				else
-					max_tick = year===-1 ? response.length/365 : response.length;
+					max_tick = year==-1 ? response.length/365 : response.length;
 
 				let graph_data = {}
 
@@ -288,8 +288,9 @@
 					labels.push(tick)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
+				let colors = ['ED6631', '9ECC3B', '7076B4']
 				for(let col in graph_data) {
-					let color = '#' + Math.floor(Math.random()*16777215).toString(16);
+					let color = '#' + colors.pop();
 					let dataset = {
 						'label': col,
 						'data': graph_data[col],
