@@ -151,17 +151,19 @@ def get_dynamic_graph_metric(request):
         file_name if metric_data_model == 'extraction_points' else ''
     )
 
-    json_from_csv = []
+    json_from_csv = {'fwa': [], 'fwoa': []} if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa' else []
+
+    scenario = validation_assignment.sr_id.name.split('_')[0]
 
     if metric_data_model == 'extraction_points':
         with open(file_path, "r") as f:
             dict_reader = csv.DictReader(f)
             if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
-                json_from_csv = {'fwa': list(dict_reader)}
+                json_from_csv['fwa'] = list(dict_reader)
                 # In this case, we need to load data from another file as well
                 fwoa_file_path = os.path.join(
                     validation_assignment.sr_id.sim_id.results_dir,
-                    validation_assignment.sr_id.name.split('_')[0],
+                    scenario,
                     'G500',
                     metric.file_path,
                     file_name.replace(validation_assignment.sr_id.name.split('_')[1], 'G500')
@@ -176,9 +178,22 @@ def get_dynamic_graph_metric(request):
         for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
             with open(os.path.join(file_path, file), 'r') as f:
                 if metric_data_model == 'hydro_compartments':
-                    # This iterates over yearly files, and grabs the column that is being viewed
                     csv_reader = list(csv.DictReader(f))
-                    json_from_csv.append(csv_reader[int(file_name)-1])
+                    # This iterates over yearly files, and grabs the column that is being viewed
+                    if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                        json_from_csv['fwa'].append(csv_reader[int(file_name)-1])
+                        fwoa_file_path = os.path.join(
+                            validation_assignment.sr_id.sim_id.results_dir,
+                            scenario,
+                            'G500',
+                            metric.file_path,
+                            file
+                        )
+                        with open(fwoa_file_path, 'r') as fwoa_f:
+                            fwoa_csv_reader = list(csv.DictReader(fwoa_f))
+                            json_from_csv['fwoa'].append(fwoa_csv_reader[int(file_name)-1])
+                    else:
+                        json_from_csv.append(csv_reader[int(file_name)-1])
                 elif metric_data_model == 'daily_hydro_compartments':
                     # This iterates over the columns in a file, and grabs the column that is being viewed
                     result = None
