@@ -182,6 +182,8 @@ def get_dynamic_graph_metric(request):
                     # This iterates over yearly files, and grabs the column that is being viewed
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
                         json_from_csv['fwa'].append(csv_reader[int(file_name)-1])
+
+                        # file can be used here (rather than fwoa_file) because its just compartment_out_xxxx
                         fwoa_file_path = os.path.join(
                             validation_assignment.sr_id.sim_id.results_dir,
                             scenario,
@@ -217,17 +219,27 @@ def get_dynamic_graph_metric(request):
                             json_from_csv['fwa'].append({'value': row})
 
                         fwoa_file = file.replace(validation_assignment.sr_id.name.split('_')[1], 'G500')
-                        if not cache.keys(f'{fwoa_file}_{int(file_name) - 1}'):
-                            csv_reader = pa.read_csv(f, header=None)
-                            for col in csv_reader.columns:
-                                # Set the columns in Redis so that subsequent loads are faster
-                                cache.set(f'{fwoa_file}_{col}', csv_reader[col])
-                                if col == int(file_name) - 1:
-                                    result = csv_reader[col]
 
-                        fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if result is None else result
-                        for row in fwoa_result[first_day:last_day]:
-                            json_from_csv['fwoa'].append({'value': row})
+                        fwoa_file_path = os.path.join(
+                            validation_assignment.sr_id.sim_id.results_dir,
+                            scenario,
+                            'G500',
+                            metric.file_path,
+                            fwoa_file
+                        )
+
+                        with open(fwoa_file_path, 'r') as fwoa_f:
+                            if not cache.keys(f'{fwoa_file}_{int(file_name) - 1}'):
+                                csv_reader = pa.read_csv(fwoa_f, header=None)
+                                for col in csv_reader.columns:
+                                    # Set the columns in Redis so that subsequent loads are faster
+                                    cache.set(f'{fwoa_file}_{col}', csv_reader[col])
+                                    if col == int(file_name) - 1:
+                                        result = csv_reader[col]
+
+                            fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if result is None else result
+                            for row in fwoa_result[first_day:last_day]:
+                                json_from_csv['fwoa'].append({'value': row})
                     else:
                         for row in result[first_day:last_day]:
                             json_from_csv.append({'value': row})
