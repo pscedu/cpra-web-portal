@@ -212,8 +212,25 @@ def get_dynamic_graph_metric(request):
                     first_day = (year-1)*365 if year > 0 else 0
                     last_day = year*365 if year > 0 else len(result)
 
-                    for row in result[first_day:last_day]:
-                        json_from_csv.append({'value': row})
+                    if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                        for row in result[first_day:last_day]:
+                            json_from_csv['fwa'].append({'value': row})
+
+                        fwoa_file = file.replace(validation_assignment.sr_id.name.split('_')[1], 'G500')
+                        if not cache.keys(f'{fwoa_file}_{int(file_name) - 1}'):
+                            csv_reader = pa.read_csv(f, header=None)
+                            for col in csv_reader.columns:
+                                # Set the columns in Redis so that subsequent loads are faster
+                                cache.set(f'{fwoa_file}_{col}', csv_reader[col])
+                                if col == int(file_name) - 1:
+                                    result = csv_reader[col]
+
+                        fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if result is None else result
+                        for row in fwoa_result[first_day:last_day]:
+                            json_from_csv['fwoa'].append({'value': row})
+                    else:
+                        for row in result[first_day:last_day]:
+                            json_from_csv.append({'value': row})
 
     return HttpResponse(json.dumps(json_from_csv))
 
