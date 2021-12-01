@@ -210,7 +210,8 @@
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
-				let max_tick = year==-1 ? response.length/365 : response.length;
+				let max_tick = year==-1 ? response.length/365 : comparison_type==='fwa_fwoa' ? response['fwa'].length : response.length;
+
 				let graph_data = {}
 
 				chart_config['options']['scales']['yAxes'] = []
