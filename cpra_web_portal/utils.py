@@ -248,8 +248,8 @@ def get_metric_files(metric, file_path):
                 continue
 
             file_name_list = file.split("_")
-            parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:3]
-            child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:7]
+            parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:4]
+            child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:8]
             if parent in files:
                 files[parent][child] = file
             else:
