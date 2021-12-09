@@ -270,20 +270,19 @@ def get_dynamic_graph_metric_files(metric, file_path):
         if dynamic_graph_data_model == 'daily_hydro_compartments':
             if not cache.keys(first_file + '_0'):
                 csv_reader = pa.read_csv(f, header=None)
-                num_cols = 0
+                num_datapoints = 0
                 for col in csv_reader.columns:
                     cache.set(first_file + '_' + str(col), csv_reader[col])
-                    num_cols += 1
+                    num_datapoints += 1
             else:
                 csv_reader = cache.get(first_file + '_0')
-                num_cols = len(cache.keys(first_file + '_*'))
+                num_datapoints = len(cache.keys(first_file + '_*'))
             num_rows = len(csv_reader)
         else:
             df = pa.read_csv(f)
-            num_rows = len(df)
-            num_cols = len(df.columns)
+            num_datapoints = num_rows = len(df)
 
-    for x in range(1, num_cols + 1):
+    for x in range(1, num_datapoints + 1):
         files['Hydro Compartments'][str(x)] = str(x)
 
     metric.graph_config['misc']['num_rows'] = num_rows
