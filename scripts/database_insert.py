@@ -65,7 +65,7 @@ for sim in sims:
 
     for new_sim_run in new_sim_runs:
         wf_simulation_subroutines = models.WFSimulationSubroutine.objects.filter(sim_id=new_sim_run.sim_id).order_by('step')
-        wf_simulation_subroutines = wf_simulation_subroutines.all() if create_all_srvs else wf_simulation_subroutines.first()
+        wf_simulation_subroutines = wf_simulation_subroutines.all() if create_all_srvs else wf_simulation_subroutines.filter(step=1).all()
         for wf_simulation_subroutine in wf_simulation_subroutines:
             subroutine = wf_simulation_subroutine.sub_id
             wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=subroutine).select_related(
