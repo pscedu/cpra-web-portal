@@ -83,7 +83,7 @@ for sim in sims:
                 new_srv.save()
 
                 # Generate assignments if it is the first subroutine
-                if subroutine.step == 1:
+                if wf_simulation_subroutine.step == 1:
                     for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
                                                                          wf_validation_item_assignments):
                         # check whether this is a team or user assignment
