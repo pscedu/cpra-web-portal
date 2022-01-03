@@ -143,6 +143,7 @@
 			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
 			for(let region in files){
+				// This does not need to be sorted
 				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
 				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
 			}
@@ -154,6 +155,7 @@
 				let max_year = Math.trunc(num_days/365);
 
 				for(let x = 1; x<=max_year; x++){
+					// This is inherently sorted
 					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
 					$select_dynamic_graph_metric_year.append(new Option(x-3, x, selected, selected))
 				}
@@ -167,6 +169,7 @@
 					$('#second_comparison_container').hide();
 
 				for(let x in columns){
+					// This does not need to be sorted
 					let column = columns[x]
 					let selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['first_field']);
 					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column, selected, selected));
@@ -187,7 +190,9 @@
 		function populate_dynamic_graph_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
 			$select_dynamic_graph_metric_data_points.empty();
-			for(let data_point in data_points){
+			const sortable = Object.entries(data_points).sort((a, b) => parseInt(a) - parseInt(b))
+			for(let e in sortable){
+				let data_point = sortable[e][0];
 				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point'])
 				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
 			}
@@ -316,11 +321,14 @@
 
 			$select_map_year.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let parent_key in files)
-				for(let year in files[parent_key]){
-					let selected = (initial_load && passed_metric_options!==undefined && year == passed_metric_options['year']);
-					$select_map_year.append(new Option(year-2, files[parent_key][year], selected, selected));
+			for(let parent_key in files) {
+				const sortable = Object.entries(files[parent_key]).sort((a, b) => parseInt(a) - parseInt(b))
+				for (let e in sortable) {
+					let year = sortable[e][0]
+					let selected = (initial_load && passed_metric_options !== undefined && year == passed_metric_options['year']);
+					$select_map_year.append(new Option(year - 2, files[parent_key][year], selected, selected));
 				}
+			}
 
 			populate_map_metric_container();
 
