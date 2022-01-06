@@ -139,7 +139,7 @@
 			let files = data['files']
 			let columns = data['columns']
 
-			if(files === undefined){
+			if(jQuery.isEmptyObject(files)){
 				$metric_container.append('<h4> No data points currently available. </h4>')
 				return;
 			}
