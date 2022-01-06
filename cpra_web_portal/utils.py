@@ -242,18 +242,21 @@ def get_metric_files(metric, file_path):
                             files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(
                                 obj.name, file.name)
     else:
-        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
-                if metric.file_name_regex else os.listdir(file_path):
-            if os.path.isdir(os.path.join(file_path, file)):
-                continue
+        try:
+            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
+                    if metric.file_name_regex else os.listdir(file_path):
+                if os.path.isdir(os.path.join(file_path, file)):
+                    continue
 
-            file_name_list = file.split("_")
-            parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:4]
-            child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:8]
-            if parent in files:
-                files[parent][child] = file
-            else:
-                files[parent] = {child: file}
+                file_name_list = file.split("_")
+                parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:4]
+                child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:8]
+                if parent in files:
+                    files[parent][child] = file
+                else:
+                    files[parent] = {child: file}
+        except Exception as e:
+            raise e
 
     return files
 
