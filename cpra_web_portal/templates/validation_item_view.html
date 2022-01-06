@@ -69,6 +69,11 @@
 				$('.metric_options').hide();
 				$('.export-container').hide();
 
+				if(data['success']===false){
+					$metric_container.append('<h4>' + data['message'] + '</h4>')
+					return;
+				}
+
 				// This is where we need to figure out which container we need populate
 				metric_type = metric_data['type'];
 				switch (metric_type){
