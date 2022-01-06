@@ -139,6 +139,11 @@
 			let files = data['files']
 			let columns = data['columns']
 
+			if(files === undefined){
+				$metric_container.append('<h4> No data points currently available. </h4>')
+				return;
+			}
+
 			let $canvas = $('<canvas id="canvas-metric"></canvas>')
 			$metric_container.append($canvas)
 
