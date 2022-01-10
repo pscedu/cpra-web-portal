@@ -69,6 +69,11 @@
 				$('.metric_options').hide();
 				$('.export-container').hide();
 
+				if(data['success']===false){
+					$metric_container.append('<h4>' + data['message'] + '</h4>')
+					return;
+				}
+
 				// This is where we need to figure out which container we need populate
 				metric_type = metric_data['type'];
 				switch (metric_type){
@@ -134,6 +139,11 @@
 			let files = data['files']
 			let columns = data['columns']
 
+			if(jQuery.isEmptyObject(files)){
+				$metric_container.append('<h4> No data points currently available. </h4>')
+				return;
+			}
+
 			let $canvas = $('<canvas id="canvas-metric"></canvas>')
 			$metric_container.append($canvas)
 
@@ -143,6 +153,7 @@
 			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
 			for(let region in files){
+				// This does not need to be sorted
 				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
 				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
 			}
@@ -154,19 +165,21 @@
 				let max_year = Math.trunc(num_days/365);
 
 				for(let x = 1; x<=max_year; x++){
+					// This is inherently sorted
 					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
 					$select_dynamic_graph_metric_year.append(new Option(x-3, x, selected, selected))
 				}
 				$('#dynamic_graph_metric_daily_options').show();
 			}
 
-			if(metric['graph_config']['misc']['comparison_type'] !== undefined){
+			if(metric['graph_config']['misc']['comparison_type'] !== undefined && metric['graph_config']['misc']['data_model']!=='daily_hydro_compartments'){
 				if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
 					$('#second_comparison_container').show();
 				else
 					$('#second_comparison_container').hide();
 
 				for(let x in columns){
+					// This does not need to be sorted
 					let column = columns[x]
 					let selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['first_field']);
 					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column, selected, selected));
@@ -187,7 +200,9 @@
 		function populate_dynamic_graph_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
 			$select_dynamic_graph_metric_data_points.empty();
-			for(let data_point in data_points){
+			const sortable = Object.entries(data_points).sort((a, b) => parseInt(a) - parseInt(b))
+			for(let e in sortable){
+				let data_point = sortable[e][0];
 				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point'])
 				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
 			}
@@ -200,7 +215,8 @@
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
 			const file_name = $select_dynamic_graph_metric_data_points.val();
 			const comparison_type = chart_config['misc']['comparison_type'];
-			const columns = comparison_type !== undefined ?
+			const data_model = chart_config['misc']['data_model'];
+			const columns = comparison_type !== undefined && data_model !== 'daily_hydro_compartments' ?
 					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
 					[chart_config['misc']['column_name']];
 			const year = $select_dynamic_graph_metric_year.is(':hidden') ? null : $select_dynamic_graph_metric_year.val();
@@ -210,7 +226,12 @@
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
-				let max_tick = year==-1 ? response.length/365 : response.length;
+				let max_tick = undefined;
+				if(comparison_type==='fwa_fwoa')
+					max_tick = year==-1 ? response['fwa'].length/365 : response['fwa'].length;
+				else
+					max_tick = year==-1 ? response.length/365 : response.length;
+
 				let graph_data = {}
 
 				chart_config['options']['scales']['yAxes'] = []
@@ -243,8 +264,9 @@
 						response[type].forEach(function(e, i){
 						for(let x in columns){
 							let col = columns[x];
+							let time_step = year == -1 ? i/365 : i;
 							graph_data[type + ' ' +col].push({
-								x: i+time_step_modifier,
+								x: time_step+time_step_modifier,
 								y: parseFloat(e[col])
 							})
 						}
@@ -281,8 +303,9 @@
 					labels.push(tick)
 
 				chart_config['data'] = {'labels': labels, 'datasets': []}
+				let colors = ['ED6631', '9ECC3B', '7076B4']
 				for(let col in graph_data) {
-					let color = '#' + Math.floor(Math.random()*16777215).toString(16);
+					let color = '#' + colors.pop();
 					let dataset = {
 						'label': col,
 						'data': graph_data[col],
@@ -308,11 +331,14 @@
 
 			$select_map_year.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let parent_key in files)
-				for(let year in files[parent_key]){
-					let selected = (initial_load && passed_metric_options!==undefined && year == passed_metric_options['year']);
-					$select_map_year.append(new Option(year-2, files[parent_key][year], selected, selected));
+			for(let parent_key in files) {
+				const sortable = Object.entries(files[parent_key]).sort((a, b) => parseInt(a) - parseInt(b))
+				for (let e in sortable) {
+					let year = sortable[e][0]
+					let selected = (initial_load && passed_metric_options !== undefined && year == passed_metric_options['year']);
+					$select_map_year.append(new Option(year - 2, files[parent_key][year], selected, selected));
 				}
+			}
 
 			populate_map_metric_container();
 

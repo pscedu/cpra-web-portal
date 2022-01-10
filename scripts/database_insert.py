@@ -16,6 +16,8 @@ sims = models.Simulation.objects.all()
 
 current_timestamp = datetime.datetime.now()
 
+create_all_srvs = None
+
 for sim in sims:
     sim_path = sim.results_dir
     new_sim_runs = []
@@ -60,46 +62,49 @@ for sim in sims:
                 new_sim_runs.append(sim_run)
 
     users_to_email = []
+
     for new_sim_run in new_sim_runs:
-        # Get related subroutines
-        wf_simulation_subroutine = models.WFSimulationSubroutine.objects.filter(sim_id=new_sim_run.sim_id).order_by('step').first()
-        next_subroutine = wf_simulation_subroutine.sub_id
+        wf_simulation_subroutines = models.WFSimulationSubroutine.objects.filter(sim_id=new_sim_run.sim_id).order_by('step')
+        wf_simulation_subroutines = wf_simulation_subroutines.all() if create_all_srvs else wf_simulation_subroutines.filter(step=1).all()
+        for wf_simulation_subroutine in wf_simulation_subroutines:
+            subroutine = wf_simulation_subroutine.sub_id
+            wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=subroutine).select_related(
+                'vi_id').all()
 
-        # Get the validation items associated with the next subroutine
-        wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related(
-            'vi_id').all()
-        # Get all of the wf_assignments for the sim_run and for the next subroutine
-        wf_simulation_assignments = models.WFAssignment.objects.filter(sim_id=sim_run.sim_id).all()
-        wf_subroutine_assignments = models.WFAssignment.objects.filter(sub_id=next_subroutine).all()
-        for wf_sub_vi in wf_sub_vis:
-            validation_item = wf_sub_vi.vi_id
-            wf_validation_item_assignments = models.WFAssignment.objects.filter(vi_id=validation_item)
-            # Generate the Simulation Run Validations
-            new_srv = models.SimulationRunValidation(
-                **{'sr_id': new_sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item,
-                   'datetime_created': datetime.datetime.now()})
-            new_srv.save()
+            wf_simulation_assignments = models.WFAssignment.objects.filter(sim_id=new_sim_run.sim_id).all()
+            wf_subroutine_assignments = models.WFAssignment.objects.filter(sub_id=subroutine).all()
+            for wf_sub_vi in wf_sub_vis:
+                validation_item = wf_sub_vi.vi_id
+                wf_validation_item_assignments = models.WFAssignment.objects.filter(vi_id=validation_item)
+                # Generate the Simulation Run Validations
+                new_srv = models.SimulationRunValidation(
+                    **{'sr_id': new_sim_run, 'sub_id': subroutine, 'vi_id': validation_item,
+                       'datetime_created': datetime.datetime.now()})
+                new_srv.save()
 
-            # here we have all of the users/teams at the sim, sub, and vi level
-            for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
-                                                                 wf_validation_item_assignments):
-                # check whether this is a team or user assignment
-                if wf_assignment.team_id:
-                    users = models.UserTeam.objects.filter(team_id=wf_assignment.team_id).all()
-                    for user in users:
-                        if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=new_srv):
-                            va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': user.user_id})
+                # Generate assignments if it is the first subroutine
+                if wf_simulation_subroutine.step == 1:
+                    for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
+                                                                         wf_validation_item_assignments):
+                        # check whether this is a team or user assignment
+                        if wf_assignment.team_id:
+                            users = models.UserTeam.objects.filter(team_id=wf_assignment.team_id).all()
+                            for user in users:
+                                if not models.ValidationAssignment.objects.filter(user_id=user.user_id, srv_id=new_srv):
+                                    va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': user.user_id})
+                                    va.save()
+                                    if user.user_id not in users_to_email:
+                                        users_to_email.append(user.user_id)
+                        # if the id that was passed is a user id - we only need to check to see if there are assignments
+                        elif wf_assignment.user_id and not models.ValidationAssignment.objects.filter(
+                                user_id=wf_assignment.user_id, srv_id=new_srv):
+                            # Then we need to create the validation assignment
+                            va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': wf_assignment.user_id})
                             va.save()
-                            if user.user_id not in users_to_email:
-                                users_to_email.append(user.user_id)
-                # if the id that was passed is a user id - we only need to check to see if there are assignments
-                elif wf_assignment.user_id and not models.ValidationAssignment.objects.filter(
-                        user_id=wf_assignment.user_id, srv_id=new_srv):
-                    # Then we need to create the validation assignment
-                    va = models.ValidationAssignment(**{'srv_id': new_srv, 'user_id': wf_assignment.user_id})
-                    va.save()
-                    if wf_assignment.user_id not in users_to_email:
-                        users_to_email.append(wf_assignment.user_id)
+                            if wf_assignment.user_id not in users_to_email:
+                                users_to_email.append(wf_assignment.user_id)
+
+
 
     # for user in users_to_email:
     #     user.email_user(
