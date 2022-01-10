@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 
 
 class Team(models.Model):
@@ -17,6 +18,16 @@ class UserTeam(models.Model):
 class Simulation(models.Model):
     name = models.CharField(max_length=64, default="")
     results_dir = models.CharField(max_length=64, default="")
+
+    class ProgressMetricChoices(models.TextChoices):
+        NONE = None, _('None')
+        ELAPSED_YEARS = 'elapsed_years', _('Elapsed Years')
+
+    progress_metric_field = models.CharField(
+        max_length=64,
+        choices=ProgressMetricChoices.choices,
+        default=ProgressMetricChoices.NONE,
+    )
 
     def __str__(self):
         return self.name
@@ -156,6 +167,7 @@ class SimulationRun(models.Model):
     is_flagged = models.SmallIntegerField(default=0)
     is_approved = models.SmallIntegerField(default=0)
     results_file_path = models.CharField(max_length=64, default="")
+    progress_metric = models.CharField(max_length=64, blank=True, default="")
 
     def __str__(self):
         return self.name
