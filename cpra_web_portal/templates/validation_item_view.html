@@ -39,12 +39,12 @@
 		if(ls_metric_options===null){
 			ls_metric_options = {
 				'dynamic': {
-					'hydro_compartment': {
+					'hydro_compartments': {
 						'region': '',
 						'data_point': '',
 						'year': ''
 					},
-					'extraction_point': {
+					'extraction_points': {
 						'region': '',
 						'data_point': ''
 					}
@@ -188,6 +188,8 @@
 
 			if(initial_load && passed_metric_options!==undefined)
 				$select_dynamic_graph_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
+			else if(ls_metric_options['dynamic'][metric['graph_config']['misc']['data_model']]['region'] in files)
+				$select_dynamic_graph_metric_regions.val(JSON.stringify(files[ls_metric_options['dynamic'][metric['graph_config']['misc']['data_model']]['region']]))
 
 			if(metric['graph_config']['misc']['data_model']==='daily_hydro_compartments'){
 				$select_dynamic_graph_metric_year.append(new Option('All', -1))
@@ -200,7 +202,10 @@
 					$select_dynamic_graph_metric_year.append(new Option(x-3, x))
 
 				if(initial_load && passed_metric_options!==undefined)
-					$select_dynamic_graph_metric_year.val(passed_metric_options['year'] === 'All' ? -1 : passed_metric_options['year']);
+					$select_dynamic_graph_metric_year.val(passed_metric_options['year'] === 'All' ? -1 : parseInt(passed_metric_options['year'])+3);
+				else if(ls_metric_options['dynamic']['hydro_compartments']['year'] !== '')
+					$select_dynamic_graph_metric_year.val(ls_metric_options['dynamic']['hydro_compartments']['year'] === 'All'
+							? -1 : parseInt(ls_metric_options['dynamic']['hydro_compartments']['year'])+3)
 
 				$('#dynamic_graph_metric_daily_options').show();
 			}
@@ -231,14 +236,18 @@
 		}
 
 		function populate_dynamic_graph_metric_data_points(data_points){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
 			data_points = JSON.parse(data_points);
 			$select_dynamic_graph_metric_data_points.empty();
 			const sortable = Object.entries(data_points).sort((a, b) => parseInt(a) - parseInt(b))
 			for(let e in sortable){
 				let data_point = sortable[e][0];
-				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point'])
-				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
+				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point]))
 			}
+			if(initial_load && passed_metric_options!==undefined)
+				$select_dynamic_graph_metric_data_points.val(data_points[passed_metric_options['data_point']]);
+			else if(ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point'] in data_points)
+				$select_dynamic_graph_metric_data_points.val(data_points[ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point']])
 		}
 
 		function populate_dynamic_graph_metric_container(){
@@ -373,7 +382,7 @@
 			}
 
 			if(initial_load && passed_metric_options !== undefined)
-				$select_map_year.val(files[Object.keys(files)[0]][passed_metric_options['year']])
+				$select_map_year.val(files[Object.keys(files)[0]][parseInt(passed_metric_options['year'])+2])
 
 			populate_map_metric_container();
 
@@ -575,17 +584,24 @@
 		});
 
 		$select_dynamic_graph_metric_regions.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['region'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_data_points($(this).val())
 			populate_dynamic_graph_metric_container();
 			load_comments();
 		});
 
 		$select_dynamic_graph_metric_data_points.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_container();
 			load_comments();
 		});
 
 		$select_dynamic_graph_metric_year.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['year'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_container();
 			load_comments();
 		});
