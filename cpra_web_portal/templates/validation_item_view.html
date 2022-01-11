@@ -32,7 +32,7 @@
 		let $select_dynamic_graph_metric_second_comparison =	$('#select_dynamic_graph_metric_second_comparison');
 		let $select_map_year = $('#select_map_year');
 		let metric_type = '';
-		let chart, passed_metric_id, passed_metric_options, metric_change_load;
+		let chart, passed_metric_id, passed_metric_options;
 		let initial_load = true;
 		let ls_metric_options = JSON.parse(window.localStorage.getItem('ls_metric_options'));
 
@@ -117,7 +117,6 @@
 						break;
 				}
 				initial_load = false;
-				metric_change_load = false;
 				load_comments();
 			});
 		}
@@ -133,6 +132,8 @@
 
 			if(initial_load && passed_metric_options!==undefined)
 				$select_static_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
+			else if(ls_metric_options['static']['region'] in files)
+				$select_static_metric_regions.val(JSON.stringify(files[ls_metric_options['static']['region']]))
 
 			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
 			populate_static_metric_container();
@@ -148,7 +149,8 @@
 
 			if(initial_load && passed_metric_options!==undefined)
 				$select_static_metric_data_points.val(data_points[passed_metric_options['data_point']])
-
+			else if(ls_metric_options['static']['data_point'] in data_points)
+				$select_static_metric_data_points.val(data_points[ls_metric_options['static']['data_point']])
 		}
 
 		function populate_static_metric_container(){
@@ -557,22 +559,20 @@
 			});
 		});
 
-		$metric_select.on('change', function(){
-			metric_change_load = true;
-			metric_change();
-			metric_change_load = false;
-		});
+		$metric_select.on('change', metric_change);
 
 		$select_static_metric_regions.on('change', function(){
-				populate_static_metric_data_points($(this).val())
-				populate_static_metric_container();
-				load_comments();
-			});
+			ls_metric_options['static']['region'] = $(this).find('option:selected').text();
+			populate_static_metric_data_points($(this).val())
+			populate_static_metric_container();
+			load_comments();
+		});
 
 		$select_static_metric_data_points.on('change', function(){
-				populate_static_metric_container();
-				load_comments();
-			});
+			ls_metric_options['static']['data_point'] = $(this).find('option:selected').text();
+			populate_static_metric_container();
+			load_comments();
+		});
 
 		$select_dynamic_graph_metric_regions.on('change', function(){
 			populate_dynamic_graph_metric_data_points($(this).val())
