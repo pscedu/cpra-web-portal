@@ -32,8 +32,32 @@
 		let $select_dynamic_graph_metric_second_comparison =	$('#select_dynamic_graph_metric_second_comparison');
 		let $select_map_year = $('#select_map_year');
 		let metric_type = '';
-		let chart, passed_metric_id, passed_metric_options;
+		let chart, passed_metric_id, passed_metric_options, metric_change_load;
 		let initial_load = true;
+		let ls_metric_options = JSON.parse(window.localStorage.getItem('ls_metric_options'));
+
+		if(ls_metric_options===null){
+			ls_metric_options = {
+				'dynamic': {
+					'hydro_compartment': {
+						'region': '',
+						'data_point': '',
+						'year': ''
+					},
+					'extraction_point': {
+						'region': '',
+						'data_point': ''
+					}
+				},
+				'static': {
+					'region': '',
+					'data_point': ''
+				},
+				'map': {
+					'year': ''
+				}
+			}
+		}
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
@@ -93,6 +117,7 @@
 						break;
 				}
 				initial_load = false;
+				metric_change_load = false;
 				load_comments();
 			});
 		}
@@ -103,10 +128,11 @@
 
 			$select_static_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let region in files){
-				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
-				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
-			}
+			for(let region in files)
+				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_static_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
 
 			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
 			populate_static_metric_container();
@@ -117,10 +143,12 @@
 		function populate_static_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
 			$select_static_metric_data_points.empty();
-			for(let data_point in data_points){
-				let selected = (initial_load && passed_metric_options!==undefined && data_point == passed_metric_options['data_point']);
-				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point], selected, selected))
-			}
+			for(let data_point in data_points)
+				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point]))
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_static_metric_data_points.val(data_points[passed_metric_options['data_point']])
+
 		}
 
 		function populate_static_metric_container(){
@@ -152,11 +180,12 @@
 
 			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let region in files){
+			for(let region in files)
 				// This does not need to be sorted
-				let selected = (initial_load && passed_metric_options!==undefined && region == passed_metric_options['region']);
-				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region]), selected, selected));
-			}
+				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region])));
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_dynamic_graph_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
 
 			if(metric['graph_config']['misc']['data_model']==='daily_hydro_compartments'){
 				$select_dynamic_graph_metric_year.append(new Option('All', -1))
@@ -164,11 +193,13 @@
 				let num_days = metric['graph_config']['misc']['num_rows'];
 				let max_year = Math.trunc(num_days/365);
 
-				for(let x = 1; x<=max_year; x++){
+				for(let x = 1; x<=max_year; x++)
 					// This is inherently sorted
-					let selected = (initial_load && passed_metric_options!==undefined && x == passed_metric_options['year']);
-					$select_dynamic_graph_metric_year.append(new Option(x-3, x, selected, selected))
-				}
+					$select_dynamic_graph_metric_year.append(new Option(x-3, x))
+
+				if(initial_load && passed_metric_options!==undefined)
+					$select_dynamic_graph_metric_year.val(passed_metric_options['year'] === 'All' ? -1 : passed_metric_options['year']);
+
 				$('#dynamic_graph_metric_daily_options').show();
 			}
 
@@ -179,7 +210,7 @@
 					$('#second_comparison_container').hide();
 
 				for(let x in columns){
-					// This does not need to be sorted
+					// This does not need to be sorted (not doing cache-ing here)
 					let column = columns[x]
 					let selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['first_field']);
 					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column, selected, selected));
@@ -334,11 +365,13 @@
 			for(let parent_key in files) {
 				const sortable = Object.entries(files[parent_key]).sort((a, b) => parseInt(a) - parseInt(b))
 				for (let e in sortable) {
-					let year = sortable[e][0]
-					let selected = (initial_load && passed_metric_options !== undefined && year == passed_metric_options['year']);
-					$select_map_year.append(new Option(year - 2, files[parent_key][year], selected, selected));
+					let year = sortable[e][0];
+					$select_map_year.append(new Option(year - 2, files[parent_key][year]));
 				}
 			}
+
+			if(initial_load && passed_metric_options !== undefined)
+				$select_map_year.val(files[Object.keys(files)[0]][passed_metric_options['year']])
 
 			populate_map_metric_container();
 
@@ -407,6 +440,10 @@
 		}
 
 		// Start Listener Region
+
+		window.onbeforeunload = function(){
+			localStorage.setItem('ls_metric_options', JSON.stringify(ls_metric_options))
+		}
 
 		$('#modal-misc-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
@@ -520,7 +557,11 @@
 			});
 		});
 
-		$metric_select.on('change', metric_change);
+		$metric_select.on('change', function(){
+			metric_change_load = true;
+			metric_change();
+			metric_change_load = false;
+		});
 
 		$select_static_metric_regions.on('change', function(){
 				populate_static_metric_data_points($(this).val())
