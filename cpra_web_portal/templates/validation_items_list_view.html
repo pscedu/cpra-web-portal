@@ -8,7 +8,7 @@
 		</div>
 		<div class="col-8 offset-2">
 			<h1>Validation Items</h1>
-			<div class="list-group">
+			<div class="list-group" style="max-height: 80vh; overflow-y:auto;">
 				{% for validation_assignment in validation_assignments %}
 					<a href="{% url 'validation_item_overview' validation_assignment.id %}" class="list-group-item">
 					<h5 class="mb-1">
