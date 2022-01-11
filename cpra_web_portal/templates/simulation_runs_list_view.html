@@ -13,6 +13,7 @@
 				<a href="{% url 'subroutines_list_view' %}?sr_id__in={{ simulation_run.id }}" class="list-group-item">
 					<h5 class="mb-1">{{ simulation_run.sim_id.name }} {{ simulation_run.name }}</h5>
 					<p class="mb-1">{{ simulation_run.datetime_created }}</p>
+					<p class="mb-1">{% if simulation_run.sim_id.progress_metric_field != "None" %} {{ simulation_run.sim_id.get_progress_metric_field_display }}: {{ simulation_run.progress_metric }}{% endif %}</p>
 				</a>
 				{% endfor %}
 			</div>

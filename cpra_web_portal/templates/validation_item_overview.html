@@ -127,8 +127,9 @@
 				{{ validation_item.sub_id.name }}
 				{{ validation_item.vi_id.name }}
 			</h1>
-			<p>{{ validation_item.vi_id.description }}</p>
-				</div>
+			<p class="mb-1">{% if validation_item.sr_id.sim_id.progress_metric_field != "None" %} {{ validation_item.sr_id.sim_id.get_progress_metric_field_display }}: {{ validation_item.sr_id.progress_metric }}{% endif %}</p>
+			<p class="mb-1">{{ validation_item.vi_id.description }}</p>
+			</div>
 				<div class="col-2">
 					<button id="btn-remove-submission" class="btn btn-danger">Remove Submission</button>
 					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Submit</button>
