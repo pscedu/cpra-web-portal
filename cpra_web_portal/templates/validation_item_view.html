@@ -632,7 +632,7 @@
 			let export_type = $(this).data('export_type')
 
 			let a = document.createElement('a');
-			a.download = $metric_name.text();
+			a.download = $metric_name.text() + '_' + '{{ validation_item.sr_id.sim_id.name }}_{{ validation_item.sr_id.name }}';
 
 			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element) {
 				a.download += '_' + $(this).attr('name') + '_' + $(this).find('option:selected').text();
