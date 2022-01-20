@@ -38,13 +38,15 @@
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
+			$.get("{% url 'comment_modal_view' 'misc' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
+					let project_information = $modal.find('#select-project-info').val();
 					let body = {
 						comments: comment,
-						validation_assignment_id: {{ validation_item.id }}
+						project_information: project_information,
+						validation_assignment_id: {{ validation_item.id }},
 					}
 
 					$.post({
