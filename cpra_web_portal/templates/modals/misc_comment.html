@@ -3,15 +3,42 @@
 <h4> New Comment </h4>
 {% endblock %}
 {% block modal_body %}
+<script>
+    $(document).ready(function(){
+        $('#modal-misc-comment').find('select').select2({width: '100%', dropdownParent: $('#modal-misc-comment'), placeholder: "None", allowClear: true});
+    });
+</script>
             <!--        Comment text area -->
-<div class="form-floating">
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
-        {% if comment %}
-                  disabled
-        {% endif %}
-        >{{ comment.comments }}</textarea>
-        <label for="textarea-comment">Comment</label>
-</div>
+
+    <div class="container">
+
+        <div class="col-12">
+            <div class="mb-3">
+                <label for="select-project-info">Project</label>
+                <select name="project_info" id="select-project-info" class="modal-form-control form-control"
+                {% if comment %}
+                          disabled
+                {% endif %}
+                >
+                    <option></option>
+                    {% for key, project in project_information.items %}
+                        <option value="{{ project.ProjectName }}"
+                        {% if project.ProjectName == comment.project_information %}
+                            selected
+                        {% endif %}
+                        >{{ project.ProjectName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        <div class="form-floating">
+                <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
+                {% if comment %}
+                          disabled
+                {% endif %}
+                >{{ comment.comments }}</textarea>
+                <label for="textarea-comment">Comment</label>
+        </div>
+        </div></div>
 {% endblock %}
 {% block modal_footer %}
     {% if comment %}
