@@ -532,6 +532,7 @@
 			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#review-comment-save').on('click', function(){
+					let project_information = $modal.find('#select-project-info').val();
 					let radio_id = $modal.find('.form-check-input:radio:checked').attr('id');
 					let comment = $modal.find('#textarea-comment').val();
 					let is_flag = radio_id === 'not-intuitive' ? $modal.find('#checkbox-flag').is(':checked') : 0;
@@ -541,6 +542,7 @@
 					    is_flag: is_flag,
 						is_review: 1,
 						review_option: radio_id,
+						project_information: project_information,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
