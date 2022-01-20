@@ -468,13 +468,15 @@
 			let comment_id = clicked_element.attr('data-bs-comment_id') !== undefined ? clicked_element.attr('data-bs-comment_id') : '';
 
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id, function(response){
+			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id+"?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
+					let project_information = $modal.find('#select-project-info').val();
 
 					let body = {
 						comments: comment,
+						project_information: project_information,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
