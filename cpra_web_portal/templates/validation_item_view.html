@@ -343,6 +343,12 @@
 				chart_config['options']['animation'] = {'duration': 0}
 				chart_config['options']['hover'] = {'animationDuration': 0}
 				chart_config['options']['responsiveAnimationDuration'] = 0
+				chart_config['options']['title'] = {"display": true, "text": $('#metric_name').text() +
+							' {{ validation_item.sr_id.sim_id.name }} {{ validation_item.sr_id.name }} ' +
+							$select_dynamic_graph_metric_regions.find('option:selected').text() + ' ' +
+							$select_dynamic_graph_metric_data_points.find('option:selected').text() +
+							(year===null ? "" : year==-1 ? " All Years" : " Year " + (parseInt(year)-3).toString())}
+				console.log(parseInt(year)-2)
 
 				let labels = []
 
