@@ -119,6 +119,8 @@
 						$('#single-export').show();
 						break;
 					case 'download':
+						populate_dynamic_graph_metrics(data);
+						$metric_container.empty();
 						$metric_container.append('<h4>Only available for download</h4>')
 						$('#single-export').show();
 					default:
