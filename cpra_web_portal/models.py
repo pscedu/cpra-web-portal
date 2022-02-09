@@ -130,7 +130,8 @@ class Metric(models.Model):
     type = models.CharField(max_length=64, default="",  choices=[
         ('static', 'Static'),
         ('dynamic_graph', 'Live Graph'),
-        ('map', 'Map')
+        ('map', 'Map'),
+        ('download', 'Download Only')
     ])
     file_path = models.CharField(max_length=64, default="")
     graph_config = models.JSONField()
