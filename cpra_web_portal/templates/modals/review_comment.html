@@ -3,6 +3,24 @@
 <h4> Review Output Item </h4>
 {% endblock %}
 {% block modal_body %}
+<script>
+    $(document).ready(function(){
+        $('#modal-review-comment').find('select').select2({width: '100%', dropdownParent: $('#modal-review-comment'), placeholder: "None", allowClear: true});
+    });
+</script>
+<div class="mb-3">
+    <label for="select-project-info">Project</label>
+    <select name="project_info" id="select-project-info" class="modal-form-control form-control">
+        <option></option>
+        {% for key, project in project_information.items %}
+            <option value="{{ project.ProjectName }}"
+            {% if project.ProjectName == comment.project_information %}
+                selected
+            {% endif %}
+            >{{ project.ProjectName }}</option>
+        {% endfor %}
+    </select>
+</div>
 <div class="form-check">
   <input class="form-check-input" type="radio" name="first-check" id="intuitive-no-comment" {% if not comment or comment.review_option == 'intuitive-no-comment' %} checked {% endif %}>
   <label class="form-check-label" for="intuitive-no-comment">
