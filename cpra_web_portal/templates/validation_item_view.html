@@ -118,6 +118,9 @@
 						populate_map_metrics(data);
 						$('#single-export').show();
 						break;
+					case 'download':
+						$metric_container.append('<h4>Only available for download</h4>')
+						$('#single-export').show();
 					default:
 						break;
 				}
