@@ -39,6 +39,7 @@ def get_metric(request):
     try:
         files = utils.get_metric_files(metric, file_path)
     except FileNotFoundError as e:
+        print(repr(e))
         return HttpResponse(json.dumps({'success': False, 'message': 'Directory/Files not yet available.'}))
 
     response = {
