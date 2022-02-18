@@ -257,6 +257,7 @@ def get_metric_files(metric, file_path):
                 else:
                     files[parent] = {child: file}
         except Exception as e:
+            print(repr(e))
             raise e
 
     return files
