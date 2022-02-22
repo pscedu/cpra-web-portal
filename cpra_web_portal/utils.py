@@ -221,6 +221,7 @@ def get_metric_files(metric, file_path):
 
     try:
         misc = metric.graph_config.get('misc', {})
+
     except:
         misc = {}
     parent_start, parent_end = misc.get('parent_start_end', [0, 4])
@@ -263,10 +264,11 @@ def get_metric_files(metric, file_path):
                     (file_name_list[child_index])[parent_start:parent_end]
                 child = file_name_list[child_index] if "map" in metric.type else \
                     (file_name_list[child_index])[child_start:child_end]
-                if parent in files:
-                    files[parent][child] = file
-                else:
-                    files[parent] = {child: file}
+                if "-9999" not in [parent, child]:
+                    if parent in files:
+                        files[parent][child] = file
+                    else:
+                        files[parent] = {child: file}
         except Exception as e:
             print(repr(e))
             raise e
