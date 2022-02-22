@@ -48,11 +48,12 @@
 						  </div>
 							<div class="form-group">
 							<label for="metric_type">Type</label>
-							  
-							<select name="type" id="metric_type" class="form-control" value="{{ metric.type }}" required>
-								<option value="dynamic_graph">Live Graph</option>
-								<option value="static">Static</option>
-								<option value="map">Map</option>
+
+							<select name="type" id="metric_type" class="form-control" required>
+								<option value="dynamic_graph" {% if metric.type == "dynamic_graph" %} selected {% endif %}> Live Graph</option>
+								<option value="static" {% if metric.type == "static" %} selected {% endif %}>Static</option>
+								<option value="map" {% if metric.type == "map" %} selected {% endif %}>Map</option>
+								<option value="download" {% if metric.type == "download" %} selected {% endif %}>Download Only</option>
 							</select>	
 						  </div>
 						  <div class="form-group">
