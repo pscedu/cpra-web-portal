@@ -219,12 +219,18 @@ def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
 
+    misc = metric.graph_config.get('misc', {})
+    parent_start, parent_end = misc.get('parent_start_end', [0, 4])
+    child_start, child_end = misc.get('child_start_end', [4, 8])
+    delimiter = misc.get('delimiter', '_')
+
     if "map" in metric.type:
         parent_index = 0
         child_index = 9
     else:
-        parent_index = 11
-        child_index = 11
+        parent_index = misc.get('parent_index', 11)
+        child_index = misc.get('child_index', 11)
+
     # files will be structured as follows
     # files = {'region': {'point': 'filename'}}
     files = {}
@@ -249,9 +255,11 @@ def get_metric_files(metric, file_path):
                 if os.path.isdir(os.path.join(file_path, file)):
                     continue
 
-                file_name_list = file.split("_")
-                parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:4]
-                child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:8]
+                file_name_list = file.split(delimiter)
+                parent = file_name_list[parent_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[parent_start:parent_end]
+                child = file_name_list[child_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[child_start:child_end]
                 if parent in files:
                     files[parent][child] = file
                 else:
