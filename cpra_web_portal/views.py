@@ -755,6 +755,8 @@ class Metric(View):
         template = loader.get_template('metric_edit_view.html')
         context['metric'] = models.Metric.objects.filter(id=id).first() if id is not None else models.Metric()
 
+        context['metric'].graph_config = json.dumps(context['metric'].graph_config)
+
         return HttpResponse(template.render(context, request))
 
     def post(self, request):
