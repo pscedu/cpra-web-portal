@@ -7,6 +7,8 @@
 		const csrftoken = Cookies.get('csrftoken');
 		$("#btn-metric-save").on("click", function(e){
 			let data = {}
+			let $validation_error_block = $('#validation_errors');
+			$validation_error_block.empty();
 
 			{% if metric.id != None %}
 			  data['id'] = {{ metric.id }}
@@ -16,8 +18,20 @@
 			// Iterate over form-control fields and get the data
 			$(".form-control").each(function(index, element){
 				let $element = $(element);
-				data[$element.attr('name')] = $element.val();
+				if($element.attr('name') === 'graph_config') {
+					try{
+						data[$element.attr('name')] = JSON.parse($element.val());
+					}
+					catch (err){
+						$validation_error_block.text('Invalid JSON, please modify.');
+					}
+				}
+				else
+					data[$element.attr('name')] = $element.val();
 			});
+
+			if($validation_error_block.text().length > 0)
+				return;
 
 			// perform post request
 			$.post({
@@ -70,6 +84,7 @@
 					</div>
 						<label for="metric_graph_config" style="display: none;"></label>
 						<textarea name="graph_config" class="form-control" id="metric_graph_config">{{ metric.graph_config }}</textarea>
+						<p style="color:red;" id="validation_errors"></p>
 				</div>
 			</div>
 		</div>
