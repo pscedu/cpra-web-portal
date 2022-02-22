@@ -219,7 +219,10 @@ def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
 
-    misc = metric.graph_config.get('misc', {})
+    try:
+        misc = metric.graph_config.get('misc', {})
+    except:
+        misc = {}
     parent_start, parent_end = misc.get('parent_start_end', [0, 4])
     child_start, child_end = misc.get('child_start_end', [4, 8])
     delimiter = misc.get('delimiter', '_')
