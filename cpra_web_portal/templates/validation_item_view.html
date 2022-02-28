@@ -222,6 +222,8 @@
 			}
 
 			if(metric['graph_config']['misc']['comparison_type'] !== undefined && metric['graph_config']['misc']['data_model']!=='daily_hydro_compartments'){
+				$select_dynamic_graph_metric_first_comparison.empty();
+				$select_dynamic_graph_metric_second_comparison.empty();
 				if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
 					$('#second_comparison_container').show();
 				else
