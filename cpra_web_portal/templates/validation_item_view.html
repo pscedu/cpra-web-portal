@@ -293,6 +293,18 @@
 					if(comparison_type==='fwa_fwoa'){
 						graph_data['fwa ' + col] = [];
 						graph_data['fwoa ' + col] = [];
+
+						chart_config['options']['scales']['y'] = {
+							'id': 'y',
+							'axis': 'y',
+							'display': true,
+							'type': 'linear',
+							'position': 'left',
+							'title': {
+								'display': true,
+								'text': col
+							}
+						}
 					}
 					else {
 						graph_data[col] = [];
