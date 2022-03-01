@@ -36,7 +36,7 @@
 <div class="form-check">
   <input class="form-check-input" type="radio" name="first-check" id="not-intuitive" {% if comment.review_option == 'not-intuitive' %} checked {% endif %}>
   <label class="form-check-label" for="not-intuitive">
-    Run does not look intuitive.
+    Output does not look intuitive.
   </label>
 </div>
 
@@ -44,7 +44,7 @@
      {% if comment.review_option != 'not-intuitive' %} style="display: none;" {% endif %}>
   <input class="form-check-input" type="checkbox" value="" id="checkbox-flag" {% if comment.is_flag %} checked {% endif %}>
   <label class="form-check-label" for="checkbox-flag">
-    Does the run need to be flagged for review?
+    Does the output need to be flagged for review?
   </label>
 </div>
 
