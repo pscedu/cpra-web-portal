@@ -516,7 +516,10 @@
 		function get_chart_formatted_data(data_to_format){
 			switch(data_to_format['type']){
 				case 'line':
-					return {'x': data_to_format['x'], 'y': data_to_format['y']}
+					if(data_to_format['format_type'] === 'ffibs_line')
+						return {'x': data_to_format['x'], 'y': data_to_format['y'] === -9999 ? 0 : data_to_format['y']}
+					else
+						return {'x': data_to_format['x'], 'y': data_to_format['y']}
 				case 'bar':
 					if(data_to_format['format_type'] === 'ffibs_bars')
 						return data_to_format['y'] === -9999 ? 0 : data_to_format['y']
