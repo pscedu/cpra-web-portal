@@ -24,13 +24,13 @@
 <div class="form-check">
   <input class="form-check-input" type="radio" name="first-check" id="intuitive-no-comment" {% if not comment or comment.review_option == 'intuitive-no-comment' %} checked {% endif %}>
   <label class="form-check-label" for="intuitive-no-comment">
-    Run looks intuitive, no comment.
+    Output looks intuitive, no comment.
   </label>
 </div>
 <div class="form-check">
   <input class="form-check-input" type="radio" name="first-check" id="intuitive-comment" {% if comment.review_option == 'intuitive-comment' %} checked {% endif %}>
   <label class="form-check-label" for="intuitive-comment">
-    Run looks intuitive, will comment.
+    Output looks intuitive, will comment.
   </label>
 </div>
 <div class="form-check">
@@ -52,7 +52,7 @@
 <div id="container-textarea-comment" class="form-floating"
      {% if not comment.review_option or comment.review_option == 'intuitive-no-comment' %} style="display: none;" {% endif %}
 >
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;">{% if not comment.review_option %}Run looks intuitive, no comment.{% else %}{{ comment.comments }}{% endif %}</textarea>
+        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;">{% if not comment.review_option %}Output looks intuitive, no comment.{% else %}{{ comment.comments }}{% endif %}</textarea>
         <label for="textarea-comment">Comment</label>
 </div>
 
@@ -73,7 +73,7 @@
                     $modal_content.find('#container-textarea-comment').show();
                 else if(radio_id === 'intuitive-no-comment'){
                     $modal_content.find('#container-textarea-comment').hide();
-                    $modal_content.find('#textarea-comment').val('Run looks intuitive, no comment.');
+                    $modal_content.find('#textarea-comment').val('Output looks intuitive, no comment.');
                 }
             }
         });
