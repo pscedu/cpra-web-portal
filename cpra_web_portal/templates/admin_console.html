@@ -35,36 +35,9 @@
         </div>
 	</div>
 	
-	<div class="row my-2">
-		<div class="col-12">
-			<h1> Recently Submitted Tasks</h1>
-        </div>
-	</div>
-	<div class="row my-2">
-		<div class="col-12">
-			<table class="table">
-			  <thead>
-				<tr>
-				  <th scope="col">Simulation Run</th>
-				  <th scope="col">Subroutine</th>
-				  <th scope="col">Validation Item</th>
-				  <th scope="col">User</th>
-				  <th scope="col">Time Submitted</th>
-				</tr>
-			  </thead>
-			  <tbody>
-			    {% for recent_approved_task in recent_approved_tasks %}
-				<tr>
-				  <th scope="row">{{ recent_approved_task.srv_id.sr_id.name }}</th>
-				  <td>{{ recent_approved_task.srv_id.sub_id.name }}</td>
-				  <td>{{ recent_approved_task.srv_id.vi_id.name }}</td>
-				  <td>{{ recent_approved_task.user_id.username }}</td>
-				  <td>{{ recent_approved_task.srv_id.datetime_submitted }}</td>
-				</tr>
-			    {% endfor %}
-			  </tbody>
-			</table>
-        </div>
+
+	<div class="container">
+		{% include 'components/validation_assignments_table.html' %}
 	</div>
 	
 	<div class="row my-2">
