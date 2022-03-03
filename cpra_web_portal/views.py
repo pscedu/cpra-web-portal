@@ -356,6 +356,38 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
         })
 
 
+class ValidationAssignmentAjaxDatatableView(AjaxDatatableView):
+
+    model = models.ValidationAssignment
+    title = 'Tasks'
+    initial_order = [["datetime_approved", "desc"], ]
+    length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
+    search_values_separator = '+'
+    show_column_filters = True
+
+    column_defs = [
+        {'name': 'id', 'visible': False, },
+        {'name': 'link', 'title': 'Link','placeholder': True},
+        {'name': 'simulation_run', 'title': 'Simulation Run', 'foreign_field': 'srv_id__sr_id__name'},
+        {'name': 'subroutine', 'title': 'Subroutine', 'foreign_field': 'srv_id__sub_id__name'},
+        {'name': 'validation_item', 'title': 'Validation Item', 'foreign_field': 'srv_id__vi_id__name'},
+        {'name': 'user', 'title': 'User', 'foreign_field': 'user_id__username'},
+        {'name': 'is_submitted', 'title': 'Submitted', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_approved', 'title': 'Approved', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'datetime_submitted', 'title': 'Time Submitted', 'visible': True},
+        {'name': 'datetime_approved', 'title': 'Time Approved', 'visible': True},
+    ]
+
+    def customize_row(self, row, obj):
+        row['link'] = f"""
+            <a href="{reverse('validation_item_overview', args=[obj.srv_id_id])}">
+               Go To
+            </a>
+        """
+        row['is_submitted'] = 'Yes' if obj.is_submitted else 'No'
+        row['is_approved'] = 'Yes' if obj.is_approved else 'No'
+
+
 # Individual Item Views
 class SimulationEditView(View):
     def get(self, request, id=None):
@@ -788,10 +820,6 @@ class AdminConsole(View):
             user_id_list.append(data.get('_auth_user_id', None))
         # Query all logged in users based on id list
         context['users'] = User.objects.filter(id__in=user_id_list).all()
-
-        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_submitted') \
-                                               .select_related('user_id').select_related(
-            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
         return HttpResponse(template.render(context, request))
 
