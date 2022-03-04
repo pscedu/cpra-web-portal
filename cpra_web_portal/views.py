@@ -219,6 +219,7 @@ def get_dynamic_graph_metric(request):
                     last_day = year*365 if year > 0 else len(result)
 
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                        fwoa_result = None
                         for row in result[first_day:last_day]:
                             json_from_csv['fwa'].append({'value': row})
 
@@ -239,9 +240,9 @@ def get_dynamic_graph_metric(request):
                                     # Set the columns in Redis so that subsequent loads are faster
                                     cache.set(f'{fwoa_file}_{col}', csv_reader[col])
                                     if col == int(file_name) - 1:
-                                        result = csv_reader[col]
+                                        fwoa_result = csv_reader[col]
 
-                            fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if result is None else result
+                            fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if fwoa_result is None else fwoa_result
                             for row in fwoa_result[first_day:last_day]:
                                 json_from_csv['fwoa'].append({'value': row})
                     else:
