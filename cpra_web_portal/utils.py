@@ -1,6 +1,7 @@
 import os
 import datetime
 import pandas as pa
+import re
 
 from django.forms.models import model_to_dict
 from django.db.models import Sum, Count
@@ -248,13 +249,13 @@ def get_metric_files(metric, file_path):
                 if obj.is_dir() and x['directory_regex'] in obj.name:
                     files[obj.name] = {}
                     for file in sorted(os.scandir(obj.path), key=lambda e: e.name):
-                        if metric.file_name_regex in file.name:
+                        if re.search(metric.file_name_regex, file.name):
                             file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
                             files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(
                                 obj.name, file.name)
     else:
         try:
-            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
+            for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)) \
                     if metric.file_name_regex else os.listdir(file_path):
                 if os.path.isdir(os.path.join(file_path, file)):
                     continue
@@ -280,7 +281,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
     files = {'Hydro Compartments': {}}
 
     dynamic_graph_data_model = metric.graph_config['misc']['data_model']
-    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0]
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex, f)][0]
 
     first_file_path = os.path.join(file_path, first_file)
 
@@ -308,7 +309,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
 
 
 def get_comparison_cols(metric, file_path):
-    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0] if metric.file_name_regex else [os.listdir(file_path)][0]
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex,f)][0] if metric.file_name_regex else [os.listdir(file_path)][0]
 
     first_file_path = os.path.join(file_path, first_file)
 

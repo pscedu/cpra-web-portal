@@ -17,6 +17,7 @@ from django.db.models import Sum, Count
 from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
 import zipfile
+import re
 
 from . import models, utils
 
@@ -99,12 +100,12 @@ def export_metric(request):
             #  Check to see if the file already exists, minor optimization
             if not os.path.exists(archive_file_path):
                 response = zipfile.ZipFile(archive_file_path, 'w')
-                for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)):
                     response.write(os.path.join(file_path, file), file)
                 response.close()
             response = open(archive_file_path, 'rb')
         elif metric_data_model == 'daily_hydro_compartments':
-            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+            for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex,file)):
                 response = open(os.path.join(file_path, file), 'rb')
     else:
         response = open(file_path, 'rb')
@@ -178,7 +179,7 @@ def get_dynamic_graph_metric(request):
                 # Otherwise, just load the data from this file
                 json_from_csv = list(dict_reader)
     else:
-        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+        for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)):
             with open(os.path.join(file_path, file), 'r') as f:
                 if metric_data_model == 'hydro_compartments':
                     csv_reader = list(csv.DictReader(f))
