@@ -73,6 +73,7 @@
 				passed_metric_options = {{ metric_options|safe }};
 				$metric_select.val($metric_select.find('[data-metric_id=' + passed_metric_id + ']').val()).trigger('change');
 
+				console.log(passed_metric_options);
 		{% endif %}
 
 		metric_change();
@@ -445,7 +446,7 @@
 			}
 
 			if(initial_load && passed_metric_options !== undefined)
-				$select_map_year.val(files[Object.keys(files)[0]][parseInt(passed_metric_options['year'])+2])
+				$select_map_year.val(files[Object.keys(files)[0]][(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
 
 			populate_map_metric_container();
 
