@@ -72,8 +72,6 @@
 				passed_metric_id = {{ metric_id }};
 				passed_metric_options = {{ metric_options|safe }};
 				$metric_select.val($metric_select.find('[data-metric_id=' + passed_metric_id + ']').val()).trigger('change');
-
-				console.log(passed_metric_options);
 		{% endif %}
 
 		metric_change();
