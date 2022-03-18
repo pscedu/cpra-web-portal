@@ -1,6 +1,15 @@
 {% extends 'modals/modal_base.html' %}
 {% block modal_title %}
+<div class="container-fluid">
+<div class="row modal-title">
 <h4> Review Output Item </h4>
+</div>
+<div class="row modal-description" style="display:block">
+{% if project_information %}
+<p>Only 1 review submission allowed per figure. If reviewing multiple projects on a map, add a <b>New</b> comment for each project.</p>
+{% endif %}
+</div>
+</div>
 {% endblock %}
 {% block modal_body %}
 <script>
