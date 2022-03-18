@@ -557,9 +557,14 @@
 			let comment_id = clicked_element.attr('data-bs-comment_id') !== undefined ? clicked_element.attr('data-bs-comment_id') : '';
 
 			$modal.empty();
+
+
 			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id+"?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$modal.find('.modal-dialog').css('margin-right', '1vw');
+				{% if validation_item.sr_id.sim_id.name == 'ICM' %}
+				$modal.find('.modal-description').empty().append('<p>Multiple comments allowed per figure. Use this section for additional project comments and ongoing discussion of data.</p>')
+				{% endif %}
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
 					let project_information = $modal.find('#select-project-info').val();
