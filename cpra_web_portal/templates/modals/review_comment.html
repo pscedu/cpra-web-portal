@@ -19,7 +19,7 @@
 </script>
 <div class="mb-3">
     <label for="select-project-info">Project</label>
-    <select name="project_info" id="select-project-info" class="modal-form-control form-control">
+    <select name="project_info" id="select-project-info" class="modal-form-control form-control" multiple>
         <option></option>
         {% for key, project in project_information.items %}
             <option value="{{ project.ProjectName }}"
