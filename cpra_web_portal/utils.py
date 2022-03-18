@@ -322,7 +322,6 @@ def get_comparison_cols(metric, file_path):
 
 def model_group_get_related_projects(model_group):
     with connections['mp23'].cursor() as cursor:
-        print(cursor)
         cursor.execute('SELECT md."ModelGroup", '
                        'md."ModelImplementation", '
                        'pm."DisplayID", '
@@ -345,7 +344,6 @@ def model_group_get_related_projects(model_group):
         rows = cursor.fetchall()
 
         for row in rows:
-            print(row)
             if row[2] in project_information:
                 project_information[row[2]]['ExtractionPoints'].append(
                     {
