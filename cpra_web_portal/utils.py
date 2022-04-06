@@ -60,7 +60,7 @@ def update_approval(srv):
         srv.save()
 
     # Sim Run Flag update
-    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(is_flagged=1).all().exists()
+    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(sr_id=sim_run, is_flagged=1).all().exists()
     sim_run.save()
     # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
     if srv.is_approved and not sim_run.is_approved and not sim_run.is_flagged:
