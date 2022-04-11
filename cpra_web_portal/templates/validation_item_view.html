@@ -801,6 +801,10 @@
 		}
 
 		$(document).on('keydown', function(e){
+
+			if($('.modal').hasClass('show'))
+				return;
+
 			switch(e.keyCode){
 				case 37:
 					// move to previous option
