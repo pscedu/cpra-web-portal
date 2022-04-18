@@ -130,7 +130,8 @@ class Metric(models.Model):
     type = models.CharField(max_length=64, default="",  choices=[
         ('static', 'Static'),
         ('dynamic_graph', 'Live Graph'),
-        ('map', 'Map')
+        ('map', 'Map'),
+        ('download', 'Download Only')
     ])
     file_path = models.CharField(max_length=64, default="")
     graph_config = models.JSONField()
@@ -305,7 +306,7 @@ class ValidationAssignmentComment(models.Model):
     metric_id = models.ForeignKey(Metric, on_delete=models.CASCADE, null=True, default=None)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     comments = models.TextField()
-    project_information = models.CharField(max_length=64, blank=True)
+    project_information = models.TextField(blank=True)
     metric_options = models.JSONField(null=True, default=None)
     is_submission = models.SmallIntegerField(default=0)
     is_approval = models.SmallIntegerField(default=0)

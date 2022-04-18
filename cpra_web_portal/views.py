@@ -17,6 +17,7 @@ from django.db.models import Sum, Count
 from django.core.serializers.json import DjangoJSONEncoder
 import pandas as pa
 import zipfile
+import re
 
 from . import models, utils
 
@@ -39,6 +40,7 @@ def get_metric(request):
     try:
         files = utils.get_metric_files(metric, file_path)
     except FileNotFoundError as e:
+        print(repr(e))
         return HttpResponse(json.dumps({'success': False, 'message': 'Directory/Files not yet available.'}))
 
     response = {
@@ -98,12 +100,12 @@ def export_metric(request):
             #  Check to see if the file already exists, minor optimization
             if not os.path.exists(archive_file_path):
                 response = zipfile.ZipFile(archive_file_path, 'w')
-                for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+                for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)):
                     response.write(os.path.join(file_path, file), file)
                 response.close()
             response = open(archive_file_path, 'rb')
         elif metric_data_model == 'daily_hydro_compartments':
-            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+            for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex,file)):
                 response = open(os.path.join(file_path, file), 'rb')
     else:
         response = open(file_path, 'rb')
@@ -177,7 +179,7 @@ def get_dynamic_graph_metric(request):
                 # Otherwise, just load the data from this file
                 json_from_csv = list(dict_reader)
     else:
-        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file):
+        for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)):
             with open(os.path.join(file_path, file), 'r') as f:
                 if metric_data_model == 'hydro_compartments':
                     csv_reader = list(csv.DictReader(f))
@@ -217,6 +219,7 @@ def get_dynamic_graph_metric(request):
                     last_day = year*365 if year > 0 else len(result)
 
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                        fwoa_result = None
                         for row in result[first_day:last_day]:
                             json_from_csv['fwa'].append({'value': row})
 
@@ -237,9 +240,9 @@ def get_dynamic_graph_metric(request):
                                     # Set the columns in Redis so that subsequent loads are faster
                                     cache.set(f'{fwoa_file}_{col}', csv_reader[col])
                                     if col == int(file_name) - 1:
-                                        result = csv_reader[col]
+                                        fwoa_result = csv_reader[col]
 
-                            fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if result is None else result
+                            fwoa_result = cache.get(f'{fwoa_file}_{int(file_name) - 1}') if fwoa_result is None else fwoa_result
                             for row in fwoa_result[first_day:last_day]:
                                 json_from_csv['fwoa'].append({'value': row})
                     else:
@@ -353,6 +356,38 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
             'model': model,
             'request': request
         })
+
+
+class ValidationAssignmentAjaxDatatableView(AjaxDatatableView):
+
+    model = models.ValidationAssignment
+    title = 'Tasks'
+    initial_order = [["datetime_approved", "desc"], ]
+    length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
+    search_values_separator = '+'
+    show_column_filters = True
+
+    column_defs = [
+        {'name': 'id', 'visible': False, },
+        {'name': 'link', 'title': 'Link','placeholder': True},
+        {'name': 'simulation_run', 'title': 'Simulation Run', 'foreign_field': 'srv_id__sr_id__name'},
+        {'name': 'subroutine', 'title': 'Subroutine', 'foreign_field': 'srv_id__sub_id__name'},
+        {'name': 'validation_item', 'title': 'Validation Item', 'foreign_field': 'srv_id__vi_id__name'},
+        {'name': 'user', 'title': 'User', 'foreign_field': 'user_id__username'},
+        {'name': 'is_submitted', 'title': 'Submitted', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_approved', 'title': 'Approved', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'datetime_submitted', 'title': 'Time Submitted', 'visible': True},
+        {'name': 'datetime_approved', 'title': 'Time Approved', 'visible': True},
+    ]
+
+    def customize_row(self, row, obj):
+        row['link'] = f"""
+            <a href="{reverse('validation_item_overview', args=[obj.srv_id_id])}">
+               Go To
+            </a>
+        """
+        row['is_submitted'] = 'Yes' if obj.is_submitted else 'No'
+        row['is_approved'] = 'Yes' if obj.is_approved else 'No'
 
 
 # Individual Item Views
@@ -754,6 +789,8 @@ class Metric(View):
         template = loader.get_template('metric_edit_view.html')
         context['metric'] = models.Metric.objects.filter(id=id).first() if id is not None else models.Metric()
 
+        context['metric'].graph_config = json.dumps(context['metric'].graph_config)
+
         return HttpResponse(template.render(context, request))
 
     def post(self, request):
@@ -785,10 +822,6 @@ class AdminConsole(View):
             user_id_list.append(data.get('_auth_user_id', None))
         # Query all logged in users based on id list
         context['users'] = User.objects.filter(id__in=user_id_list).all()
-
-        context['recent_submitted_tasks'] = models.ValidationAssignment.objects.order_by('-datetime_submitted') \
-                                               .select_related('user_id').select_related(
-            'srv_id__sr_id').select_related('srv_id__sub_id').select_related('srv_id__vi_id')[:5]
 
         return HttpResponse(template.render(context, request))
 

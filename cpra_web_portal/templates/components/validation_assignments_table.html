@@ -1,0 +1,33 @@
+{% load static %}
+<link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+<link rel='stylesheet' href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+<link rel='stylesheet' href="https://cdn.datatables.net/buttons/1.7.0/css/buttons.bootstrap4.min.css">
+
+<script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.bootstrap4.min.js"></script>
+
+<script>
+	$(document).ready(function() {
+        AjaxDatatableViewUtils.initialize_table(
+            $('#validation_assignments_table'),
+            "{% url 'ajax_datatable_validation_assignments' %}",
+            {
+                processing: false,
+                autoWidth: false,
+                scrollX: false,
+				select: true
+            }
+        );
+    });
+</script>
+
+<div class="row my-2">
+		<div class="col-12">
+			<h1> Tasks </h1>
+        </div>
+	</div>
+	<table class="table table-hover" id="validation_assignments_table">
+	</table>

@@ -64,5 +64,6 @@ urlpatterns = [
     path('team_view/<int:id>/', views.TeamView.as_view(), name='team_edit_view'),
     path('team/modal/<str:type>', views.TeamModal.as_view(), name='team_modal_view'),
     path('widget/review_status', views.widget_review_status, name='widget_review_status'),
-    path('datatables/validation_item_comments_table', views.ValidationItemCommentAjaxDatatableView.as_view(), name='ajax_datatable_validation_item_comments')
+    path('datatables/validation_item_comments_table', views.ValidationItemCommentAjaxDatatableView.as_view(), name='ajax_datatable_validation_item_comments'),
+    path('datatables/validation_assignment_table', views.ValidationAssignmentAjaxDatatableView.as_view(), name='ajax_datatable_validation_assignments')
 ]

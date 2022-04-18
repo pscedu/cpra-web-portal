@@ -1,6 +1,7 @@
 import os
 import datetime
 import pandas as pa
+import re
 
 from django.forms.models import model_to_dict
 from django.db.models import Sum, Count
@@ -59,7 +60,7 @@ def update_approval(srv):
         srv.save()
 
     # Sim Run Flag update
-    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(is_flagged=1).all().exists()
+    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(sr_id=sim_run, is_flagged=1).all().exists()
     sim_run.save()
     # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
     if srv.is_approved and not sim_run.is_approved and not sim_run.is_flagged:
@@ -219,12 +220,22 @@ def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
 
+    try:
+        misc = metric.graph_config.get('misc', {})
+
+    except:
+        misc = {}
+    parent_start, parent_end = misc.get('parent_start_end', [0, 4])
+    child_start, child_end = misc.get('child_start_end', [4, 8])
+    delimiter = misc.get('delimiter', '_')
+
     if "map" in metric.type:
         parent_index = 0
         child_index = 9
     else:
-        parent_index = 11
-        child_index = 11
+        parent_index = misc.get('parent_index', 11)
+        child_index = misc.get('child_index', 11)
+
     # files will be structured as follows
     # files = {'region': {'point': 'filename'}}
     files = {}
@@ -238,25 +249,29 @@ def get_metric_files(metric, file_path):
                 if obj.is_dir() and x['directory_regex'] in obj.name:
                     files[obj.name] = {}
                     for file in sorted(os.scandir(obj.path), key=lambda e: e.name):
-                        if metric.file_name_regex in file.name:
+                        if re.search(metric.file_name_regex, file.name):
                             file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
                             files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(
                                 obj.name, file.name)
     else:
         try:
-            for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
+            for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)) \
                     if metric.file_name_regex else os.listdir(file_path):
                 if os.path.isdir(os.path.join(file_path, file)):
                     continue
 
-                file_name_list = file.split("_")
-                parent = file_name_list[parent_index] if "map" in metric.type else (file_name_list[child_index])[0:4]
-                child = file_name_list[child_index] if "map" in metric.type else (file_name_list[child_index])[4:8]
-                if parent in files:
-                    files[parent][child] = file
-                else:
-                    files[parent] = {child: file}
+                file_name_list = file.split(delimiter)
+                parent = file_name_list[parent_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[parent_start:parent_end]
+                child = file_name_list[child_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[child_start:child_end]
+                if "-9999" not in [parent, child]:
+                    if parent in files:
+                        files[parent][child] = file
+                    else:
+                        files[parent] = {child: file}
         except Exception as e:
+            print(repr(e))
             raise e
 
     return files
@@ -266,7 +281,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
     files = {'Hydro Compartments': {}}
 
     dynamic_graph_data_model = metric.graph_config['misc']['data_model']
-    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0]
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex, f)][0]
 
     first_file_path = os.path.join(file_path, first_file)
 
@@ -294,7 +309,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
 
 
 def get_comparison_cols(metric, file_path):
-    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0] if metric.file_name_regex else [os.listdir(file_path)][0]
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex,f)][0] if metric.file_name_regex else [os.listdir(file_path)][0]
 
     first_file_path = os.path.join(file_path, first_file)
 
@@ -307,7 +322,6 @@ def get_comparison_cols(metric, file_path):
 
 def model_group_get_related_projects(model_group):
     with connections['mp23'].cursor() as cursor:
-        print(cursor)
         cursor.execute('SELECT md."ModelGroup", '
                        'md."ModelImplementation", '
                        'pm."DisplayID", '
@@ -330,7 +344,6 @@ def model_group_get_related_projects(model_group):
         rows = cursor.fetchall()
 
         for row in rows:
-            print(row)
             if row[2] in project_information:
                 project_information[row[2]]['ExtractionPoints'].append(
                     {
