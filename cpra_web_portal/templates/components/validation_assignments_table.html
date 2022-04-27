@@ -11,8 +11,9 @@
 
 <script>
 	$(document).ready(function() {
+		let validation_assignments_table = $('#validation_assignments_table')
         AjaxDatatableViewUtils.initialize_table(
-            $('#validation_assignments_table'),
+			validation_assignments_table,
             "{% url 'ajax_datatable_validation_assignments' %}",
             {
                 processing: false,
@@ -21,13 +22,24 @@
 				select: true
             }
         );
+		$('button').on('click', function(){
+            AjaxDatatableViewUtils.export_table(
+                validation_assignments_table,
+                "{% url 'ajax_datatable_validation_assignments' %}"
+            )
+        });
     });
 </script>
 
+<div class="row">
+    <div class="col-12">
+        <h3>Tasks</h3>
+    </div>
+</div>
 <div class="row my-2">
-	<div class="col-12">
-		<h1> Tasks </h1>
-	</div>
+    <div class="col-12">
+        <button class="btn btn-primary">Export</button>
+    </div>
 </div>
 <table class="table table-hover" id="validation_assignments_table">
 </table>
