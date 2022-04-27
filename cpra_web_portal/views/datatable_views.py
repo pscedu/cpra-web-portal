@@ -47,6 +47,9 @@ class ValidationItemCommentAjaxDatatableView(AjaxDatatableView):
         row['is_flag'] = 'Yes' if obj.is_flag else 'No'
         row['is_review'] = 'Yes' if obj.is_review else 'No'
 
+    def export_row(self, row, obj):
+        self.customize_row(row, obj)
+
     def render_row_details(self, pk, request=None):
         model = self.model.objects.get(pk=pk)
 
@@ -84,6 +87,11 @@ class ValidationAssignmentAjaxDatatableView(AjaxDatatableView):
                Go To
             </a>
         """
+        row['is_submitted'] = 'Yes' if obj.is_submitted else 'No'
+        row['is_approved'] = 'Yes' if obj.is_approved else 'No'
+
+    def export_row(self, row, obj):
+        row['link'] = f"{reverse('validation_item_overview', args=[obj.srv_id_id])}"
         row['is_submitted'] = 'Yes' if obj.is_submitted else 'No'
         row['is_approved'] = 'Yes' if obj.is_approved else 'No'
 
@@ -138,6 +146,18 @@ class CommentAjaxDatatableView(AjaxDatatableView):
                    Go To
                 </a>
             """
+        row['is_submission'] = 'Yes' if obj.is_submission else 'No'
+        row['is_approval'] = 'Yes' if obj.is_approval else 'No'
+        row['is_flag'] = 'Yes' if obj.is_flag else 'No'
+        row['is_review'] = 'Yes' if obj.is_review else 'No'
+
+    def export_row(self, row, obj):
+        row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
+        # print(urlencode(row.get('metric_options')))
+        if row['metric_options']:
+            row['link'] = f"{reverse('validation_item_view', args=[obj.srv_id_id])}?metric_id={obj.metric_id_id}&metric_options={urllib.parse.quote_plus(row['metric_options'])}"
+        else:
+            row['link'] = f"{reverse('validation_item_overview', args=[obj.srv_id_id])}"
         row['is_submission'] = 'Yes' if obj.is_submission else 'No'
         row['is_approval'] = 'Yes' if obj.is_approval else 'No'
         row['is_flag'] = 'Yes' if obj.is_flag else 'No'
