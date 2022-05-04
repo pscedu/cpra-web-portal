@@ -40,6 +40,9 @@
                                 <div class="dropdown-menu" aria-labelledby="reports_dropdown">
                                     <a class="dropdown-item" href="{% url 'tasks_report_view' %}">Tasks</a>
                                     <a class="dropdown-item" href="{% url 'comments_report_view' %}">Comments</a>
+                                    {% if user|has_group:"Admin" %}
+                                    <a class="dropdown-item" href="{% url 'mass_approval_report_view' %}">Mass Approval</a>
+                                    {% endif %}
                                 </div>
                             </li>
                         {% if user|has_group:"Admin" %}
