@@ -265,7 +265,7 @@ class ValidationAssignment(View):
             validation_assignment.save()
 
         if method == 'remove_submission':
-            comment = models.ValidationAssignmentComment.objects.get(srv_id=srv, user_id=request.user, is_submission=1)
+            comment = models.ValidationAssignmentComment.objects.filter(srv_id=srv, user_id=request.user, is_submission=1).all()
             comment.delete()
 
         if user.groups.filter(name="Admin").exists():
