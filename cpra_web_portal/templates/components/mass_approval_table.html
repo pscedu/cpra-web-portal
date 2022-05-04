@@ -1,0 +1,127 @@
+{% load static %}
+<link href="{% static 'ajax_datatable/css/style.css' %}" rel="stylesheet" />
+<link rel='stylesheet' href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap4.min.css">
+<link rel='stylesheet' href="https://cdn.datatables.net/buttons/1.7.0/css/buttons.bootstrap4.min.css">
+<link rel='stylesheet' href="https://cdn.datatables.net/select/1.3.4/css/select.dataTables.min.css">
+
+<script type="text/javascript" src="{% static 'ajax_datatable/js/utils.js' %}"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.7.0/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/select/1.3.4/js/dataTables.select.min.js"></script>
+
+<script>
+
+    $(document).ready(function() {
+		const csrftoken = Cookies.get('csrftoken');
+        let mass_approval_table = $('#mass_approval_table')
+
+        AjaxDatatableViewUtils.initialize_table(
+            mass_approval_table,
+            "{% url 'ajax_datatable_mass_approval' %}",
+            {
+                // extra_options (example)
+                processing: false,
+                autoWidth: false,
+                scrollX: false,
+                select: true,
+            }
+        );
+
+        $('#btn-export').on('click', function(){
+            AjaxDatatableViewUtils.export_table(
+                mass_approval_table,
+                "{% url 'ajax_datatable_mass_approval' %}"
+            )
+        });
+
+        $('#btn-approve').on('click', function(){
+            $(this).prop('disabled', true);
+            const selected_rows = mass_approval_table.DataTable().rows( { selected: true } ).data().toArray();
+
+            let body = {
+                comments: "Mass approved by {{ user.username }}",
+                is_submission: 1,
+                is_approval: 1,
+                is_approved: 1,
+                is_override: 1
+            }
+
+            let url_template = "{% url 'validation_assignment_methods' 0 'submit' %}"
+
+            for(let row in selected_rows){
+                let validation_assignment_id = selected_rows[row]['pk'];
+                body['validation_assignment_id'] = validation_assignment_id
+
+                let url = url_template.replace(0, validation_assignment_id);
+                $.ajax({
+                    url: url ,
+                    type: 'PUT',
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(body),
+                    success: function(data){
+                        $.fn.dataTable.tables({
+                            api: true
+                        }).draw();
+                    }
+                });
+                $.post({
+                    url: "{% url 'validation_assignment_comment' %}",
+                    headers: {'X-CSRFToken': csrftoken},
+                    data: JSON.stringify(body),
+                    success: function(){
+                        $.fn.dataTable.tables({
+                            api: true
+                        }).draw();
+                    }
+                });
+            }
+
+            $(this).prop('disabled', false);
+
+        });
+
+        $('#btn-remove-approval').on('click', function(){
+            const selected_rows = mass_approval_table.DataTable().rows( { selected: true } ).data().toArray();
+
+            let url_template = "{% url 'validation_assignment_methods' 0 'remove_submission' %}"
+
+            for(let row in selected_rows){
+                let validation_assignment_id = selected_rows[row]['pk'];
+
+                let url = url_template.replace(0, validation_assignment_id);
+
+                $.ajax({
+					url: url ,
+					type: 'PUT',
+					headers: {'X-CSRFToken': csrftoken},
+					success: function(){
+                        $.fn.dataTable.tables({
+                            api: true
+                        }).draw();
+					}
+				});
+            }
+
+
+        })
+    });
+
+</script>
+
+<div class="row">
+    <div class="col-12">
+        <h3>Mass Approval</h3>
+    </div>
+</div>
+<div class="row my-2">
+    <div class="col-12">
+        <button id='btn-export' class="btn btn-primary">Export</button>
+        <button id='btn-approve' class="btn btn-success">Approve</button>
+        <button id='btn-remove-approval' class="btn btn-danger">Remove Approval</button>
+
+    </div>
+</div>
+<table class="table table-hover" id="mass_approval_table">
+</table>
