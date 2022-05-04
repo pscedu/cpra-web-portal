@@ -67,6 +67,8 @@ urlpatterns = [
     path('datatables/validation_item_comments_table', datatable_views.ValidationItemCommentAjaxDatatableView.as_view(), name='ajax_datatable_validation_item_comments'),
     path('datatables/validation_assignment_table', datatable_views.ValidationAssignmentAjaxDatatableView.as_view(), name='ajax_datatable_validation_assignments'),
     path('datatables/comments_table', datatable_views.CommentAjaxDatatableView.as_view(), name='ajax_datatable_comments'),
+    path('datatables/mass_approval_table', datatable_views.MassApprovalAjaxDatatableView.as_view(), name='ajax_datatable_mass_approval'),
     path('reports/comments/', report_views.CommentsReportView.as_view(), name='comments_report_view'),
-    path('reports/tasks/', report_views.TasksReportView.as_view(), name='tasks_report_view')
+    path('reports/tasks/', report_views.TasksReportView.as_view(), name='tasks_report_view'),
+    path('reports/mass_approval/', report_views.MassApprovalReportView.as_view(), name='mass_approval_report_view')
 ]
