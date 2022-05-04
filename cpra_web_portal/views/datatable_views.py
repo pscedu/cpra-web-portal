@@ -162,3 +162,46 @@ class CommentAjaxDatatableView(AjaxDatatableView):
         row['is_approval'] = 'Yes' if obj.is_approval else 'No'
         row['is_flag'] = 'Yes' if obj.is_flag else 'No'
         row['is_review'] = 'Yes' if obj.is_review else 'No'
+
+
+class MassApprovalAjaxDatatableView(AjaxDatatableView):
+
+    model = models.SimulationRunValidation
+    title = 'Mass Approval'
+    initial_order = [["is_approved", "asc"], ]
+    length_menu = [[10, 20, 50, 100, -1], [10, 20, 50, 100, 'all']]
+    search_values_separator = '+'
+    show_column_filters = True
+
+    column_defs = [
+        {'name': 'id', 'visible': False, },
+        {'name': 'link', 'title': 'Link', 'placeholder': True},
+        {'name': 'model_group', 'title': 'Model Group', 'foreign_field': 'sr_id__name'},
+        {'name': 'subroutine', 'title': 'Subroutine', 'foreign_field': 'sub_id__name'},
+        {'name': 'validation_item', 'title': 'Validation Item', 'foreign_field': 'vi_id__name'},
+        {'name': 'is_approved', 'title': 'Approved', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'is_flagged', 'title': 'Flag', 'choices': ((1, 'Yes'), (0, 'No'))},
+        {'name': 'datetime_approved', 'title': 'Datetime Approved', 'visible': True},
+    ]
+
+    def get_initial_queryset(self, request=None):
+        if not getattr(request, 'REQUEST', None):
+            request.REQUEST = request.GET if request.method=='GET' else request.POST
+
+        queryset = self.model.objects.all()
+
+        return queryset
+
+    def customize_row(self, row, obj):
+        row['link'] = f"""
+            <a href="{reverse('validation_item_overview', args=[obj.id])}">
+               Go To
+            </a>
+        """
+        row['is_approved'] = 'Yes' if obj.is_approved else 'No'
+        row['is_flagged'] = 'Yes' if obj.is_flagged else 'No'
+
+    def export_row(self, row, obj):
+        row['link'] = f"{reverse('validation_item_overview', args=[obj.id])}"
+        row['is_approved'] = 'Yes' if obj.is_approved else 'No'
+        row['is_flagged'] = 'Yes' if obj.is_flagged else 'No'
