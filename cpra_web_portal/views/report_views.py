@@ -19,3 +19,12 @@ class CommentsReportView(View):
         return HttpResponse(template.render(context, request))
 
     post = get
+
+
+class MassApprovalReportView(View):
+    def get(self, request):
+        context = {}
+        template = loader.get_template('reports/mass_approval_report_view.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get
