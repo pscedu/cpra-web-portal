@@ -566,10 +566,12 @@
 				$modal.find('.modal-description').empty().append('<p>Multiple comments allowed per figure. Use this section for additional project comments and ongoing discussion of data.</p>')
 				{% endif %}
 				$('#misc-comment-save').on('click', function(){
+					let users_to_notify = $modal.find('#select-users').val();
 					let comment = $modal.find('#textarea-comment').val();
 					let project_information = $modal.find('#select-project-info').val();
 
 					let body = {
+						users_to_notify: users_to_notify,
 						comments: comment,
 						project_information: project_information,
 						validation_assignment_id: {{ validation_item.id }}
