@@ -35,6 +35,16 @@
                                     <a class="dropdown-item" href="{% url 'validation_items_list_view' %}">Validation Items</a>
                                 </div>
                             </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="reports_dropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Reports <span class="sr-only"></span></a>
+                                <div class="dropdown-menu" aria-labelledby="reports_dropdown">
+                                    <a class="dropdown-item" href="{% url 'tasks_report_view' %}">Tasks</a>
+                                    <a class="dropdown-item" href="{% url 'comments_report_view' %}">Comments</a>
+                                    {% if user|has_group:"Admin" %}
+                                    <a class="dropdown-item" href="{% url 'mass_approval_report_view' %}">Mass Approval</a>
+                                    {% endif %}
+                                </div>
+                            </li>
                         {% if user|has_group:"Admin" %}
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="admin_dropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
@@ -63,38 +73,5 @@
             {% block content %}
             {% endblock %}
         </div>
-<!--        <footer class="page-footer font-small special-color-dark">-->
-<!--            <div class="container">-->
-<!--                <div class="col-md-12 pt-4 pb-3">-->
-<!--                    <div class="text-center">-->
-<!--                        <p>Phone: 412-268-4960 | Fax: 412-268-5832</p>-->
-<!--                    </div>-->
-<!--                    <div class="text-center">-->
-<!--                        <p>Email: <a class="footer-email" href = "mailto:remarks@psc.edu">remarks@psc.edu</a></p>-->
-<!--                    </div>-->
-<!--                    <div class="text-center">-->
-<!--                        <p>Location: 300 S. Craig Street, Pittsburgh, PA 15213</p>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            <div class="row">-->
-<!--                <div class="col-md-12 pb-4">-->
-<!--                    <div class="flex-center">-->
-<!--                        <a class="li-ic" href="https://www.linkedin.com/company/pittsburgh-supercomputing-center/" target = "_blank">-->
-<!--                            <i class="fa fa-linkedin fa-lg white-text mr-md-5 mr-3 fa-2x" name="logo-linkedin"> </i>-->
-<!--                        </a>-->
-<!--                        <a class="tw-ic" href="https://twitter.com/psc_live?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor" target = "_blank">-->
-<!--                            <i class="fa fa-twitter fa-lg white-text mr-md-5 mr-3 fa-2x" name="logo-twitter"> </i>-->
-<!--                        </a>-->
-<!--                        <a class="fb-ic" href="https://www.facebook.com/PittsburghSupercomputingCenter/" target = "_blank">-->
-<!--                            <i class="fa fa-facebook-f fa-lg white-text mr-md-5 mr-3 fa-2x" name="logo-facebook"> </i>-->
-<!--                        </a>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--            <div class="footer-copyright text-center py-3">-->
-<!--                &copy; 2020 Pittsburgh Supercomputing Center-->
-<!--            </div>-->
-<!--        </footer>-->
     </body>
 </html>
