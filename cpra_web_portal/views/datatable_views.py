@@ -133,7 +133,6 @@ class CommentAjaxDatatableView(AjaxDatatableView):
 
     def customize_row(self, row, obj):
         row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
-        # print(urlencode(row.get('metric_options')))
         if row['metric_options']:
             row['link'] = f"""
                 <a href="{reverse('validation_item_view', args=[obj.srv_id_id])}?metric_id={obj.metric_id_id}&metric_options={urllib.parse.quote_plus(row['metric_options'])}">
@@ -153,7 +152,6 @@ class CommentAjaxDatatableView(AjaxDatatableView):
 
     def export_row(self, row, obj):
         row['metric_options'] = json.dumps(obj.metric_options) if obj.metric_options else ''
-        # print(urlencode(row.get('metric_options')))
         if row['metric_options']:
             row['link'] = f"{reverse('validation_item_view', args=[obj.srv_id_id])}?metric_id={obj.metric_id_id}&metric_options={urllib.parse.quote_plus(row['metric_options'])}"
         else:
