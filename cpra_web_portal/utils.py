@@ -127,6 +127,9 @@ def update_approval(srv):
                     for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
                                                                          wf_validation_item_assignments):
                         # check whether this is a team or user assignment
+                        if 'G500' in new_srv.sim_id.name:
+                            continue
+
                         if wf_assignment.team_id:
                             users = models.UserTeam.objects.filter(team_id=wf_assignment.team_id).all()
                             for user in users:
@@ -178,6 +181,8 @@ def create_tasks(related_tables):
                 filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
                 srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
                 for srv in srvs:
+                    if 'G500' in srv.sim_id.name:
+                        continue
                     # if the id that was passed is a team id
                     # we need to get the related users and check to see if there are assignments
                     if assignment['team_id_id']:
@@ -210,7 +215,8 @@ def create_tasks(related_tables):
                         **{srv_filter: related_id, 'is_approved': 0})
                     for srv_to_check in srvs_to_check:
                         if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'],
-                                                                          srv_id=srv_to_check):
+                                                                          srv_id=srv_to_check)\
+                                and 'G500' not in srv_to_check.sim_id.name:
                             va = models.ValidationAssignment(
                                 **{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
                             va.save()

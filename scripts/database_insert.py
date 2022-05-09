@@ -26,7 +26,7 @@ for sim in sims:
         for s_level in os.listdir(sim_path):
             if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
-                    if "G" in g_level and len(g_level) == 4 and g_level != 'G500':
+                    if "G" in g_level and len(g_level) == 4:
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)
@@ -83,7 +83,7 @@ for sim in sims:
                 new_srv.save()
 
                 # Generate assignments if it is the first subroutine
-                if wf_simulation_subroutine.step == 1:
+                if wf_simulation_subroutine.step == 1 and 'G500' not in new_sim_run.name:
                     for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
                                                                          wf_validation_item_assignments):
                         # check whether this is a team or user assignment
