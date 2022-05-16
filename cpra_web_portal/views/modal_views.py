@@ -54,6 +54,7 @@ class CommentModal(View):
         context = {}
         srv_id = request.GET.get('validation_assignment_id')
         srv = models.SimulationRunValidation.objects.filter(id=srv_id).first()
+        context['users'] = User.objects.all()
         if srv.sr_id.sim_id.name == 'ICM':
             context['project_information'] = utils.model_group_get_related_projects(srv.sr_id.name[-3:])
         if type == 'misc':

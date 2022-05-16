@@ -19,6 +19,19 @@
     <div class="container">
 
         <div class="col-12">
+            <div class="mb-3"
+                {% if comment %}
+                          hidden
+                {% endif %}>
+                <label for="select-users">Notify Users</label>
+                <select name="users" id="select-users" class="modal-form-control form-control" multiple>
+                    <option></option>
+                    {% for notify_user in users %}
+                        <option value="{{ notify_user.id }}">{{ notify_user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <div class="mb-3">
                 <label for="select-project-info">Project</label>
                 <select name="project_info" id="select-project-info" class="modal-form-control form-control" multiple
@@ -36,15 +49,16 @@
                     {% endfor %}
                 </select>
             </div>
-        <div class="form-floating">
-                <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
-                {% if comment %}
-                          disabled
-                {% endif %}
-                >{{ comment.comments }}</textarea>
-                <label for="textarea-comment">Comment</label>
+            <div class="form-floating">
+                    <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
+                    {% if comment %}
+                              disabled
+                    {% endif %}
+                    >{{ comment.comments }}</textarea>
+                    <label for="textarea-comment">Comment</label>
+            </div>
         </div>
-        </div></div>
+    </div>
 {% endblock %}
 {% block modal_footer %}
     {% if comment %}

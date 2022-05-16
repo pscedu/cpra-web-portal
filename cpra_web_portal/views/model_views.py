@@ -1,5 +1,6 @@
 import json
 import datetime
+import urllib
 
 from django.contrib.auth.models import User as user_model, Group
 from django.forms.models import model_to_dict
@@ -322,6 +323,19 @@ class ValidationAssignmentComment(View):
         validation_assignment_comment.save()
 
         # Need to return a template with the approval/denial details.
+        email_url = f"{request.get_host()}{reverse('validation_item_view', args=[validation_assignment.id])}?" \
+                    f"metric_id={validation_assignment_comment_data['metric_id_id']}&metric_options=" \
+                    f"{urllib.parse.quote_plus(json.dumps(validation_assignment_comment_data['metric_options']))}"
+
+        for user_id in body.get('users_to_notify', {}):
+            user = user_model.objects.get(pk=user_id)
+            user.email_user(
+                'New QA/QC Assignments',
+                "Hello " + user.username + f",\n\n{request.user.username} would like you to review the following comment:"
+                                           f"\n\n{body['comments']}"
+                                           f"\n\nYou can review this at the following link {email_url}"
+            )
+
         return HttpResponse(json.dumps(model_to_dict(validation_assignment_comment), cls=DjangoJSONEncoder))
 
     def delete(self, request, id):
