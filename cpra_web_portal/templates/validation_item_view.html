@@ -303,7 +303,10 @@
 							'position': 'left',
 							'title': {
 								'display': true,
-								'text': col
+								'text': col,
+								'font': {
+									'size': 18
+								}
 							}
 						}
 					}
@@ -318,7 +321,10 @@
 								'position': x==='1' ? 'right' : 'left',
 								'title': {
 									'display': true,
-									'text': col
+									'text': col,
+									'font': {
+										'size': 18
+									}
 								}
 							}
 					}
@@ -376,7 +382,7 @@
 				chart_config['options']['responsiveAnimationDuration'] = 0
 				chart_config['options']['plugins']= {
 					'title': {
-						"display": true, "text": $('#metric_name').text() +
+						'font': {'size': 18}, "display": true, "text": $('#metric_name').text() +
 						' {{ validation_item.sr_id.sim_id.name }} {{ validation_item.sr_id.name }} ' +
 						$select_dynamic_graph_metric_regions.find('option:selected').text() + ' ' +
 						$select_dynamic_graph_metric_data_points.find('option:selected').text() +
