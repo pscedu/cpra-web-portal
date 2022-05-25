@@ -28,3 +28,12 @@ class MassApprovalReportView(View):
         return HttpResponse(template.render(context, request))
 
     post = get
+
+
+class CustomExtractionPointReportView(View):
+    def get(self, request):
+        context = {}
+        template = loader.get_template('reports/custom_extraction_point_report_view.html')
+        return HttpResponse(template.render(context, request))
+
+    post = get

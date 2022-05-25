@@ -70,5 +70,6 @@ urlpatterns = [
     path('datatables/mass_approval_table', datatable_views.MassApprovalAjaxDatatableView.as_view(), name='ajax_datatable_mass_approval'),
     path('reports/comments/', report_views.CommentsReportView.as_view(), name='comments_report_view'),
     path('reports/tasks/', report_views.TasksReportView.as_view(), name='tasks_report_view'),
-    path('reports/mass_approval/', report_views.MassApprovalReportView.as_view(), name='mass_approval_report_view')
+    path('reports/mass_approval/', report_views.MassApprovalReportView.as_view(), name='mass_approval_report_view'),
+    path('reports/custom_extraction_points/', report_views.CustomExtractionPointReportView.as_view(), name='custom_extraction_point_report_view')
 ]
