@@ -21,12 +21,33 @@ create_all_srvs = None
 for sim in sims:
     sim_path = sim.results_dir
     new_sim_runs = []
-    if sim.name=='ICM':
+    if sim.name == 'ICM':
         # There are two different levels for ICM runs, S** and G***
         for s_level in os.listdir(sim_path):
             if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
-                    if "G" in g_level and len(g_level) == 4:
+                    if "G" in g_level and len(g_level) == 4 and g_level != 'G500':
+                        # Check to see if this sim run exists yet
+                        sim_run_name = s_level + "_" + g_level
+                        print(sim_run_name)
+                        try:
+                            sim_run = models.SimulationRun.objects.get(name=sim_run_name)
+                            print("exists")
+                        except:
+                            sim_run = models.SimulationRun(**{
+                                'name': sim_run_name,
+                                'sim_id': sim,
+                                'results_file_path': s_level+'/'+g_level,
+                                'datetime_created': datetime.datetime.now()
+                            })
+                            sim_run.save()
+                            new_sim_runs.append(sim_run)
+    elif sim.name == 'ICM FWOA':
+        # There are two different levels for ICM runs, S** and G***
+        for s_level in os.listdir(sim_path):
+            if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
+                for g_level in os.listdir(os.path.join(sim_path, s_level)):
+                    if "G" in g_level and len(g_level) == 4 and g_level == 'G500':
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)
