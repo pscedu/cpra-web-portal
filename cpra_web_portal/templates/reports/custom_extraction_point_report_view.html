@@ -10,9 +10,10 @@
         const $extraction_point_select = $('#extraction_point_select');
         const $metric_select = $('#metric_select');
         const $btn_add = $('#btn_add');
-        $sim_run_select.select2({width: '20%', placeholder: 'Scenario + Model Group'});
-        $extraction_point_select.select2({width: '20%', placeholder: 'Extraction Point'});
-        $metric_select.select2({width: '20%', placeholder: 'Metric'});
+        const $title_input = $('#title_input');
+        $sim_run_select.select2({width: '30%', placeholder: 'Scenario + Model Group'});
+        $extraction_point_select.select2({width: '30%', placeholder: 'Extraction Point'});
+        $metric_select.select2({width: '30%', placeholder: 'Metric'});
 
         let added_datasets = [];
         let active_dataset;
@@ -121,7 +122,6 @@
                 active_dataset['data'].push({'x': year-1, 'y': data[year][column]})
             }
 
-
             chart.data.datasets = added_datasets.concat([active_dataset]);
             chart.update();
         });
@@ -160,33 +160,48 @@
                 chart.update();
                 $card.remove();
             });
-        })
+        });
+
+        $title_input.on('keyup', function(){
+            chart.options.plugins.title.text = $(this).val().length === 0 ? 'Extraction Point Comparisons' : $(this).val();
+            chart.update();
+        });
+
+        $('#btn-export').on('click', function(){
+            let a = document.createElement('a');
+            a.download = chart.options.plugins.title.text;
+            a.href = chart.toBase64Image();
+            a.click();
+        });
     });
 </script>
 <div class="row my-2">
     <div class="col-2" id="datasets_container">
-        <input id="title_input" value="Extraction Point Comparisons">
-
-
     </div>
     <div class="col-9" id="graph_container"></div>
 </div>
 <div class="row my-2">
     <div class="col-2"></div>
-    <div class="col-8">
-    <select name="sim_run" id="sim_run_select">
-        <option></option>
-        {% for sr in srs %}
-            <option value="{{ sr.id }}">{{ sr.name }}</option>
-        {% endfor %}
-    </select>
-    <select name="extraction_point" id="extraction_point_select" disabled>
-        <option></option>
-    </select>
-    <select name="metric" id="metric_select" disabled>
-        <option></option>
-    </select>
+    <div class="col-6">
+        <select name="sim_run" id="sim_run_select">
+            <option></option>
+            {% for sr in srs %}
+                <option value="{{ sr.id }}">{{ sr.name }}</option>
+            {% endfor %}
+        </select>
+        <select name="extraction_point" id="extraction_point_select" disabled>
+            <option></option>
+        </select>
+        <select name="metric" id="metric_select" disabled>
+            <option></option>
+        </select>
         <button class="btn btn-sm btn-primary" id="btn_add" disabled>Add</button>
+    </div>
+    <div class="col-2">
+        <input id="title_input" class="form-control-sm" placeholder="Title">
+    </div>
+    <div class="col-1">
+        <button class="btn btn-sm btn-secondary" id="btn-export">Export</button>
     </div>
 </div>
 
