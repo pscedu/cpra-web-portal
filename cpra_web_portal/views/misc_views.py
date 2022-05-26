@@ -20,6 +20,53 @@ import re
 from cpra_web_portal import models, utils
 
 
+def get_extraction_points(request):
+    sim_run_id = request.GET.get('sim_run_id')
+    sim_run = models.SimulationRun.objects.get(pk=sim_run_id)
+    metric = models.Metric(**{
+        'type': 'dynamic_graph',
+        'file_path': 'geomorph/output_qaqc',
+        'graph_config': {
+            'misc': {
+                'data_model': 'extraction_points'
+            }
+        },
+        'file_name_regex': 'MP2023_'
+    })
+    file_path = os.path.join(
+        sim_run.sim_id.results_dir,
+        sim_run.results_file_path,
+        metric.file_path
+    )
+
+    try:
+        files = utils.get_metric_files(metric, file_path)
+    except FileNotFoundError as e:
+        print(repr(e))
+        return HttpResponse(json.dumps({'success': False, 'message': 'Directory/Files not yet available.'}))
+
+    response = {'extraction_points': files}
+
+    return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder))
+
+
+def get_extraction_point_values(request):
+    sim_run_id = request.GET.get('sim_run_id')
+    sim_run = models.SimulationRun.objects.get(pk=sim_run_id)
+    file_name = request.GET.get('file_name')
+    file_path = os.path.join(
+        sim_run.sim_id.results_dir,
+        sim_run.results_file_path,
+        'geomorph/output_qaqc',
+        file_name
+    )
+    with open(file_path, "r") as f:
+        dict_reader = csv.DictReader(f)
+        json_from_csv = list(dict_reader)
+
+    return HttpResponse(json.dumps(json_from_csv))
+
+
 def get_metric(request):
     metric_id = request.GET.get('metric_id')
     validation_assignment_id = request.GET.get('validation_assignment_id')
