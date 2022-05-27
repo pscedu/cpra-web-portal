@@ -5,6 +5,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     $(document).ready(function(){
+        const metric_lookup = {
+            'comp_mwl_NAVD88m':	'Mean Water Level (m)',
+            'comp_wlv_m': 'Water Level Variability (m)',
+            'comp_mean_sal_ppt': 'Mean Salinity (ppt)',
+            'comp_2wk_max_sal_ppt': '2-week Maximum Salinity (ppt)',
+            'pixel_z_NAVD88m': 'Pixel Height',
+            'annual_mean_inun_depth_m': 'Annual Mean Innundation Depth (m)',
+            'pixel_lndtyp': 'Land Type',
+            'pixel_mnrl_dep_g/cm2-yr': 'Mineral Deposition (g/cm^2-yr)',
+            'pixel_mnrl_accr_cm	Mineral': 'Accretion (cm)',
+            'pixel_org_accum_g/cm2-yr':	'Organic Accumulation (g/cm^2-yr)',
+            'pixel_org_accr_cm': 'Organic Accretion (cm)',
+            'grid_FFIBS': 'FFIBS Score',
+        }
+
 		const $graph_container = $('#graph_container');
         const $sim_run_select = $('#sim_run_select');
         const $extraction_point_select = $('#extraction_point_select');
@@ -95,7 +110,9 @@
                 let columns = Object.keys(data[0]);
                 $metric_select.append(new Option('',''))
                 for(let column in columns){
-                    $metric_select.append(new Option(columns[column], columns[column]))
+                    let val = columns[column];
+                    if(val in metric_lookup)
+                        $metric_select.append(new Option(metric_lookup[val], val))
                 }
                 $metric_select.data('metric_data', data)
                 $metric_select.removeAttr('disabled')
@@ -112,7 +129,7 @@
             const extraction_point = $extraction_point_select.find('option:selected').text();
             $btn_add.attr('disabled', false)
             active_dataset = {
-                'label': sim_run_name + ' ' + extraction_point + ' ' + column,
+                'label': sim_run_name + ' ' + extraction_point + ' ' + metric_lookup[column],
                 'data': [],
                 'fill': false,
                 'lineTension': 0,
@@ -160,6 +177,8 @@
                 chart.update();
                 $card.remove();
             });
+
+            $btn_add.attr('disabled', true)
         });
 
         $title_input.on('keyup', function(){
