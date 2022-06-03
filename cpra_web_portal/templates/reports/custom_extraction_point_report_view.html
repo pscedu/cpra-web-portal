@@ -59,11 +59,11 @@
                 'yAxisID': 'grid_FFIBS'
             },
             'deep_subsidence_mm/yr': {
-                'title': 'Deep Subsidence (mm/yr)',
+                'title': 'Deep Subsidence (cm/yr)',
                 'yAxisID': 'cm'
             },
             'shallow_subsidence_mm/yr': {
-                'title': 'Shallow Subsidence (mm/yr)',
+                'title': 'Shallow Subsidence (cm/yr)',
                 'yAxisID': 'cm'
             }
         }
@@ -287,7 +287,7 @@
             }
             for(let year in data){
                 let data_to_push = {'x': year-1};
-                let y_val = parseFloat(data[year][column])
+                let y_val = ['deep_subsidence_mm/yr', 'shallow_subsidence_mm/yr'].includes(column) ? parseFloat(data[year][column])/10 : parseFloat(data[year][column]);
                 if(column === 'pixel_lndtyp') {
                     switch (y_val) {
                         case 3.0:
