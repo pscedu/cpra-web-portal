@@ -2,6 +2,10 @@
 {% load static %}
 {% block content %}
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@700&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     $(document).ready(function(){
@@ -20,6 +24,12 @@
             'grid_FFIBS': 'FFIBS Score',
         }
 
+        const color_list = ['#0092c5','#005372', '#00688d', '#007fad',
+            '#006b66', '#007f79', '#08938c', '#0ba7a0',
+            '#9fcc3b', '#5e8021', '#74992a', '#89b232',
+        ]
+
+
 		const $graph_container = $('#graph_container');
         const $sim_run_select = $('#sim_run_select');
         const $extraction_point_select = $('#extraction_point_select');
@@ -33,6 +43,7 @@
         let added_datasets = [];
         let active_dataset;
 
+        Chart.defaults.font.family = "'Libre Franklin', sans-serif"
         let chart_config = {
             'type': 'line',
             'labels': [],
@@ -40,11 +51,12 @@
             'options': {
                 'plugins': {
                     'title': {
+                        'align': 'start',
                         'display': true,
                         'font': {
                             'size': 18
                         },
-                        'text': 'Extraction Point Comparisons'
+                        'text': 'EXTRACTION POINT COMPARISONS'
                     }
                 },
                 'scales': {
@@ -56,6 +68,7 @@
                         },
                         'title': {
                             'text': 'Years -1-51',
+                            'display': true,
                             'font': {
                                 'size': 18
                             }
@@ -148,8 +161,9 @@
 
             // Take the active dataset, set the color to something else and add it to added_datasets
             // This will add the active dataset to the added datasets
-            active_dataset['backgroundColor'] = '#9ECC3B';
-            active_dataset['borderColor'] = '#9ECC3B';
+            let color =  color_list[(added_datasets.length + 1) % color_list.length];
+            active_dataset['backgroundColor'] = color;
+            active_dataset['borderColor'] = color;
             added_datasets.push(active_dataset);
             chart.data.datasets = added_datasets;
             chart.update();
@@ -182,7 +196,7 @@
         });
 
         $title_input.on('keyup', function(){
-            chart.options.plugins.title.text = $(this).val().length === 0 ? 'Extraction Point Comparisons' : $(this).val();
+            chart.options.plugins.title.text = $(this).val().length === 0 ? 'EXTRACTION POINT COMPARISONS' : $(this).val().toUpperCase();
             chart.update();
         });
 
