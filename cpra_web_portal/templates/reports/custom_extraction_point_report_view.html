@@ -165,7 +165,6 @@
             '#006b66', '#e5a524', '#ed6731', '#714592', '#7076b4',
         ]
 
-
 		const $graph_container = $('#graph_container');
         const $sim_run_select = $('#sim_run_select');
         const $extraction_point_select = $('#extraction_point_select');
@@ -179,7 +178,6 @@
         let added_datasets = [];
         let active_dataset;
 
-        Chart.defaults.font.family = "'Libre Franklin', sans-serif"
         let chart_config = {
             'type': 'line',
             'labels': [],
@@ -220,6 +218,8 @@
 
         const $canvas = $('<canvas id="canvas-graph"></canvas>')
         $graph_container.append($canvas)
+
+        Chart.defaults.font.family = "'Libre Franklin', sans-serif"
 
         let chart = new Chart($canvas, chart_config);
 
@@ -401,31 +401,36 @@
 <div class="row my-2">
     <div class="col-2" id="datasets_container">
     </div>
-    <div class="col-9" id="graph_container"></div>
+    <div class="col-10">
+        <div class="row" id="graph_container"></div>
+        <div class="row mt-4">
+            <div class="col-6">
+                <select name="sim_run" id="sim_run_select">
+                    <option></option>
+                    {% for sr in srs %}
+                        <option value="{{ sr.id }}">{{ sr.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="extraction_point" id="extraction_point_select" disabled>
+                    <option></option>
+                </select>
+                <select name="metric" id="metric_select" disabled>
+                    <option></option>
+                </select>
+                <button class="btn btn-sm btn-primary" id="btn_add" disabled>Add</button>
+            </div>
+            <div class="col-1"></div>
+            <div class="col-2">
+                <input id="title_input" class="form-control-sm" placeholder="Title">
+            </div>
+            <div class="col-1">
+                <button class="btn btn-sm btn-secondary" id="btn-export">Export</button>
+            </div>
+        </div>
+    </div>
 </div>
 <div class="row my-2">
     <div class="col-2"></div>
-    <div class="col-6">
-        <select name="sim_run" id="sim_run_select">
-            <option></option>
-            {% for sr in srs %}
-                <option value="{{ sr.id }}">{{ sr.name }}</option>
-            {% endfor %}
-        </select>
-        <select name="extraction_point" id="extraction_point_select" disabled>
-            <option></option>
-        </select>
-        <select name="metric" id="metric_select" disabled>
-            <option></option>
-        </select>
-        <button class="btn btn-sm btn-primary" id="btn_add" disabled>Add</button>
-    </div>
-    <div class="col-2">
-        <input id="title_input" class="form-control-sm" placeholder="Title">
-    </div>
-    <div class="col-1">
-        <button class="btn btn-sm btn-secondary" id="btn-export">Export</button>
-    </div>
 </div>
 
 <div id="container_card_template" style="display: none">
