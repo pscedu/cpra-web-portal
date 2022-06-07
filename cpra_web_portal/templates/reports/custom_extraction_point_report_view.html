@@ -71,7 +71,7 @@
         const y_axes = {
             'navd88_m': {
                 'title': {
-                    'text': 'NAVD88 m',
+                    'text': '',
                     'font': {
                         'size': 14
                     },
@@ -82,18 +82,18 @@
             },
             'cm': {
                 'title': {
-                    'text': 'cm',
+                    'text': '',
                     'font': {
                         'size': 14
                     },
                     'display': true
                 },
                 'type': 'linear',
-                'position': 'left'
+                'position': 'right'
             },
             'g_cm_2_yr': {
                 'title': {
-                    'text': 'g/cm^2-yr',
+                    'text': '',
                     'font': {
                         'size': 14
                     },
@@ -104,18 +104,7 @@
             },
             'ppt': {
                 'title': {
-                    'text': 'ppt',
-                    'font': {
-                        'size': 14
-                    },
-                    'display': true
-                },
-                'type': 'linear',
-                'position': 'left'
-            },
-            'comp_wlv_m': {
-                'title': {
-                    'text': 'Water Level Variability',
+                    'text': '',
                     'font': {
                         'size': 14
                     },
@@ -124,9 +113,20 @@
                 'type': 'linear',
                 'position': 'right'
             },
+            'comp_wlv_m': {
+                'title': {
+                    'text': 'Water Level Variability (m)',
+                    'font': {
+                        'size': 14
+                    },
+                    'display': true
+                },
+                'type': 'linear',
+                'position': 'left'
+            },
             'annual_mean_inun_depth_m': {
                 'title': {
-                    'text': 'Annual Mean Innundation Depth',
+                    'text': 'Annual Mean Innundation Depth (m)',
                     'font': {
                         'size': 14
                     },
@@ -144,7 +144,7 @@
                     'display': true
                 },
                 'type': 'category',
-                'position': 'right',
+                'position': 'left',
                 'labels': ['Bareground', 'Water', 'Veg. Land']
             },
             'grid_FFIBS': {
@@ -283,7 +283,8 @@
                 'fill': false,
                 'lineTension': 0,
                 'type': 'line',
-                'yAxisID': metric_lookup[column]['yAxisID']
+                'yAxisID': metric_lookup[column]['yAxisID'],
+                'title': metric_lookup[column]['title']
             }
             for(let year in data){
                 let data_to_push = {'x': year-1};
@@ -389,10 +390,12 @@
 
             chart.data.datasets.forEach(function(e, i){
                 if(e.yAxisID in chart.options.scales){
-                //    skip
+                    if(!chart.options.scales[e.yAxisID]['title']['text'].includes(e.title))
+                        chart.options.scales[e.yAxisID]['title']['text'] += ', ' + e.title
                 }
                 else {
                     chart.options.scales[e.yAxisID] = y_axes[e.yAxisID]
+                    chart.options.scales[e.yAxisID]['title']['text'] = e.title
                 }
             })
         }
