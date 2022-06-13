@@ -190,7 +190,7 @@
                         'font': {
                             'size': 20
                         },
-                        'text': 'EXTRACTION POINT COMPARISONS'
+                        'text': 'DATA PLOTTER'
                     },
                     'legend': {
                         'labels':{
@@ -367,7 +367,7 @@
         });
 
         $title_input.on('keyup', function(){
-            chart.options.plugins.title.text = $(this).val().length === 0 ? 'EXTRACTION POINT COMPARISONS' : $(this).val().toUpperCase();
+            chart.options.plugins.title.text = $(this).val().length === 0 ? 'DATA PLOTTER' : $(this).val().toUpperCase();
             chart.update();
         });
 
