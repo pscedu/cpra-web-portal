@@ -36,7 +36,7 @@ class CustomExtractionPointReportView(View):
         context = {}
         template = loader.get_template('reports/custom_extraction_point_report_view.html')
 
-        context['srs'] = models.SimulationRun.objects.filter(sim_id__name__in=['ICM', 'ICM_FWOA']).all()
+        context['srs'] = models.SimulationRun.objects.filter(sim_id__name__in=['ICM', 'ICM FWOA']).all()
 
         return HttpResponse(template.render(context, request))
 
