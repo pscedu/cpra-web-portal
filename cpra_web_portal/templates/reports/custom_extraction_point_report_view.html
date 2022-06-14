@@ -73,9 +73,14 @@
                 'title': {
                     'text': '',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'left'
@@ -84,9 +89,14 @@
                 'title': {
                     'text': '',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'right'
@@ -95,9 +105,14 @@
                 'title': {
                     'text': '',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'left'
@@ -106,9 +121,14 @@
                 'title': {
                     'text': '',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'right'
@@ -117,9 +137,14 @@
                 'title': {
                     'text': 'Water Level Variability (m)',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'left'
@@ -128,9 +153,14 @@
                 'title': {
                     'text': 'Annual Mean Innundation Depth (m)',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'right'
@@ -139,9 +169,14 @@
                 'title': {
                     'text': 'Land Type',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'category',
                 'position': 'left',
@@ -151,9 +186,14 @@
                 'title': {
                     'text': 'FFIBS Score',
                     'font': {
-                        'size': 16
+                        'size': 20
                     },
                     'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
                 },
                 'type': 'linear',
                 'position': 'right'
@@ -161,8 +201,8 @@
         }
 
         const color_list = [
-            '#7076b4', '#005372', '#89b232', '#00a5d1', '#08938c',
-            '#5e8021', '#006b66', '#e5a524', '#ed6731', '#714592',
+            '#5e8021', '#005372', '#89b232', '#00a5d1', '#5e8021',
+            '#6ab9b4', '#e5a524', '#714592', '#ed6731', '#5e8021',
         ]
 
 		const $graph_container = $('#graph_container');
@@ -188,14 +228,14 @@
                         'align': 'start',
                         'display': true,
                         'font': {
-                            'size': 20
+                            'size': 22
                         },
                         'text': 'DATA PLOTTER'
                     },
                     'legend': {
                         'labels':{
                             'font':{
-                                'size': 14
+                                'size': 20
                             }
                         }
                     }
@@ -203,18 +243,18 @@
                 'scales': {
                     'x': {
                         'ticks': {
-                            'stepSize': 1,
+                            'stepSize': 5,
                             'max': 51,
                             'min': -1,
                             'font': {
-                                'size': 16
+                                'size': 20
                             }
                         },
                         'title': {
-                            'text': 'Years -1-51',
+                            'text': 'Year',
                             'display': true,
                             'font': {
-                                'size': 16
+                                'size': 20
                             }
                         },
                         'type': 'linear'
@@ -294,7 +334,10 @@
                 'lineTension': 0,
                 'type': 'line',
                 'yAxisID': metric_lookup[column]['yAxisID'],
-                'title': metric_lookup[column]['title']
+                'title': metric_lookup[column]['title'],
+                'font': {
+                    'size': 20
+                }
             }
             for(let year in data){
                 let data_to_push = {'x': year-1};
@@ -385,13 +428,16 @@
                         'ticks': {
                             'stepSize': 1,
                             'max': 51,
-                            'min': -1
+                            'min': -1,
+                            'font': {
+                                'size': 20
+                            }
                         },
                         'title': {
-                            'text': 'Years -1-51',
+                            'text': 'Year',
                             'display': true,
                             'font': {
-                                'size': 16
+                                'size': 20
                             }
                         },
                         'type': 'linear'
