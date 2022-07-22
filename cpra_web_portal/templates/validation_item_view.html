@@ -28,6 +28,7 @@
 		let $select_dynamic_graph_metric_first_comparison =	$('#select_dynamic_graph_metric_first_comparison');
 		let $select_dynamic_graph_metric_second_comparison =	$('#select_dynamic_graph_metric_second_comparison');
 		let $select_map_year = $('#select_map_year');
+		let $select_map_datapoint = $('#select_map_datapoint');
 		let metric_type = '';
 		let chart, passed_metric_id, passed_metric_options;
 		let initial_load = true;
@@ -56,7 +57,8 @@
 					'data_point': ''
 				},
 				'map': {
-					'year': ''
+					'year': '',
+					'data_point': ''
 				}
 			}
 		}
@@ -433,24 +435,61 @@
 
 		function populate_map_metrics(data){
 			let files = data['files']
+			let metric = data['metric']
+
 			let $map_metric_options = $('#map_metric_options');
 
+			$select_map_datapoint.empty();
+
 			$select_map_year.empty().addClass('navigation_active').prev().css('font-weight','bold');
+			// Need to check that graph_config and misc are actually in here.
+			if(metric['graph_config'] &&
+				metric['graph_config']['misc'] &&
+				metric['graph_config']['misc']['map_with_datapoints']
+			){
+				$("#map_metric_datapoint_options").show();
+				for(let parent_key in files)
+					$select_map_datapoint.append(new Option(parent_key, JSON.stringify(files[parent_key])));
 
-			for(let parent_key in files) {
-				const sortable = Object.entries(files[parent_key]).sort((a, b) => parseInt(a) - parseInt(b))
-				for (let e in sortable) {
-					let year = sortable[e][0];
-					$select_map_year.append(new Option(year - 2, files[parent_key][year]));
-				}
+				if(initial_load && passed_metric_options !== undefined)
+					$select_map_datapoint.val(JSON.stringify(files[passed_metric_options['data_point']]))
+				else if(ls_metric_options['map']['data_point'] in files)
+					$select_map_datapoint.val(JSON.stringify(files[ls_metric_options['map']['data_point']]))
+
+				populate_map_years($select_map_datapoint.find('option:selected').val());
 			}
+			else{
+				$("#map_metric_datapoint_options").hide();
 
-			if(initial_load && passed_metric_options !== undefined)
-				$select_map_year.val(files[Object.keys(files)[0]][(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
+				for(let parent_key in files) {
+					populate_map_years(JSON.stringify(files[parent_key]))
+				}
+
+				if(initial_load && passed_metric_options !== undefined)
+					$select_map_year.val(files[Object.keys(files)[0]][(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
+				else if(ls_metric_options['map']['year'] in files[Object.keys(files)[0]])
+					$select_map_year.val(files[Object.keys(files)[0]][ls_metric_options['map']['year']])
+			}
 
 			populate_map_metric_container();
 
 			$map_metric_options.show();
+		}
+
+		function populate_map_years(years){
+			$select_map_year.empty();
+			years = JSON.parse(years)
+			const sortable = Object.entries(years).sort((a, b) => parseInt(a) - parseInt(b))
+			for (let e in sortable) {
+				let year = sortable[e][0];
+				$select_map_year.append(new Option(year - 2, years[year]));
+			}
+
+
+			if(initial_load && passed_metric_options !== undefined)
+				$select_map_year.val(years[(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
+			else if(ls_metric_options['map']['year'] in years)
+				$select_map_year.val(years[ls_metric_options['map']['year']])
 		}
 
 		function populate_map_metric_container(){
@@ -725,7 +764,17 @@
 			load_comments();
 		});
 
+		$select_map_datapoint.on('change', function(){
+			ls_metric_options['map']['data_point'] = $(this).find('option:selected').text();
+
+			populate_map_years($(this).val())
+			populate_map_metric_container();
+			load_comments();
+		})
+
 		$select_map_year.on('change', function(){
+			ls_metric_options['map']['year'] = $(this).find('option:selected').text();
+
 			populate_map_metric_container();
 			load_comments();
 		});
@@ -895,6 +944,10 @@
 							<label for="select_dynamic_graph_metric_second_comparison">Field 2</label>
 							<select name="second_field" class="form-control" id="select_dynamic_graph_metric_second_comparison"></select>
 						</div>
+					</div>
+					<div id="map_metric_datapoint_options" class="metric_options" style="display: none">
+						<label for="select_map_datapoint">Datapoint</label>
+						<select name="data_point" class="form-control" id="select_map_datapoint"></select>
 					</div>
 					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>
