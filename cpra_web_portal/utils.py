@@ -228,16 +228,16 @@ def get_metric_files(metric, file_path):
 
     try:
         misc = metric.graph_config.get('misc', {})
-
     except:
         misc = {}
+
     parent_start, parent_end = misc.get('parent_start_end', [0, 4])
     child_start, child_end = misc.get('child_start_end', [4, 8])
     delimiter = misc.get('delimiter', '_')
 
     if "map" in metric.type:
-        parent_index = 0
-        child_index = 9
+        parent_index = misc.get('parent_index', 0)
+        child_index = misc.get('child_index', 9)
     else:
         parent_index = misc.get('parent_index', 11)
         child_index = misc.get('child_index', 11)
