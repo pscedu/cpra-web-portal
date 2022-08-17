@@ -5,6 +5,9 @@ set -x
 echo "Running database insert"
 echo `date`
 
-module load anaconda5
-source activate cpra-web-portal
-python /opt/repositories/cpra-web-portal/scripts/database_insert.py
+source /etc/profile.d/z00_lmod.sh
+
+module load anaconda3
+source activate /opt/environments/cpra-web-portal
+cd /opt/repositories/cpra-web-portal
+python scripts/database_insert.py

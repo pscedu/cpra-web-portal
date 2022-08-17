@@ -11,6 +11,12 @@
                         }).draw();
 					}
             });
+        });
+        $('.comment_go_to_button').on('click', function(){
+            let url = "{% url 'validation_item_view' model.srv_id.id %}?metric_id=" + {{ model.metric_id_id }}
+            url += "&metric_options=" + encodeURI(JSON.stringify({{ model.metric_options | safe }}));
+            console.log(url);
+            window.location = url;
         })
     })
 </script>
@@ -19,4 +25,6 @@
 <!-- If the comment is miscellaneous and a non-metric comment AND made by the current user, allow for deletion -->
 {% if model.user_id == request.user and not model.is_approval and not model.is_submission and not model.metric_id %}
     <button class="btn btn-danger btn-sm comment_delete_button">Delete</button>
+{% elif model.metric_id %}
+    <button class="btn btn-sm btn-primary comment_go_to_button">Go To</button>
 {% endif %}

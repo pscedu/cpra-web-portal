@@ -1,0 +1,34 @@
+<h3>Modeled Projects</h3>
+{% for key, project in project_information.items %}
+
+<div class="row">
+<div class="col-8">
+
+<h4>{{ project.ProjectName }} - {{ key }} - {{ project.TypeCode }}</h4>
+<p> <strong>Description:</strong> {{ project.Description }} </p>
+<p> <strong>Model Implementation:</strong> {{ project.ModelImplementation }}</p>
+    </div>
+    <div class="col-4">
+
+        <table class="table table-hover">
+          <thead>
+            <tr>
+                <th scope="col">Ecoregion</th>
+                <th scope="col">Extraction Point</th>
+                <th scope="col">Distance (m)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for extraction_point in project.ExtractionPoints %}
+            <tr>
+                <th scope="row">{{ extraction_point.Ecoregion }}</th>
+                <td>{{ extraction_point.ExtractionPoint }}</td>
+                <td>{{ extraction_point.Distance_m }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+    </div>
+</div>
+
+{% endfor %}

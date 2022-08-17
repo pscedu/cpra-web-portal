@@ -1,0 +1,508 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@700&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    $(document).ready(function(){
+        const metric_lookup = {
+            'comp_mwl_NAVD88m':	{
+                'title': 'Mean Water Level (NAVD88 m)',
+                'yAxisID': 'navd88_m'
+            },
+            'comp_wlv_m': {
+                'title': 'Water Level Variability (m)',
+                'yAxisID': 'comp_wlv_m'
+            },
+            'comp_mean_sal_ppt': {
+                'title': 'Mean Salinity (ppt)',
+                'yAxisID': 'ppt'
+            },
+            'comp_2wk_max_sal_ppt': {
+                'title': '2-week Maximum Salinity (ppt)',
+                'yAxisID': 'ppt'
+            },
+            'pixel_z_NAVD88m': {
+                'title': 'Pixel Elevation (NAVD88 m)',
+                'yAxisID': 'navd88_m'
+            },
+            'annual_mean_inun_depth_m': {
+                'title': 'Annual Mean Innundation Depth (m)',
+                'yAxisID': 'annual_mean_inun_depth_m'
+            },
+            'pixel_lndtyp': {
+                'title': 'Land Type',
+                'yAxisID': 'pixel_lndtyp'
+            },
+            'pixel_mnrl_dep_g/cm2-yr': {
+                'title': 'Mineral Deposition (g/cm^2-yr)',
+                'yAxisID': 'g_cm_2_yr'
+            },
+            'pixel_mnrl_accr_cm': {
+                'title': 'Mineral Accretion (cm)',
+                'yAxisID': 'cm'
+            },
+            'pixel_org_accum_g/cm2-yr': {
+                'title': 'Organic Accumulation (g/cm^2-yr)',
+                'yAxisID': 'g_cm_2_yr'
+            },
+            'pixel_org_accr_cm': {
+                'title': 'Organic Accretion (cm)',
+                'yAxisID': 'cm'
+            },
+            'grid_FFIBS': {
+                'title': 'FFIBS Score',
+                'yAxisID': 'grid_FFIBS'
+            },
+            'deep_subsidence_mm/yr': {
+                'title': 'Deep Subsidence (cm/yr)',
+                'yAxisID': 'cm'
+            },
+            'shallow_subsidence_mm/yr': {
+                'title': 'Shallow Subsidence (cm/yr)',
+                'yAxisID': 'cm'
+            }
+        }
+
+        const y_axes = {
+            'navd88_m': {
+                'title': {
+                    'text': '',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'left'
+            },
+            'cm': {
+                'title': {
+                    'text': '',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'right'
+            },
+            'g_cm_2_yr': {
+                'title': {
+                    'text': '',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'left'
+            },
+            'ppt': {
+                'title': {
+                    'text': '',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'right'
+            },
+            'comp_wlv_m': {
+                'title': {
+                    'text': 'Water Level Variability (m)',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'left'
+            },
+            'annual_mean_inun_depth_m': {
+                'title': {
+                    'text': 'Annual Mean Innundation Depth (m)',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'right'
+            },
+            'pixel_lndtyp': {
+                'title': {
+                    'text': 'Land Type',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'category',
+                'position': 'left',
+                'labels': ['Bareground', 'Water', 'Veg. Land']
+            },
+            'grid_FFIBS': {
+                'title': {
+                    'text': 'FFIBS Score',
+                    'font': {
+                        'size': 20
+                    },
+                    'display': true
+                },
+                'ticks': {
+                    'font': {
+                        'size': 20
+                    }
+                },
+                'type': 'linear',
+                'position': 'right'
+            }
+        }
+
+        const color_list = [
+            '#5e8021', '#005372', '#89b232', '#00a5d1', '#5e8021',
+            '#6ab9b4', '#e5a524', '#714592', '#ed6731', '#5e8021',
+        ]
+
+		const $graph_container = $('#graph_container');
+        const $sim_run_select = $('#sim_run_select');
+        const $extraction_point_select = $('#extraction_point_select');
+        const $metric_select = $('#metric_select');
+        const $btn_add = $('#btn_add');
+        const $title_input = $('#title_input');
+        $sim_run_select.select2({width: '30%', placeholder: 'Scenario + Model Group'});
+        $extraction_point_select.select2({width: '30%', placeholder: 'Extraction Point'});
+        $metric_select.select2({width: '30%', placeholder: 'Metric'});
+
+        let added_datasets = [];
+        let active_dataset;
+
+        let chart_config = {
+            'type': 'line',
+            'labels': [],
+            'data': {'datasets':[]},
+            'options': {
+                'plugins': {
+                    'title': {
+                        'align': 'start',
+                        'display': true,
+                        'font': {
+                            'size': 22
+                        },
+                        'text': 'DATA PLOTTER'
+                    },
+                    'legend': {
+                        'labels':{
+                            'font':{
+                                'size': 20
+                            }
+                        }
+                    }
+                },
+                'scales': {
+                    'x': {
+                        'ticks': {
+                            'stepSize': 1,
+                            'max': 51,
+                            'min': -1,
+                            'font': {
+                                'size': 20
+                            }
+                        },
+                        'title': {
+                            'text': 'Year',
+                            'display': true,
+                            'font': {
+                                'size': 20
+                            }
+                        },
+                        'type': 'linear'
+                    }
+                }
+            }
+        };
+
+        for(let tick = -1; tick < 51; tick++)
+            chart_config['labels'].push(tick)
+
+        const $canvas = $('<canvas id="canvas-graph"></canvas>')
+        $graph_container.append($canvas)
+
+        Chart.defaults.font.family = "'Libre Franklin', sans-serif"
+
+        let chart = new Chart($canvas, chart_config);
+
+        $sim_run_select.on('change', function(){
+            if($(this).val().length===0)
+                return;
+
+            // We need to get the available extraction points
+            const sim_run_id = $sim_run_select.val();
+            $extraction_point_select.empty();
+            $metric_select.empty();
+            $metric_select.data('metric_data', {})
+            $metric_select.attr('disabled', true)
+            $btn_add.attr('disabled', true)
+            $.get('/extraction_points/?sim_run_id=' + sim_run_id, function(data) {
+                const extraction_points = JSON.parse(data)['extraction_points'];
+                $extraction_point_select.append(new Option('',''))
+                for(let region in extraction_points){
+                    for(let datapoint in extraction_points[region]){
+                        $extraction_point_select.append(new Option(region+datapoint, extraction_points[region][datapoint]))
+                    }
+                }
+                $extraction_point_select.removeAttr('disabled')
+            })
+        });
+
+        $extraction_point_select.on('change', function(){
+            if($(this).val().length===0)
+                return;
+
+            const sim_run_id = $sim_run_select.val();
+            const file_name = $extraction_point_select.val();
+            $metric_select.empty();
+            $metric_select.data('metric_data', {})
+            $.get('/extraction_point_values/?sim_run_id='+sim_run_id+'&file_name='+file_name, function(data){
+                data = JSON.parse(data);
+                let columns = Object.keys(data[0]);
+                $metric_select.append(new Option('',''))
+                for(let column in columns){
+                    let val = columns[column];
+                    if(val in metric_lookup)
+                        $metric_select.append(new Option(metric_lookup[val]['title'], val))
+                }
+                $metric_select.data('metric_data', data)
+                $metric_select.removeAttr('disabled')
+            })
+        });
+
+        $metric_select.on('change', function(){
+            if($(this).val().length===0)
+                return;
+
+            const data = $metric_select.data('metric_data');
+            const column = $metric_select.val();
+            const sim_run_name = $sim_run_select.find('option:selected').text();
+            const extraction_point = $extraction_point_select.find('option:selected').text();
+            $btn_add.attr('disabled', false)
+            active_dataset = {
+                'label': sim_run_name + ' ' + extraction_point + ' ' + metric_lookup[column]['title'],
+                'data': [],
+                'fill': false,
+                'lineTension': 0,
+                'type': 'line',
+                'yAxisID': metric_lookup[column]['yAxisID'],
+                'title': metric_lookup[column]['title'],
+                'font': {
+                    'size': 20
+                }
+            }
+            for(let year in data){
+                let data_to_push = {'x': year-1};
+                let y_val = ['deep_subsidence_mm/yr', 'shallow_subsidence_mm/yr'].includes(column) ? parseFloat(data[year][column])/10 : parseFloat(data[year][column]);
+                if(column === 'pixel_lndtyp') {
+                    switch (y_val) {
+                        case 3.0:
+                            data_to_push['y'] = 'Bareground'
+                            break;
+                        case 2.0:
+                            data_to_push['y'] = 'Water';
+                            break;
+                        case 1.0:
+                            data_to_push['y'] = 'Veg. Land';
+                            break;
+                        default:
+                            data_to_push = {}
+                    }
+                }
+                else
+                    data_to_push['y'] = (y_val===-9999) ? 0 : y_val
+
+                active_dataset['data'].push(data_to_push)
+            }
+
+            chart.data.datasets = added_datasets.concat([active_dataset]);
+            update_y_axes();
+            chart.update();
+        });
+
+        $btn_add.on('click', function(){
+            $metric_select.val(null).trigger('change');
+
+            // Take the active dataset, set the color to something else and add it to added_datasets
+            // This will add the active dataset to the added datasets
+            let color =  color_list[(added_datasets.length + 1) % color_list.length];
+            active_dataset['backgroundColor'] = color;
+            active_dataset['borderColor'] = color;
+            added_datasets.push(active_dataset);
+            chart.data.datasets = added_datasets;
+            update_y_axes();
+            chart.update();
+
+            // Create a rectangle/square/widget with this information to the left hand side
+            let $card = $('#container_card_template').find('.card').clone();
+            $card.find('.card-text').text(active_dataset['label'])
+            $('#datasets_container').append($card);
+
+            active_dataset = {};
+
+            // Add a listener to remove the dataset from the added_datasets
+            // and remove the card from the container
+            $card.find('.btn-close').on('click', function(){
+                let dataset_label = $card.find('.card-text').text();
+                for(let i in added_datasets){
+                    if(added_datasets[i]['label'] === dataset_label) {
+                        added_datasets.splice(i, 1);
+                        break;
+                    }
+                }
+
+                chart.data.datasets =  $.isEmptyObject(active_dataset) ? added_datasets : added_datasets.concat([active_dataset]);
+
+                update_y_axes();
+                chart.update();
+                $card.remove();
+            });
+
+            $btn_add.attr('disabled', true)
+        });
+
+        $title_input.on('keyup', function(){
+            chart.options.plugins.title.text = $(this).val().length === 0 ? 'DATA PLOTTER' : $(this).val().toUpperCase();
+            chart.update();
+        });
+
+        $('#btn-export').on('click', function(){
+            let a = document.createElement('a');
+            a.download = chart.options.plugins.title.text;
+            a.href = chart.toBase64Image();
+            a.click();
+        });
+
+        function update_y_axes(){
+            chart.options.scales =
+                {
+                    'x': {
+                        'ticks': {
+                            'autoSkip': false,
+                            'callback': function(value, index, ticks){
+                                return (parseInt(value)%5===0) ? value : '';
+                            },
+                            'stepSize': 1,
+                            'max': 51,
+                            'min': -1,
+                            'font': {
+                                'size': 20
+                            }
+                        },
+                        'title': {
+                            'text': 'Year',
+                            'display': true,
+                            'font': {
+                                'size': 20
+                            }
+                        },
+                        'type': 'linear'
+                    }
+                }
+
+            chart.data.datasets.forEach(function(e, i){
+                if(e.yAxisID in chart.options.scales){
+                    if(!chart.options.scales[e.yAxisID]['title']['text'].includes(e.title))
+                        chart.options.scales[e.yAxisID]['title']['text'] += ', ' + e.title
+                }
+                else {
+                    chart.options.scales[e.yAxisID] = y_axes[e.yAxisID]
+                    chart.options.scales[e.yAxisID]['title']['text'] = e.title
+                }
+            })
+        }
+    });
+</script>
+<div class="row my-2">
+    <div class="col-2" id="datasets_container">
+    </div>
+    <div class="col-10">
+        <div class="row" id="graph_container"></div>
+        <div class="row mt-4">
+            <div class="col-6">
+                <select name="sim_run" id="sim_run_select">
+                    <option></option>
+                    {% for sr in srs %}
+                        <option value="{{ sr.id }}">{{ sr.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="extraction_point" id="extraction_point_select" disabled>
+                    <option></option>
+                </select>
+                <select name="metric" id="metric_select" disabled>
+                    <option></option>
+                </select>
+                <button class="btn btn-sm btn-primary" id="btn_add" disabled>Add</button>
+            </div>
+            <div class="col-1"></div>
+            <div class="col-2">
+                <input id="title_input" class="form-control-sm" placeholder="Title">
+            </div>
+            <div class="col-1">
+                <button class="btn btn-sm btn-secondary" id="btn-export">Export</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row my-2">
+    <div class="col-2"></div>
+</div>
+
+<div id="container_card_template" style="display: none">
+    <div class="card">
+        <div class="card-body">
+            <p class="card-text" style="display: inline;"></p>
+            <span style="float: right;"><button type="button" class="btn-close" aria-label="Close"></button></span>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

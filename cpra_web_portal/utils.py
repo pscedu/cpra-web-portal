@@ -1,11 +1,13 @@
 import os
 import datetime
 import pandas as pa
+import re
 
 from django.forms.models import model_to_dict
 from django.db.models import Sum, Count
 from django.apps import apps
 from django.core.cache import cache
+from django.db import connections
 
 from . import models
 
@@ -58,16 +60,18 @@ def update_approval(srv):
         srv.save()
 
     # Sim Run Flag update
-    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(is_flagged=1).all().exists()
+    sim_run.is_flagged = models.SimulationRunValidation.objects.filter(sr_id=sim_run, is_flagged=1).all().exists()
     sim_run.save()
     # if the srv is approved now, get all of the srvs related to the subroutine and check whether they are all approved
     if srv.is_approved and not sim_run.is_approved and not sim_run.is_flagged:
-        sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run, sub_id=srv.sub_id).aggregate(
+        sum_count_related_subs = models.SimulationRunValidation.objects.filter(sr_id=sim_run,
+                                                                               sub_id=srv.sub_id).aggregate(
             num_related=Count('id'), num_approved=Sum('is_approved'))
 
         # If they are all approved, do more checking/generation
         if sum_count_related_subs['num_related'] == sum_count_related_subs['num_approved']:
-            last_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id).order_by('step').last()
+            last_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id).order_by(
+                'step').last()
             # Check to see if this subroutine is the last step for the SimRun
             if srv.sub_id == last_wf_sim_sub.sub_id:
                 # If it is the last step, then update the sim run to be approved and return
@@ -76,12 +80,16 @@ def update_approval(srv):
                 return
             else:
                 # If it is not the last step, get the next subroutine
-                wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, sub_id=srv.sub_id).first()
-                next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id, step__gt=wf_sim_sub.step).order_by('step').select_related('sub_id').first()
+                wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id,
+                                                                          sub_id=srv.sub_id).first()
+                next_wf_sim_sub = models.WFSimulationSubroutine.objects.filter(sim_id=sim_run.sim_id,
+                                                                               step__gt=wf_sim_sub.step).order_by(
+                    'step').select_related('sub_id').first()
                 next_subroutine = next_wf_sim_sub.sub_id
 
                 # Get the validation items associated with the next subroutine
-                wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related('vi_id').all()
+                wf_sub_vis = models.WFSubroutineValidationItem.objects.filter(sub_id=next_subroutine).select_related(
+                    'vi_id').all()
 
                 # Check to see if there are actually validation items associated with the next subroutine.
                 while not wf_sub_vis:
@@ -106,16 +114,22 @@ def update_approval(srv):
                     validation_item = wf_sub_vi.vi_id
                     wf_validation_item_assignments = models.WFAssignment.objects.filter(vi_id=validation_item)
                     # Check to see if an SRV exists already
-                    new_srv = models.SimulationRunValidation.objects.filter(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item}).first()
+                    new_srv = models.SimulationRunValidation.objects.filter(
+                        **{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item}).first()
                     if not new_srv:
                         # If no SRV exists, generate a new SRV
-                        new_srv = models.SimulationRunValidation(**{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item, 'datetime_created': datetime.datetime.now()})
+                        new_srv = models.SimulationRunValidation(
+                            **{'sr_id': sim_run, 'sub_id': next_subroutine, 'vi_id': validation_item,
+                               'datetime_created': datetime.datetime.now()})
                         new_srv.save()
 
                     # here we have all of the users/teams at the sim, sub, and vi level
                     for wf_assignment in wf_simulation_assignments.union(wf_subroutine_assignments,
                                                                          wf_validation_item_assignments):
                         # check whether this is a team or user assignment
+                        if 'G500' in new_srv.sr_id.name:
+                            continue
+
                         if wf_assignment.team_id:
                             users = models.UserTeam.objects.filter(team_id=wf_assignment.team_id).all()
                             for user in users:
@@ -135,11 +149,11 @@ def update_approval(srv):
 
     for user in users_to_email:
         user.email_user(
-                'New QA/QC Assignments',
-                "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
-                                           "\n\nPlease review at your earliest convenience"
-                "\n\nHappy QA/QCing!"
-            )
+            'New QA/QC Assignments',
+            "Hello " + user.username + ",\n\nThere are new assignments that have been generated for your review."
+                                       "\n\nPlease review at your earliest convenience"
+                                       "\n\nHappy QA/QCing!"
+        )
 
 
 def update_related_tables(related_tables):
@@ -167,6 +181,8 @@ def create_tasks(related_tables):
                 filter_clause = {parent_table['id_field']: parent_table['id_value'], 'is_approved': 0}
                 srvs = models.SimulationRunValidation.objects.filter(**filter_clause).all()
                 for srv in srvs:
+                    if 'G500' in srv.sr_id.name:
+                        continue
                     # if the id that was passed is a team id
                     # we need to get the related users and check to see if there are assignments
                     if assignment['team_id_id']:
@@ -176,7 +192,8 @@ def create_tasks(related_tables):
                                 va = models.ValidationAssignment(**{'srv_id': srv, 'user_id': user.user_id})
                                 va.save()
                     # if the id that was passed is a user id - we only need to check to see if there are assignments
-                    elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(user_id_id=assignment['user_id_id'], srv_id=srv):
+                    elif assignment['user_id_id'] and not models.ValidationAssignment.objects.filter(
+                            user_id_id=assignment['user_id_id'], srv_id=srv):
                         # Then we need to create the validation assignment
                         va = models.ValidationAssignment(**{'srv_id': srv, 'user_id_id': assignment['user_id_id']})
                         va.save()
@@ -197,8 +214,11 @@ def create_tasks(related_tables):
                     srvs_to_check = models.SimulationRunValidation.objects.filter(
                         **{srv_filter: related_id, 'is_approved': 0})
                     for srv_to_check in srvs_to_check:
-                        if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'], srv_id=srv_to_check):
-                            va = models.ValidationAssignment(**{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
+                        if not models.ValidationAssignment.objects.filter(user_id_id=user['user_id_id'],
+                                                                          srv_id=srv_to_check)\
+                                and 'G500' not in srv_to_check.sr_id.name:
+                            va = models.ValidationAssignment(
+                                **{'srv_id': srv_to_check, 'user_id_id': user['user_id_id']})
                             va.save()
 
 
@@ -206,12 +226,21 @@ def get_metric_files(metric, file_path):
     if metric.type == "dynamic_graph" and metric.graph_config['misc']['data_model'] != 'extraction_points':
         return get_dynamic_graph_metric_files(metric, file_path)
 
+    try:
+        misc = metric.graph_config.get('misc', {})
+    except:
+        misc = {}
+
+    parent_start, parent_end = misc.get('parent_start_end', [0, 4])
+    child_start, child_end = misc.get('child_start_end', [4, 8])
+    delimiter = misc.get('delimiter', '_')
+
     if "map" in metric.type:
-        parent_index = 0
-        child_index = 9
+        parent_index = misc.get('parent_index', 0)
+        child_index = misc.get('child_index', 9)
     else:
-        parent_index = 12
-        child_index = 11
+        parent_index = misc.get('parent_index', 11)
+        child_index = misc.get('child_index', 11)
 
     # files will be structured as follows
     # files = {'region': {'point': 'filename'}}
@@ -226,21 +255,30 @@ def get_metric_files(metric, file_path):
                 if obj.is_dir() and x['directory_regex'] in obj.name:
                     files[obj.name] = {}
                     for file in sorted(os.scandir(obj.path), key=lambda e: e.name):
-                        if metric.file_name_regex in file.name:
+                        if re.search(metric.file_name_regex, file.name):
                             file_name_list = file.name.split(metric.graph_config['misc']['delimiter'])
-                            files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(obj.name, file.name)
+                            files[obj.name][file_name_list[metric.graph_config['misc']['child_index']]] = os.path.join(
+                                obj.name, file.name)
     else:
-        for file in (file for file in sorted(os.listdir(file_path)) if metric.file_name_regex in file) \
-                if metric.file_name_regex else os.listdir(file_path):
-            if os.path.isdir(os.path.join(file_path, file)):
-                continue
+        try:
+            for file in (file for file in sorted(os.listdir(file_path)) if re.search(metric.file_name_regex, file)) \
+                    if metric.file_name_regex else os.listdir(file_path):
+                if os.path.isdir(os.path.join(file_path, file)):
+                    continue
 
-            file_name_list = file.split("_")
-            parent = file_name_list[parent_index]
-            if parent in files:
-                files[parent][file_name_list[child_index]] = file
-            else:
-                files[parent] = {file_name_list[child_index]: file}
+                file_name_list = file.split(delimiter)
+                parent = file_name_list[parent_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[parent_start:parent_end]
+                child = file_name_list[child_index] if "map" in metric.type else \
+                    (file_name_list[child_index])[child_start:child_end]
+                if "-9999" not in [parent, child]:
+                    if parent in files:
+                        files[parent][child] = file
+                    else:
+                        files[parent] = {child: file}
+        except Exception as e:
+            print(repr(e))
+            raise e
 
     return files
 
@@ -249,7 +287,7 @@ def get_dynamic_graph_metric_files(metric, file_path):
     files = {'Hydro Compartments': {}}
 
     dynamic_graph_data_model = metric.graph_config['misc']['data_model']
-    first_file = [f for f in os.listdir(file_path) if metric.file_name_regex in f][0]
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex, f)][0]
 
     first_file_path = os.path.join(file_path, first_file)
 
@@ -257,21 +295,85 @@ def get_dynamic_graph_metric_files(metric, file_path):
         if dynamic_graph_data_model == 'daily_hydro_compartments':
             if not cache.keys(first_file + '_0'):
                 csv_reader = pa.read_csv(f, header=None)
-                num_cols = 0
+                num_datapoints = 0
                 for col in csv_reader.columns:
                     cache.set(first_file + '_' + str(col), csv_reader[col])
-                    num_cols += 1
+                    num_datapoints += 1
             else:
-                csv_reader = cache.get(first_file+'_0')
-                num_cols = len(cache.keys(first_file+'_*'))
+                csv_reader = cache.get(first_file + '_0')
+                num_datapoints = len(cache.keys(first_file + '_*'))
             num_rows = len(csv_reader)
         else:
             df = pa.read_csv(f)
-            num_rows = len(df)
-            num_cols = len(df.columns)
+            num_datapoints = num_rows = len(df)
 
-    for x in range(1, num_cols+1):
+    for x in range(1, num_datapoints + 1):
         files['Hydro Compartments'][str(x)] = str(x)
 
     metric.graph_config['misc']['num_rows'] = num_rows
     return files
+
+
+def get_comparison_cols(metric, file_path):
+    first_file = [f for f in os.listdir(file_path) if re.search(metric.file_name_regex,f)][0] if metric.file_name_regex else [os.listdir(file_path)][0]
+
+    first_file_path = os.path.join(file_path, first_file)
+
+    with open(first_file_path, 'r') as f:
+        csv_reader = pa.read_csv(f)
+        cols = list(csv_reader.columns)
+
+    return cols
+
+
+def model_group_get_related_projects(model_group):
+    with connections['mp23'].cursor() as cursor:
+        cursor.execute('SELECT md."ModelGroup", '
+                       'md."ModelImplementation", '
+                       'pm."DisplayID", '
+                       'pm."LegacyProjectNumber", '
+                       'pm."TypeCode", '
+                       'pm."ProjectName", '
+                       'pm."Description", '
+                       'ed."Ecoregion", '
+                       'epa."ExtractionPoint", '
+                       'epa."Distance_m" '
+                       'FROM pdd."ModelDefinition" as md '
+                       'JOIN pct."ProjectMetadata" as pm ON md."ProjectID" = pm."ProjectID" '
+                       'JOIN icm."ecoregion_definition" as ed ON md."ProjectID" = ed."ProjectID" '
+                       'JOIN pdd."ExtractionPointDefinition" as epd ON ed."Ecoregion" = epd."Ecoregion" '
+                       'JOIN pdd."ExtractionPointAssignment" as epa '
+                       '    ON epd."ExtractionPoint" = epa."ExtractionPoint"  '
+                       '    AND pm."ProjectID" = epa."ProjectID" '
+                       'WHERE md."ModelGroup" = %s', [model_group])
+        project_information = {}
+        rows = cursor.fetchall()
+
+        for row in rows:
+            if row[2] in project_information:
+                project_information[row[2]]['ExtractionPoints'].append(
+                    {
+                        'Ecoregion': row[7],
+                        'ExtractionPoint': row[8],
+                        'Distance_m': row[9]
+                    }
+                )
+            else:
+                project_information[row[2]] = {
+                    'ModelGroup': row[0],
+                    'ModelImplementation': row[1],
+                    'DisplayID': row[2],
+                    'LegacyProjectNumber': row[3],
+                    'TypeCode': row[4],
+                    'ProjectName': row[5],
+                    'Description': row[6],
+                    'ExtractionPoints': [
+                        {
+                            'Ecoregion': row[7],
+                            'ExtractionPoint': row[8],
+                            'Distance_m': row[9]
+                        }
+                    ]
+                }
+
+        return project_information

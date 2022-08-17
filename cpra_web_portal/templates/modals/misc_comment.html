@@ -1,17 +1,64 @@
 {% extends 'modals/modal_base.html' %}
 {% block modal_title %}
-<h4> New Comment </h4>
+<div class="container-fluid">
+<div class="row modal-title">
+    <h4> New Summary Comment </h4>
+</div>
+<div class="row modal-description" style="display:block">
+</div>
+</div>
 {% endblock %}
 {% block modal_body %}
+<script>
+    $(document).ready(function(){
+        $('#modal-misc-comment').find('select').select2({width: '100%', dropdownParent: $('#modal-misc-comment'), placeholder: "None", allowClear: true});
+    });
+</script>
             <!--        Comment text area -->
-<div class="form-floating">
-        <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
-        {% if comment %}
-                  disabled
-        {% endif %}
-        >{{ comment.comments }}</textarea>
-        <label for="textarea-comment">Comment</label>
-</div>
+
+    <div class="container">
+
+        <div class="col-12">
+            <div class="mb-3"
+                {% if comment %}
+                          hidden
+                {% endif %}>
+                <label for="select-users">Notify Users</label>
+                <select name="users" id="select-users" class="modal-form-control form-control" multiple>
+                    <option></option>
+                    {% for notify_user in users %}
+                        <option value="{{ notify_user.id }}">{{ notify_user.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="select-project-info">Project</label>
+                <select name="project_info" id="select-project-info" class="modal-form-control form-control" multiple
+                {% if comment %}
+                          disabled
+                {% endif %}
+                >
+                    <option></option>
+                    {% for key, project in project_information.items %}
+                        <option value="{{ project.ProjectName }}"
+                        {% if project.ProjectName == comment.project_information %}
+                            selected
+                        {% endif %}
+                        >{{ project.ProjectName }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-floating">
+                    <textarea name="comment" id="textarea-comment" class="modal-form-control form-control" style="height: 200px;"
+                    {% if comment %}
+                              disabled
+                    {% endif %}
+                    >{{ comment.comments }}</textarea>
+                    <label for="textarea-comment">Comment</label>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 {% block modal_footer %}
     {% if comment %}

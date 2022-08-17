@@ -8,7 +8,7 @@
 		</div>
 		<div class="col-8 offset-2">
 		<h1>Subroutines</h1>
-			<div class="list-group">
+			<div class="list-group" style="max-height: 80vh; overflow-y:auto;">
 				{% for grouped_validation_assignment in grouped_validation_assignments %}
 				<a href="{% url 'validation_items_list_view' %}?sr_id__in={{ grouped_validation_assignment.sr_id.id }}&sub_id__in={{ grouped_validation_assignment.sub_id.id }}" class="list-group-item">
 					<h5 class="mb-1">{{ grouped_validation_assignment.sim_id.name }}

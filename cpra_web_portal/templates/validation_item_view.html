@@ -3,8 +3,7 @@
 {% load util_filters %}
 {% block content %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.panzoom/4.0.0/panzoom.min.js" integrity="sha512-9P4403el58YclVUmhMst5Bzpcy+i0V0F0wiMlrkTDgmVqYXhF+tccpnhGIHKzKPXKaTF0Q4J9UEhu2i6PckJWg==" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.css" integrity="sha512-C7hOmCgGzihKXzyPU/z4nv97W0d9bv4ALuuEbSf6hm93myico9qa0hv4dODThvCsqQUmKmLcJmlpRmCaApr83g==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 	$(document).ready(function(){
 		{% if edit_permission %}
@@ -26,12 +25,52 @@
 		let $select_dynamic_graph_metric_regions = $('#select_dynamic_graph_metric_region');
 		let $select_dynamic_graph_metric_data_points = $('#select_dynamic_graph_metric_data_points');
 		let $select_dynamic_graph_metric_year =	$('#select_dynamic_graph_metric_year');
+		let $select_dynamic_graph_metric_first_comparison =	$('#select_dynamic_graph_metric_first_comparison');
+		let $select_dynamic_graph_metric_second_comparison =	$('#select_dynamic_graph_metric_second_comparison');
 		let $select_map_year = $('#select_map_year');
+		let $select_map_datapoint = $('#select_map_datapoint');
 		let metric_type = '';
-		let chart;
+		let chart, passed_metric_id, passed_metric_options;
+		let initial_load = true;
+		let ls_metric_options = JSON.parse(window.localStorage.getItem('ls_metric_options'));
+
+		if(ls_metric_options===null){
+			ls_metric_options = {
+				'dynamic': {
+					'hydro_compartments': {
+						'region': '',
+						'data_point': '',
+						'year': ''
+					},
+					'daily_hydro_compartments': {
+						'region': '',
+						'data_point': '',
+						'year': ''
+					},
+					'extraction_points': {
+						'region': '',
+						'data_point': ''
+					}
+				},
+				'static': {
+					'region': '',
+					'data_point': ''
+				},
+				'map': {
+					'year': '',
+					'data_point': ''
+				}
+			}
+		}
 
 		// Initial Load Sequence
 		// Set the title of the page equal to the selected value
+
+		{% if metric_id and metric_options %}
+				passed_metric_id = {{ metric_id }};
+				passed_metric_options = {{ metric_options|safe }};
+				$metric_select.val($metric_select.find('[data-metric_id=' + passed_metric_id + ']').val()).trigger('change');
+		{% endif %}
 
 		metric_change();
 
@@ -53,41 +92,56 @@
 				$metric_container.empty();
 
 				// hide option containers
+				$('.navigation_active').removeClass('navigation_active').prev().css('font-weight','normal');
 				$('.metric_options').hide();
 				$('.export-container').hide();
+
+				if(data['success']===false){
+					$metric_container.append('<h4>' + data['message'] + '</h4>')
+					return;
+				}
 
 				// This is where we need to figure out which container we need populate
 				metric_type = metric_data['type'];
 				switch (metric_type){
 					case 'static':
-						populate_static_metrics(metric_data, files);
+						populate_static_metrics(data);
 						$('#single-export').show();
 						break;
 					case 'dynamic_graph':
-						populate_dynamic_graph_metrics(metric_data, files);
+						populate_dynamic_graph_metrics(data);
 						$('#multiple-export').show();
 						break;
 					case 'map':
-						populate_map_metrics(metric_data, files);
+						populate_map_metrics(data);
 						$('#single-export').show();
 						break;
+					case 'download':
+						populate_dynamic_graph_metrics(data);
+						$metric_container.empty();
+						$metric_container.append('<h4>Only available for download</h4>')
+						$('#single-export').show();
 					default:
-						console.log(metric_type)
 						break;
 				}
-
+				initial_load = false;
 				load_comments();
 			});
 		}
 
-		function populate_static_metrics(metric, files){
+		function populate_static_metrics(data){
+			let files = data['files']
 			let $static_metric_options = $('#static_metric_options');
 
-			$select_static_metric_regions.empty();
+			$select_static_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let region in files){
+			for(let region in files)
 				$select_static_metric_regions.append(new Option(region, JSON.stringify(files[region])));
-			}
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_static_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
+			else if(ls_metric_options['static']['region'] in files)
+				$select_static_metric_regions.val(JSON.stringify(files[ls_metric_options['static']['region']]))
 
 			populate_static_metric_data_points($select_static_metric_regions.find('option:selected').val());
 			populate_static_metric_container();
@@ -98,9 +152,13 @@
 		function populate_static_metric_data_points(data_points){
 			data_points = JSON.parse(data_points);
 			$select_static_metric_data_points.empty();
-			for(let data_point in data_points){
+			for(let data_point in data_points)
 				$select_static_metric_data_points.append(new Option(data_point, data_points[data_point]))
-			}
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_static_metric_data_points.val(data_points[passed_metric_options['data_point']])
+			else if(ls_metric_options['static']['data_point'] in data_points)
+				$select_static_metric_data_points.val(data_points[ls_metric_options['static']['data_point']])
 		}
 
 		function populate_static_metric_container(){
@@ -109,22 +167,37 @@
 			let file_name = $select_static_metric_data_points.val();
 			let img = new Image();
 			img.src = '/static_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
-			img.style.width = "85%"
+			img.style.height = "70vh";
+			img.style.width = "auto";
 			$metric_container.append(img);
 		}
 
-		function populate_dynamic_graph_metrics(metric, files){
+		function populate_dynamic_graph_metrics(data){
+			let metric = data['metric']
+			let files = data['files']
+			let columns = data['columns']
+
+			if(jQuery.isEmptyObject(files)){
+				$metric_container.append('<h4> No data points currently available. </h4>')
+				return;
+			}
+
 			let $canvas = $('<canvas id="canvas-metric"></canvas>')
 			$metric_container.append($canvas)
 
 			let $dynamic_graph_metric_options = $('#dynamic_graph_metric_options');
 			$dynamic_graph_metric_options.data('graph_config', metric['graph_config']);
 
-			$select_dynamic_graph_metric_regions.empty();
+			$select_dynamic_graph_metric_regions.empty().addClass('navigation_active').prev().css('font-weight','bold');
 
-			for(let region in files){
+			for(let region in files)
+				// This does not need to be sorted
 				$select_dynamic_graph_metric_regions.append(new Option(region, JSON.stringify(files[region])));
-			}
+
+			if(initial_load && passed_metric_options!==undefined)
+				$select_dynamic_graph_metric_regions.val(JSON.stringify(files[passed_metric_options['region']]))
+			else if(ls_metric_options['dynamic'][metric['graph_config']['misc']['data_model']]['region'] in files)
+				$select_dynamic_graph_metric_regions.val(JSON.stringify(files[ls_metric_options['dynamic'][metric['graph_config']['misc']['data_model']]['region']]))
 
 			if(metric['graph_config']['misc']['data_model']==='daily_hydro_compartments'){
 				$select_dynamic_graph_metric_year.append(new Option('All', -1))
@@ -132,10 +205,38 @@
 				let num_days = metric['graph_config']['misc']['num_rows'];
 				let max_year = Math.trunc(num_days/365);
 
-				for(let x = 1; x<=max_year; x++){
-					$select_dynamic_graph_metric_year.append(new Option(x, x))
-				}
+				for(let x = 1; x<=max_year; x++)
+					// This is inherently sorted
+					$select_dynamic_graph_metric_year.append(new Option(x-3, x))
+
+				if(initial_load && passed_metric_options!==undefined)
+					$select_dynamic_graph_metric_year.val(passed_metric_options['year'] === 'All' ? -1 : parseInt(passed_metric_options['year'])+3);
+				else if(ls_metric_options['dynamic']['hydro_compartments']['year'] !== '')
+					$select_dynamic_graph_metric_year.val(ls_metric_options['dynamic']['hydro_compartments']['year'] === 'All'
+							? -1 : parseInt(ls_metric_options['dynamic']['hydro_compartments']['year'])+3)
+
 				$('#dynamic_graph_metric_daily_options').show();
+			}
+
+			if(metric['graph_config']['misc']['comparison_type'] !== undefined && metric['graph_config']['misc']['data_model']!=='daily_hydro_compartments'){
+				$select_dynamic_graph_metric_first_comparison.empty();
+				$select_dynamic_graph_metric_second_comparison.empty();
+				if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics')
+					$('#second_comparison_container').show();
+				else
+					$('#second_comparison_container').hide();
+
+				for(let x in columns){
+					// This does not need to be sorted (not doing cache-ing here)
+					let column = columns[x]
+					let selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['first_field']);
+					$select_dynamic_graph_metric_first_comparison.append(new Option(column, column, selected, selected));
+					if(metric['graph_config']['misc']['comparison_type'] === 'datapoint_metrics'){
+						selected = (initial_load && passed_metric_options!==undefined && column === passed_metric_options['second_field']);
+						$select_dynamic_graph_metric_second_comparison.append(new Option(column, column, selected, selected))
+					}
+				}
+				$('#dynamic_graph_metric_comparison_options').show();
 			}
 
 			populate_dynamic_graph_metric_data_points($select_dynamic_graph_metric_regions.find('option:selected').val());
@@ -145,56 +246,250 @@
 		}
 
 		function populate_dynamic_graph_metric_data_points(data_points){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
 			data_points = JSON.parse(data_points);
 			$select_dynamic_graph_metric_data_points.empty();
-			for(let data_point in data_points){
+			const sortable = Object.entries(data_points).sort((a, b) => parseInt(a) - parseInt(b))
+			for(let e in sortable){
+				let data_point = sortable[e][0];
 				$select_dynamic_graph_metric_data_points.append(new Option(data_point, data_points[data_point]))
 			}
+			if(initial_load && passed_metric_options!==undefined)
+				$select_dynamic_graph_metric_data_points.val(data_points[passed_metric_options['data_point']]);
+			else if(ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point'] in data_points)
+				$select_dynamic_graph_metric_data_points.val(data_points[ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point']])
 		}
 
 		function populate_dynamic_graph_metric_container(){
 			let $canvas = $('#canvas-metric');
-			let chart_config = $('#dynamic_graph_metric_options').data('graph_config');
-			$canvas.empty();
+			let chart_config = JSON.parse(JSON.stringify($('#dynamic_graph_metric_options').data('graph_config')));
 			const metric_id = $metric_select.find('option:selected').data('metric_id');
 			const file_name = $select_dynamic_graph_metric_data_points.val();
-			const column_name = chart_config['misc']['column_name'];
-			const year = $select_dynamic_graph_metric_year.val();
+			const comparison_type = chart_config['misc']['comparison_type'];
+			const data_model = chart_config['misc']['data_model'];
+			const columns = comparison_type !== undefined && data_model !== 'daily_hydro_compartments' ?
+					$('#dynamic_graph_metric_comparison_options').find('.form-control:visible').map(function(){return $(this).val()}).get() :
+					(typeof chart_config['misc']['column_name'] === "string" ? [chart_config['misc']['column_name']] : chart_config['misc']['column_name']);
+			const column_dataset_options = chart_config['misc']['column_dataset_options'];
+
+			const year = $select_dynamic_graph_metric_year.is(':hidden') ? null : $select_dynamic_graph_metric_year.val();
+
+			const time_step_modifier = year===null ? -1 : year==-1 ? -2 : 0;
+			const min_tick = year===null ? -2 : time_step_modifier;
 
 			$.get('/dynamic_graph_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name + '&year=' + year, function(response){
 				response = JSON.parse(response)
-				let max_tick = response.length;
-				let graph_data = []
-				response.forEach(function(e, i){
-					graph_data.push({
-						x: i,
-						y: parseFloat(e[column_name])
-					})
-				})
+				let max_tick = undefined;
+				if(comparison_type==='fwa_fwoa')
+					max_tick = year==-1 ? response['fwa'].length/365 : response['fwa'].length;
+				else
+					max_tick = year==-1 ? response.length/365 : response.length;
 
-				chart_config['options']['scales']['xAxes'][0]['ticks']['max'] = max_tick;
+				let graph_data = {}
+
+				for(let x in columns) {
+					let col = columns[x];
+					if(comparison_type==='fwa_fwoa'){
+						graph_data['fwa ' + col] = [];
+						graph_data['fwoa ' + col] = [];
+
+						chart_config['options']['scales']['y'] = {
+							'id': 'y',
+							'axis': 'y',
+							'display': true,
+							'type': 'linear',
+							'position': 'left',
+							'title': {
+								'display': true,
+								'text': col,
+								'font': {
+									'size': 18
+								}
+							}
+						}
+					}
+					else {
+						graph_data[col] = [];
+						if (comparison_type==='datapoint_metrics')
+							chart_config['options']['scales'][col] = {
+								'id': col,
+								'axis': 'y',
+								'display': true,
+								'type': 'linear',
+								'position': x==='1' ? 'right' : 'left',
+								'title': {
+									'display': true,
+									'text': col,
+									'font': {
+										'size': 18
+									}
+								}
+							}
+					}
+				}
+
+				if(comparison_type==='fwa_fwoa')
+					for(let type in response){
+						response[type].forEach(function(e, i){
+						for(let x in columns){
+							let col = columns[x];
+							let time_step = year == -1 ? i/365 : i;
+							let chart_type = column_dataset_options!==undefined&&column_dataset_options[col]!==undefined?column_dataset_options[col]['type']:chart_config['type'];
+							let chart_type_format = column_dataset_options!==undefined&&column_dataset_options[col]!==undefined?column_dataset_options[col]['format_type']: undefined;
+
+							graph_data[type + ' ' +col].push(get_chart_formatted_data({
+								'x': time_step + time_step_modifier,
+								'y': parseFloat(e[col]),
+								'type': chart_type,
+								'format_type': chart_type_format
+							}))
+						}
+					})
+					}
+				else
+					response.forEach(function(e, i){
+						for(let x in columns){
+							let col = columns[x];
+							let time_step = year == -1 ? i/365 : i;
+
+							let type = column_dataset_options!==undefined&&column_dataset_options[col]!==undefined?column_dataset_options[col]['type']:chart_config['type'];
+							let chart_type_format = column_dataset_options!==undefined&&column_dataset_options[col]!==undefined?column_dataset_options[col]['format_type']: undefined;
+
+							graph_data[col].push(get_chart_formatted_data({
+								'x': time_step+time_step_modifier,
+								'y': parseFloat(e[col]),
+								'type': type,
+								'format_type': chart_type_format
+							}))
+						}
+					})
+
+				chart_config['options']['scales']['x']['type'] = 'linear';
+				chart_config['options']['scales']['x']['ticks'] = {
+					'stepSize': 1,
+					'max': max_tick+time_step_modifier,
+					'min': min_tick,
+					'beginAtZero': year!==null
+				}
+
+				if(year!==null && year!= -1)
+					chart_config['options']['scales']['x']['title']['text'] = "Days 0-365"
+
+				chart_config['options']['animation'] = {'duration': 0}
+				chart_config['options']['hover'] = {'animationDuration': 0}
+				chart_config['options']['responsiveAnimationDuration'] = 0
+				chart_config['options']['plugins']= {
+					'title': {
+						'font': {'size': 18}, "display": true, "text": $('#metric_name').text() +
+						' {{ validation_item.sr_id.sim_id.name }} {{ validation_item.sr_id.name }} ' +
+						$select_dynamic_graph_metric_regions.find('option:selected').text() + ' ' +
+						$select_dynamic_graph_metric_data_points.find('option:selected').text() +
+						(year===null ? "" : year==-1 ? " All Years" : " Year " + (parseInt(year)-3).toString())
+					}
+				}
 
 				let labels = []
-				for(let year = 0; year <= max_tick; year++)
-					labels.push(year)
 
-				chart_config['data'] = {'labels': labels, 'datasets':[{'label': file_name, 'data': graph_data, 'fill': false, 'backgroundColor': '#ff6384', 'borderColor': '#ff6384', 'lineTension': 0}]}
+				for(let tick = time_step_modifier; tick < max_tick + time_step_modifier; tick++)
+					labels.push(tick)
+
+				chart_config['data'] = {'labels': labels, 'datasets': []}
+				let colors = [ '9ECC3B', 'e5a524', 'ED6631',  '284D36', '7076B4']
+				for(let col in graph_data) {
+					let color = '#' + colors.pop();
+
+					let type = column_dataset_options !== undefined && column_dataset_options[col] !== undefined ?
+							column_dataset_options[col]['type'] : chart_config['type'];
+					let yAxisID = column_dataset_options !== undefined && column_dataset_options[col] !== undefined
+							&& column_dataset_options[col]['yAxisID'] !== undefined ?
+							column_dataset_options[col]['yAxisID'] : 'y';
+
+					let dataset = {
+						'label': col,
+						'data': graph_data[col],
+						'fill': false,
+						'backgroundColor': color,
+						'borderColor': color,
+						'lineTension': 0,
+						'type': type,
+						'yAxisID': yAxisID
+					}
+
+					if(column_dataset_options!==undefined && column_dataset_options[col] !== undefined &&
+					column_dataset_options[col]['pointRadius'] !== undefined)
+						dataset['pointRadius'] = column_dataset_options[col]['pointRadius']
+
+
+					if(comparison_type==='datapoint_metrics')
+						dataset['yAxisID'] = col
+
+					chart_config['data']['datasets'].push(dataset)
+				}
+
+				if(chart!==undefined)
+					chart.destroy();
+
 				chart = new Chart($canvas, chart_config)
 			})
 		}
 
-		function populate_map_metrics(metric, files){
+		function populate_map_metrics(data){
+			let files = data['files']
+			let metric = data['metric']
+
 			let $map_metric_options = $('#map_metric_options');
 
-			$select_map_year.empty();
+			$select_map_datapoint.empty();
 
-			for(let parent_key in files)
-				for(let year in files[parent_key])
-					$select_map_year.append(new Option(year, files[parent_key][year]));
+			$select_map_year.empty().addClass('navigation_active').prev().css('font-weight','bold');
+			// Need to check that graph_config and misc are actually in here.
+			if(metric['graph_config'] &&
+				metric['graph_config']['misc'] &&
+				metric['graph_config']['misc']['map_with_datapoints']
+			){
+				$("#map_metric_datapoint_options").show();
+				for(let parent_key in files)
+					$select_map_datapoint.append(new Option(parent_key, JSON.stringify(files[parent_key])));
+
+				if(initial_load && passed_metric_options !== undefined)
+					$select_map_datapoint.val(JSON.stringify(files[passed_metric_options['data_point']]))
+				else if(ls_metric_options['map']['data_point'] in files)
+					$select_map_datapoint.val(JSON.stringify(files[ls_metric_options['map']['data_point']]))
+
+				populate_map_years($select_map_datapoint.find('option:selected').val());
+			}
+			else{
+				$("#map_metric_datapoint_options").hide();
+
+				for(let parent_key in files) {
+					populate_map_years(JSON.stringify(files[parent_key]))
+				}
+
+				if(initial_load && passed_metric_options !== undefined)
+					$select_map_year.val(files[Object.keys(files)[0]][(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
+				else if(ls_metric_options['map']['year'] in files[Object.keys(files)[0]])
+					$select_map_year.val(files[Object.keys(files)[0]][ls_metric_options['map']['year']])
+			}
 
 			populate_map_metric_container();
 
 			$map_metric_options.show();
+		}
+
+		function populate_map_years(years){
+			$select_map_year.empty();
+			years = JSON.parse(years)
+			const sortable = Object.entries(years).sort((a, b) => parseInt(a) - parseInt(b))
+			for (let e in sortable) {
+				let year = sortable[e][0];
+				$select_map_year.append(new Option(year - 2, years[year]));
+			}
+
+
+			if(initial_load && passed_metric_options !== undefined)
+				$select_map_year.val(years[(parseInt(passed_metric_options['year'])+2).toString().padStart(2,'0')])
+			else if(ls_metric_options['map']['year'] in years)
+				$select_map_year.val(years[ls_metric_options['map']['year']])
 		}
 
 		function populate_map_metric_container(){
@@ -223,7 +518,7 @@
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
-			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element){
+			$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
 			});
 			metric_options = encodeURI(JSON.stringify(metric_options))
@@ -258,7 +553,43 @@
 			$("#container-oi-comments").append($comment_container);
 		}
 
+		function get_chart_formatted_data(data_to_format){
+			switch(data_to_format['type']){
+				case 'line':
+					if(data_to_format['format_type'] === 'ffibs_line')
+						return {'x': data_to_format['x'], 'y': data_to_format['y'] === -9999 ? 0 : data_to_format['y']}
+					else
+						return {'x': data_to_format['x'], 'y': data_to_format['y']}
+				case 'bar':
+					if(data_to_format['format_type'] === 'ffibs_bars')
+						return data_to_format['y'] === -9999 ? 0 : data_to_format['y']
+					else
+						return data_to_format['y']
+				case 'scatter':
+					if(data_to_format['format_type'] === 'land_type_category')
+						switch(data_to_format['y']) {
+							case 3.0:
+								return {'x': data_to_format['x'], 'y': 'Bareground'}
+							case 2.0:
+								return {'x': data_to_format['x'], 'y': 'Water'}
+							case 1.0:
+								return {'x': data_to_format['x'], 'y': 'Veg. Land'}
+							default:
+								return {}
+						}
+					else
+						return {'x': data_to_format['x'], 'y': data_to_format['y']}
+				default:
+					return {}
+			}
+
+		}
+
 		// Start Listener Region
+
+		window.onbeforeunload = function(){
+			localStorage.setItem('ls_metric_options', JSON.stringify(ls_metric_options))
+		}
 
 		$('#modal-misc-comment').on('show.bs.modal', function(e){
 			// this is a new modal so we do a get request to load the HTML
@@ -267,18 +598,28 @@
 			let comment_id = clicked_element.attr('data-bs-comment_id') !== undefined ? clicked_element.attr('data-bs-comment_id') : '';
 
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id, function(response){
+
+
+			$.get("{% url 'comment_modal_view' 'misc' %}"+comment_id+"?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
+				$modal.find('.modal-dialog').css('margin-right', '1vw');
+				{% if validation_item.sr_id.sim_id.name == 'ICM' %}
+				$modal.find('.modal-description').empty().append('<p>Multiple comments allowed per figure. Use this section for additional project comments and ongoing discussion of data.</p>')
+				{% endif %}
 				$('#misc-comment-save').on('click', function(){
+					let users_to_notify = $modal.find('#select-users').val();
 					let comment = $modal.find('#textarea-comment').val();
+					let project_information = $modal.find('#select-project-info').val();
 
 					let body = {
+						users_to_notify: users_to_notify,
 						comments: comment,
+						project_information: project_information,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
 					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function(index, element){
+					$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
 					})
 					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
@@ -321,14 +662,16 @@
 
 			let metric_id = $metric_select.find('option:selected').data('metric_id');
 			let metric_options = {}
-			$('.metric_options:visible').find('.form-control').each(function(index, element){
+			$('.metric_options:visible').find('.form-control:visible').each(function(index, element){
 				metric_options[$(this).attr('name')] = $(this).find('option:selected').text();
 			});
 			metric_options = encodeURI(JSON.stringify(metric_options))
 
 			$.get("{% url 'comment_modal_view' 'review' %}?metric_options="+ metric_options +"&metric_id=" + metric_id + "&validation_assignment_id="+ {{ validation_item.id }}, function(response){
 				$modal.append(response);
+				$modal.find('.modal-dialog').css('margin-right', '1vw');
 				$('#review-comment-save').on('click', function(){
+					let project_information = $modal.find('#select-project-info').val();
 					let radio_id = $modal.find('.form-check-input:radio:checked').attr('id');
 					let comment = $modal.find('#textarea-comment').val();
 					let is_flag = radio_id === 'not-intuitive' ? $modal.find('#checkbox-flag').is(':checked') : 0;
@@ -338,11 +681,12 @@
 					    is_flag: is_flag,
 						is_review: 1,
 						review_option: radio_id,
+						project_information: project_information,
 						validation_assignment_id: {{ validation_item.id }}
 					}
 
 					body['metric_options'] = {}
-					$('.metric_options:visible').find('.form-control').each(function (index, element) {
+					$('.metric_options:visible').find('.form-control:visible').each(function (index, element) {
 						body['metric_options'][$(this).attr('name')] = $(this).find('option:selected').text();
 					})
 					body['metric_id'] = $metric_select.find('option:selected').data('metric_id');
@@ -375,33 +719,62 @@
 		$metric_select.on('change', metric_change);
 
 		$select_static_metric_regions.on('change', function(){
-				populate_static_metric_data_points($(this).val())
-				populate_static_metric_container();
-				load_comments();
-			});
+			ls_metric_options['static']['region'] = $(this).find('option:selected').text();
+			populate_static_metric_data_points($(this).val())
+			populate_static_metric_container();
+			load_comments();
+		});
 
 		$select_static_metric_data_points.on('change', function(){
-				populate_static_metric_container();
-				load_comments();
-			});
+			ls_metric_options['static']['data_point'] = $(this).find('option:selected').text();
+			populate_static_metric_container();
+			load_comments();
+		});
 
 		$select_dynamic_graph_metric_regions.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['region'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_data_points($(this).val())
 			populate_dynamic_graph_metric_container();
 			load_comments();
 		});
 
 		$select_dynamic_graph_metric_data_points.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['data_point'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_container();
 			load_comments();
 		});
 
 		$select_dynamic_graph_metric_year.on('change', function(){
+			let graph_config = $('#dynamic_graph_metric_options').data('graph_config')
+
+			ls_metric_options['dynamic'][graph_config['misc']['data_model']]['year'] = $(this).find('option:selected').text();
 			populate_dynamic_graph_metric_container();
+			load_comments();
+		});
+
+		$select_dynamic_graph_metric_first_comparison.on('change', function(){
+			populate_dynamic_graph_metric_container();
+			load_comments();
+		});
+
+		$select_dynamic_graph_metric_second_comparison.on('change', function(){
+			populate_dynamic_graph_metric_container();
+			load_comments();
+		});
+
+		$select_map_datapoint.on('change', function(){
+			ls_metric_options['map']['data_point'] = $(this).find('option:selected').text();
+
+			populate_map_years($(this).val())
+			populate_map_metric_container();
 			load_comments();
 		})
 
 		$select_map_year.on('change', function(){
+			ls_metric_options['map']['year'] = $(this).find('option:selected').text();
+
 			populate_map_metric_container();
 			load_comments();
 		});
@@ -412,7 +785,7 @@
 			let export_type = $(this).data('export_type')
 
 			let a = document.createElement('a');
-			a.download = $metric_name.text();
+			a.download = $metric_name.text() + '_' + '{{ validation_item.sr_id.sim_id.name }}_{{ validation_item.sr_id.name }}';
 
 			$('.metric_options:visible').find('.form-control:not(#select_dynamic_graph_metric_year)').each(function(index, element) {
 				a.download += '_' + $(this).attr('name') + '_' + $(this).find('option:selected').text();
@@ -423,6 +796,86 @@
 					: '/export_metric/?metric_id=' + metric_id + '&validation_assignment_id={{ validation_item.id }}' + '&file_name=' + file_name;
 
 			a.click();
+		})
+
+		function navigate_select(direction){
+			// Get the selects
+			let $navigation_selects = $('.metric_options:visible').find('select:visible');
+			let active_index;
+
+			$navigation_selects.each(function (i){
+				if($(this).hasClass('navigation_active'))
+					active_index = i;
+			})
+
+			let $active_select = $($navigation_selects.get(active_index));
+
+			let $new_active_select;
+
+			switch(direction){
+				case 'previous':
+					$new_active_select = $($navigation_selects.get(active_index-1));
+					break;
+				case 'next':
+					$new_active_select = $($navigation_selects.get((active_index === $navigation_selects.length-1 ? -1 : active_index)+1));
+					break;
+			}
+
+			$active_select.removeClass('navigation_active');
+			$new_active_select.addClass('navigation_active');
+
+			$active_select.prev().css('font-weight', 'normal')
+			$new_active_select.prev().css('font-weight', 'bold')
+		}
+
+		function navigate_option(direction){
+			// Get the selects
+			let $active_select = $('.navigation_active');
+			let $active_select_options = $active_select.find('option');
+
+			if($active_select_options.length === 1)
+				return
+
+			let $active_option = $active_select.find('option:selected');
+			let active_index = $active_option.index('.navigation_active>option');
+
+			let $new_active_option;
+
+			switch(direction){
+				case 'previous':
+					$new_active_option = $($active_select_options.get(active_index-1));
+					break;
+				case 'next':
+					$new_active_option = $($active_select_options.get((active_index === $active_select_options.length-1 ? -1 : active_index)+1));
+					break;
+			}
+
+			$active_select.val($new_active_option.val()).trigger('change');
+		}
+
+		$(document).on('keydown', function(e){
+
+			if($('.modal').hasClass('show'))
+				return;
+
+			switch(e.keyCode){
+				case 37:
+					// move to previous option
+					navigate_option('previous');
+					break;
+				case 38:
+					navigate_select('previous');
+					// move to previous selector
+					break;
+				case 39:
+					// move to next option
+					navigate_option('next');
+					break;
+				case 40:
+					// move to next select
+					navigate_select('next')
+					break;
+			}
 		})
 
 		// End Listener Region
@@ -483,6 +936,18 @@
 					<div id="dynamic_graph_metric_daily_options" class="metric_options" style="display: none;">
 						<label for="select_dynamic_graph_metric_year">Year</label>
 						<select name="year" class="form-control" id="select_dynamic_graph_metric_year"></select>
+					</div>
+					<div id="dynamic_graph_metric_comparison_options" class="metric_options" style="display: none;">
+						<label for="select_dynamic_graph_metric_first_comparison">Field 1</label>
+						<select name="first_field" class="form-control" id="select_dynamic_graph_metric_first_comparison"></select>
+						<div id="second_comparison_container">
+							<label for="select_dynamic_graph_metric_second_comparison">Field 2</label>
+							<select name="second_field" class="form-control" id="select_dynamic_graph_metric_second_comparison"></select>
+						</div>
+					</div>
+					<div id="map_metric_datapoint_options" class="metric_options" style="display: none">
+						<label for="select_map_datapoint">Datapoint</label>
+						<select name="data_point" class="form-control" id="select_map_datapoint"></select>
 					</div>
 					<div id="map_metric_options" class="metric_options" style="display: none;">
 						<label for="select_map_year">Year</label>

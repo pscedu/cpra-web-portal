@@ -38,13 +38,15 @@
 			// this is a new modal so we do a get request to load the HTML
 			let $modal = $(this);
 			$modal.empty();
-			$.get("{% url 'comment_modal_view' 'misc' %}", function(response){
+			$.get("{% url 'comment_modal_view' 'misc' %}?validation_assignment_id=" + {{ validation_item.id }}, function(response){
 				$modal.append(response);
 				$('#misc-comment-save').on('click', function(){
 					let comment = $modal.find('#textarea-comment').val();
+					let project_information = $modal.find('#select-project-info').val();
 					let body = {
 						comments: comment,
-						validation_assignment_id: {{ validation_item.id }}
+						project_information: project_information,
+						validation_assignment_id: {{ validation_item.id }},
 					}
 
 					$.post({
@@ -127,11 +129,12 @@
 				{{ validation_item.sub_id.name }}
 				{{ validation_item.vi_id.name }}
 			</h1>
-			<p>{{ validation_item.vi_id.description }}</p>
-				</div>
+			<p class="mb-1">{% if validation_item.sr_id.sim_id.progress_metric_field != "None" %} {{ validation_item.sr_id.sim_id.get_progress_metric_field_display }}: {{ validation_item.sr_id.progress_metric }}{% endif %}</p>
+			<p class="mb-1">{{ validation_item.vi_id.description }}</p>
+			</div>
 				<div class="col-2">
 					<button id="btn-remove-submission" class="btn btn-danger">Remove Submission</button>
-					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Submit</button>
+					<button id="btn-submit" data-bs-toggle="modal" data-bs-target="#modal-submit-comment" class="btn btn-success">Mark as Complete</button>
 				</div>
 				<div class="col-1">
 					<a href="{% url 'validation_item_view' validation_item.id %}">Data Viewer</a>
@@ -179,6 +182,9 @@
 		<div class="col-8">
 			<div class="container">
 				{% include 'components/validation_item_comments_table.html' %}
+			</div>
+			<div class="container">
+				{% include 'components/validation_item_project_information.html' %}
 			</div>
 		</div>
 	</div>

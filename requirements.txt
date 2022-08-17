@@ -1,9 +1,10 @@
 asgiref==3.3.1
 Django==3.1.4
-django-ajax-datatable==4.2.0
+git+https://github.com/jpuerto-psc/django-ajax-datatable@export
 django-redis==4.12.1
 numpy==1.20.2
 pandas==1.2.4
+psycopg2==2.9.3
 python-dateutil==2.8.1
 pytz==2020.4
 redis==3.5.3
