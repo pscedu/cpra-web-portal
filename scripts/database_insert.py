@@ -83,6 +83,52 @@ for sim in sims:
                             })
                             sim_run.save()
                             new_sim_runs.append(sim_run)
+    elif sim.name == 'ICM IP2':
+        for s_level in os.listdir(sim_path):
+            if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
+                for g_level in os.listdir(os.path.join(sim_path, s_level)):
+                    if "G" in g_level and len(g_level) == 4 and g_level in ["G655", "G656", "G657", "G658", "G659",
+                                                                            "G660", "G661", "G662", "G663", "G664",
+                                                                            "G665", "G666", "G667", "G668", "G669",
+                                                                            "G670", "G671", "G672", "G673", "G674",
+                                                                            "G675", "G676", "G677", "G678", "G679",
+                                                                            "G680", "G681", "G682", "G683", "G684",
+                                                                            "G685", "G686", "G687", "G688", "G689"]:
+                        # Check to see if this sim run exists yet
+                        sim_run_name = s_level + "_" + g_level
+                        print(sim_run_name)
+                        try:
+                            sim_run = models.SimulationRun.objects.get(name=sim_run_name)
+                            print("exists")
+                        except:
+                            sim_run = models.SimulationRun(**{
+                                'name': sim_run_name,
+                                'sim_id': sim,
+                                'results_file_path': s_level+'/'+g_level,
+                                'datetime_created': datetime.datetime.now()
+                            })
+                            sim_run.save()
+                            new_sim_runs.append(sim_run)
+    elif sim.name == 'ICM FWOCPP':
+        for s_level in os.listdir(sim_path):
+            if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
+                for g_level in os.listdir(os.path.join(sim_path, s_level)):
+                    if "G" in g_level and len(g_level) == 4 and g_level in ["G511"]:
+                        # Check to see if this sim run exists yet
+                        sim_run_name = s_level + "_" + g_level
+                        print(sim_run_name)
+                        try:
+                            sim_run = models.SimulationRun.objects.get(name=sim_run_name)
+                            print("exists")
+                        except:
+                            sim_run = models.SimulationRun(**{
+                                'name': sim_run_name,
+                                'sim_id': sim,
+                                'results_file_path': s_level+'/'+g_level,
+                                'datetime_created': datetime.datetime.now()
+                            })
+                            sim_run.save()
+                            new_sim_runs.append(sim_run)
     elif sim.name=='ADCIRC':
         # One sim run per Simulations.cpra_mp2023_2020system_vXXa.54_02
         for sim_run_version in (file for file in sorted(os.listdir(sim_path)) if 'Simulations.cpra_mp2023-' in file):
