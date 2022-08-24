@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     $(document).ready(function(){
+        const split_length = 55;
         const metric_lookup = {
             'comp_mwl_NAVD88m':	{
                 'title': 'Mean Water Level (NAVD88 m)',
@@ -31,7 +32,7 @@
                 'yAxisID': 'navd88_m'
             },
             'annual_mean_inun_depth_m': {
-                'title': 'Annual Mean Innundation Depth (m)',
+                'title': 'Annual Mean Inundation Depth (m)',
                 'yAxisID': 'annual_mean_inun_depth_m'
             },
             'pixel_lndtyp': {
@@ -151,7 +152,7 @@
             },
             'annual_mean_inun_depth_m': {
                 'title': {
-                    'text': 'Annual Mean Innundation Depth (m)',
+                    'text': 'Annual Mean Inundation Depth (m)',
                     'font': {
                         'size': 20
                     },
@@ -450,8 +451,41 @@
 
             chart.data.datasets.forEach(function(e, i){
                 if(e.yAxisID in chart.options.scales){
-                    if(!chart.options.scales[e.yAxisID]['title']['text'].includes(e.title))
-                        chart.options.scales[e.yAxisID]['title']['text'] += ', ' + e.title
+                    let text = chart.options.scales[e.yAxisID]['title']['text'];
+
+                    if(typeof text == "object")
+                        text = text.join(' ')
+
+                    if(!text.includes(e.title)) {
+                        if((text + ', ' + e.title).length >= split_length){
+                            text += (', ' + e.title)
+                            chart.options.scales[e.yAxisID]['title']['text'] = []
+                            let title_entry = ''
+                            let text_split = text.split(' ')
+                            text_split.forEach(function(word, index){
+                                if((title_entry + ' ' + word).length >= split_length){
+                                    if(index === text_split.length-1){
+                                        chart.options.scales[e.yAxisID]['title']['text'].push(title_entry)
+                                        chart.options.scales[e.yAxisID]['title']['text'].push(word)
+                                    }
+                                    else{
+                                        chart.options.scales[e.yAxisID]['title']['text'].push(title_entry)
+                                        title_entry = word
+                                    }
+                                }
+                                else {
+                                    if(index === text_split.length-1){
+                                        chart.options.scales[e.yAxisID]['title']['text'].push(title_entry + ' ' + word)
+                                    }
+                                    else{
+                                        title_entry += index===0 ? word : (' ' +word)
+                                    }
+                                }
+                            })
+                        }
+                        else
+                            chart.options.scales[e.yAxisID]['title']['text'] += ', ' + e.title
+                    }
                 }
                 else {
                     chart.options.scales[e.yAxisID] = y_axes[e.yAxisID]
