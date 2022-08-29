@@ -10,6 +10,11 @@
 <script>
     $(document).ready(function(){
         const split_length = 55;
+        const color_list = [
+            '#005d72', '#89b232', '#00a5d1', '#6ab9b4',
+            '#e5a524', '#714592', '#ed6731', '#5e8021',
+            '#b1d9ec', '#cae1df', '#e2efcb'
+        ]
         const metric_lookup = {
             'comp_mwl_NAVD88m':	{
                 'title': 'Mean Water Level (NAVD88 m)',
@@ -201,20 +206,27 @@
             }
         }
 
-        const color_list = [
-            '#5e8021', '#005372', '#89b232', '#00a5d1', '#5e8021',
-            '#6ab9b4', '#e5a524', '#714592', '#ed6731', '#5e8021',
-        ]
-
 		const $graph_container = $('#graph_container');
+        const $color_select = $('#color_select');
         const $sim_run_select = $('#sim_run_select');
         const $extraction_point_select = $('#extraction_point_select');
         const $metric_select = $('#metric_select');
         const $btn_add = $('#btn_add');
         const $title_input = $('#title_input');
-        $sim_run_select.select2({width: '30%', placeholder: 'Scenario + Model Group'});
-        $extraction_point_select.select2({width: '30%', placeholder: 'Extraction Point'});
-        $metric_select.select2({width: '30%', placeholder: 'Metric'});
+
+        function formatColorOptions(color){
+            if (!color.id) {
+                return color.text;
+            }
+
+            return $('<span style="display: inline-block; width: 15px; height: 15px; margin-right: 5px; background: '+color.text+'"></span><span>'+color.text+'</span>');
+        }
+
+        $color_select.select2({width: '15%', placeholder: 'Color',
+            templateResult: formatColorOptions, templateSelection: formatColorOptions})
+        $sim_run_select.select2({width: '25%', placeholder: 'Scenario + Model Group'});
+        $extraction_point_select.select2({width: '25%', placeholder: 'Extraction Point'});
+        $metric_select.select2({width: '25%', placeholder: 'Metric'});
 
         let added_datasets = [];
         let active_dataset;
@@ -263,6 +275,10 @@
                 }
             }
         };
+
+        color_list.forEach(function(value, index){
+           $color_select.append(new Option(value, value))
+        });
 
         for(let tick = -1; tick < 51; tick++)
             chart_config['labels'].push(tick)
@@ -327,6 +343,7 @@
             const column = $metric_select.val();
             const sim_run_name = $sim_run_select.find('option:selected').text();
             const extraction_point = $extraction_point_select.find('option:selected').text();
+            const color = $color_select.val();
             $btn_add.attr('disabled', false)
             active_dataset = {
                 'label': sim_run_name + ' ' + extraction_point + ' ' + metric_lookup[column]['title'],
@@ -338,7 +355,9 @@
                 'title': metric_lookup[column]['title'],
                 'font': {
                     'size': 20
-                }
+                },
+                'backgroundColor': color,
+                'borderColor': color
             }
             for(let year in data){
                 let data_to_push = {'x': year-1};
@@ -369,12 +388,16 @@
             chart.update();
         });
 
+        $color_select.on('change', function(){
+            $metric_select.trigger('change');
+        })
+
         $btn_add.on('click', function(){
             $metric_select.val(null).trigger('change');
 
             // Take the active dataset, set the color to something else and add it to added_datasets
             // This will add the active dataset to the added datasets
-            let color =  color_list[(added_datasets.length + 1) % color_list.length];
+            let color = $color_select.val();
             active_dataset['backgroundColor'] = color;
             active_dataset['borderColor'] = color;
             added_datasets.push(active_dataset);
@@ -501,7 +524,9 @@
     <div class="col-10">
         <div class="row" id="graph_container"></div>
         <div class="row mt-4">
-            <div class="col-6">
+            <div class="col-7">
+                <select name="color" id="color_select">
+                </select>
                 <select name="sim_run" id="sim_run_select">
                     <option></option>
                     {% for sr in srs %}
@@ -516,7 +541,6 @@
                 </select>
                 <button class="btn btn-sm btn-primary" id="btn_add" disabled>Add</button>
             </div>
-            <div class="col-1"></div>
             <div class="col-2">
                 <input id="title_input" class="form-control-sm" placeholder="Title">
             </div>

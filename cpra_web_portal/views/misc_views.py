@@ -192,14 +192,15 @@ def get_dynamic_graph_metric(request):
         with open(file_path, "r") as f:
             dict_reader = csv.DictReader(f)
             if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
                 json_from_csv['fwa'] = list(dict_reader)
                 # In this case, we need to load data from another file as well
                 fwoa_file_path = os.path.join(
                     validation_assignment.sr_id.sim_id.results_dir,
                     scenario,
-                    'G500',
+                    fwoa_model_group,
                     metric.file_path,
-                    file_name.replace(validation_assignment.sr_id.name.split('_')[1], 'G500')
+                    file_name.replace(validation_assignment.sr_id.name.split('_')[1], fwoa_model_group)
                 )
                 with open(fwoa_file_path, 'r') as fwoa_f:
                     fwoa_dict_reader = csv.DictReader(fwoa_f)
@@ -215,12 +216,13 @@ def get_dynamic_graph_metric(request):
                     # This iterates over yearly files, and grabs the column that is being viewed
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
                         json_from_csv['fwa'].append(csv_reader[int(file_name) - 1])
+                        fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
 
                         # file can be used here (rather than fwoa_file) because its just compartment_out_xxxx
                         fwoa_file_path = os.path.join(
                             validation_assignment.sr_id.sim_id.results_dir,
                             scenario,
-                            'G500',
+                            fwoa_model_group,
                             metric.file_path,
                             file
                         )
@@ -248,16 +250,17 @@ def get_dynamic_graph_metric(request):
                     last_day = year * 365 if year > 0 else len(result)
 
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
+                        fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
                         fwoa_result = None
                         for row in result[first_day:last_day]:
                             json_from_csv['fwa'].append({'value': row})
 
-                        fwoa_file = file.replace(validation_assignment.sr_id.name.split('_')[1], 'G500')
+                        fwoa_file = file.replace(validation_assignment.sr_id.name.split('_')[1], fwoa_model_group)
 
                         fwoa_file_path = os.path.join(
                             validation_assignment.sr_id.sim_id.results_dir,
                             scenario,
-                            'G500',
+                            fwoa_model_group,
                             metric.file_path,
                             fwoa_file
                         )
