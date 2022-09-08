@@ -39,7 +39,7 @@ class User(View):
                     setattr(user, attr, value)
         else:
             user = user_model(**body)
-            pw = User.objects.make_random_password()
+            pw = user_model.objects.make_random_password()
             user.set_password(pw)
 
             user.email_user(
