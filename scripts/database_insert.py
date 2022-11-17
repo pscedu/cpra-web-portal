@@ -16,7 +16,7 @@ sims = models.Simulation.objects.all()
 
 current_timestamp = datetime.datetime.now()
 
-create_all_srvs = None
+create_all_srvs = True
 
 for sim in sims:
     sim_path = sim.results_dir
@@ -26,7 +26,7 @@ for sim in sims:
         for s_level in os.listdir(sim_path):
             if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
-                    if "G" in g_level and len(g_level) == 4 and g_level not in ['G500', 'G511', 'G512', 'G513']:
+                    if "G" in g_level and len(g_level) == 4 and g_level not in ['G500', 'G511', 'G512', 'G513', 'G516']:
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)
@@ -114,6 +114,26 @@ for sim in sims:
             if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
                 for g_level in os.listdir(os.path.join(sim_path, s_level)):
                     if "G" in g_level and len(g_level) == 4 and g_level in ["G511"]:
+                        # Check to see if this sim run exists yet
+                        sim_run_name = s_level + "_" + g_level
+                        print(sim_run_name)
+                        try:
+                            sim_run = models.SimulationRun.objects.get(name=sim_run_name)
+                            print("exists")
+                        except:
+                            sim_run = models.SimulationRun(**{
+                                'name': sim_run_name,
+                                'sim_id': sim,
+                                'results_file_path': s_level+'/'+g_level,
+                                'datetime_created': datetime.datetime.now()
+                            })
+                            sim_run.save()
+                            new_sim_runs.append(sim_run)
+    elif sim.name == 'ICM FWMP':
+        for s_level in os.listdir(sim_path):
+            if "S" in s_level and len(s_level) == 3 and s_level not in ['S00', 'S04']:
+                for g_level in os.listdir(os.path.join(sim_path, s_level)):
+                    if "G" in g_level and len(g_level) == 4 and g_level in ["G516"]:
                         # Check to see if this sim run exists yet
                         sim_run_name = s_level + "_" + g_level
                         print(sim_run_name)

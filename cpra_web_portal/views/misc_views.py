@@ -192,7 +192,12 @@ def get_dynamic_graph_metric(request):
         with open(file_path, "r") as f:
             dict_reader = csv.DictReader(f)
             if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
-                fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
+                fwoa_model_group = 'G500'
+                if validation_assignment.sr_id.sim_id.name == 'ICM IP2':
+                    fwoa_model_group = 'G512'
+                elif validation_assignment.sr_id.sim_id.name == 'ICM FWMP':
+                    fwoa_model_group = 'G514'
+
                 json_from_csv['fwa'] = list(dict_reader)
                 # In this case, we need to load data from another file as well
                 fwoa_file_path = os.path.join(
@@ -216,7 +221,11 @@ def get_dynamic_graph_metric(request):
                     # This iterates over yearly files, and grabs the column that is being viewed
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
                         json_from_csv['fwa'].append(csv_reader[int(file_name) - 1])
-                        fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
+                        fwoa_model_group = 'G500'
+                        if validation_assignment.sr_id.sim_id.name == 'ICM IP2':
+                            fwoa_model_group = 'G512'
+                        elif validation_assignment.sr_id.sim_id.name == 'ICM FWMP':
+                            fwoa_model_group = 'G514'
 
                         # file can be used here (rather than fwoa_file) because its just compartment_out_xxxx
                         fwoa_file_path = os.path.join(
@@ -250,7 +259,11 @@ def get_dynamic_graph_metric(request):
                     last_day = year * 365 if year > 0 else len(result)
 
                     if metric.graph_config.get('misc', {}).get('comparison_type', False) == 'fwa_fwoa':
-                        fwoa_model_group = 'G512' if validation_assignment.sr_id.sim_id.name == 'ICM IP2' else 'G500'
+                        fwoa_model_group = 'G500'
+                        if validation_assignment.sr_id.sim_id.name == 'ICM IP2':
+                            fwoa_model_group = 'G512'
+                        elif validation_assignment.sr_id.sim_id.name == 'ICM FWMP':
+                            fwoa_model_group = 'G514'
                         fwoa_result = None
                         for row in result[first_day:last_day]:
                             json_from_csv['fwa'].append({'value': row})
